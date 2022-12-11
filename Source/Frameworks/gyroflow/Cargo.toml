@@ -1,6 +1,8 @@
 [package]
 name = "gyroflow"
 version = "1.0.0"
+authors = ["Ilya Epifanov <elijah.epifanov@gmail.com>", "Adrian <adrian.eddy@gmail.com>", "Chris Hocking <chris@latenitefilms.com>"]
+license = "GPL-3.0-or-later"
 edition = "2021"
 
 [lib]
@@ -11,3 +13,4 @@ argh = "*"
 serde = { version = "*", features = ["derive"] }
 serde_json = { version = "*", features = ["preserve_order"] }
 libc = "0.2"
+gyroflow-core = { git = "https://github.com/gyroflow/gyroflow.git", default-features = false, rev = "fc1e326" }
