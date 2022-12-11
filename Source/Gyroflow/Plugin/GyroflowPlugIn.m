@@ -12,7 +12,7 @@
 
 #import "GyroflowParameters.h"
 
-#include "GyroflowWrapper.h"
+#include "gyroflow.h"
 
 //---------------------------------------------------------
 // Plugin Parameter Constants:
@@ -533,7 +533,7 @@ enum {
     unsigned long sourceHeight  = inputTexture.height;
     const char* sourcePath      = [gyroflowFile UTF8String];
     
-    if (!startGyroflow(sourceWidth, sourceHeight, sourcePath)) {
+    if (!start_gyroflow(sourceWidth, sourceHeight, sourcePath)) {
         NSString *errorMessage = [NSString stringWithFormat:@"[Gyroflow] Failed to start Gyroflow."];
         if (outError != NULL) {
             *outError = [NSError errorWithDomain:FxPlugErrorDomain
@@ -565,7 +565,7 @@ enum {
     long long smoothnessValue       = [smoothness longLongValue];
     long long lensCorrectionValue   = [lensCorrection longLongValue];
     
-    if (!processPixels(&timestamp, &fovValue, &smoothnessValue, &lensCorrectionValue, buffer, bufferSize)) {
+    if (!process_pixels(&timestamp, &fovValue, &smoothnessValue, &lensCorrectionValue, buffer, bufferSize)) {
         NSString *errorMessage = [NSString stringWithFormat:@"[Gyroflow] Failed to process pixels."];
         if (outError != NULL) {
             *outError = [NSError errorWithDomain:FxPlugErrorDomain
@@ -596,7 +596,7 @@ enum {
     //---------------------------------------------------------
     // Stop Gyroflow Processing:
     //---------------------------------------------------------
-    if (!stopGyroflow()) {
+    if (!stop_gyroflow()) {
         NSString *errorMessage = [NSString stringWithFormat:@"[Gyroflow] Failed to stop Gyroflow."];
         if (outError != NULL) {
             *outError = [NSError errorWithDomain:FxPlugErrorDomain

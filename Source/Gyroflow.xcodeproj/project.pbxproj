@@ -27,7 +27,8 @@
 		2239AB57294400B500028B77 /* GyroflowParameters.m in Sources */ = {isa = PBXBuildFile; fileRef = 2239AB56294400B500028B77 /* GyroflowParameters.m */; };
 		2239AB5C29453BB400028B77 /* GyroflowFCP.icns in Resources */ = {isa = PBXBuildFile; fileRef = 2239AB5B29453BB400028B77 /* GyroflowFCP.icns */; };
 		2239AB6D2945471500028B77 /* Motion Templates in Resources */ = {isa = PBXBuildFile; fileRef = 2239AB6C2945471500028B77 /* Motion Templates */; };
-		2239AB7129454BCB00028B77 /* GyroflowWrapper.c in Sources */ = {isa = PBXBuildFile; fileRef = 2239AB6F29454BC800028B77 /* GyroflowWrapper.c */; };
+		2239AB782945979800028B77 /* libgyroflow.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2239AB772945979800028B77 /* libgyroflow.dylib */; };
+		2239AB792945979800028B77 /* libgyroflow.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 2239AB772945979800028B77 /* libgyroflow.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -57,6 +58,17 @@
 				2239AB192943F8F600028B77 /* Gyroflow XPC Service.pluginkit in Embed PlugIns */,
 			);
 			name = "Embed PlugIns";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		2239AB752945960300028B77 /* Embed Libraries */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				2239AB792945979800028B77 /* libgyroflow.dylib in Embed Libraries */,
+			);
+			name = "Embed Libraries";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
@@ -92,8 +104,8 @@
 		2239AB5A2944150B00028B77 /* Shared.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Shared.xcconfig; sourceTree = "<group>"; };
 		2239AB5B29453BB400028B77 /* GyroflowFCP.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = GyroflowFCP.icns; path = Resources/GyroflowFCP.icns; sourceTree = "<group>"; };
 		2239AB6C2945471500028B77 /* Motion Templates */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "Motion Templates"; path = "Gyroflow/Wrapper Application/Resources/Motion Templates"; sourceTree = "<group>"; };
-		2239AB6E29454BC800028B77 /* GyroflowWrapper.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GyroflowWrapper.h; sourceTree = "<group>"; };
-		2239AB6F29454BC800028B77 /* GyroflowWrapper.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = GyroflowWrapper.c; sourceTree = "<group>"; };
+		2239AB772945979800028B77 /* libgyroflow.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libgyroflow.dylib; path = Frameworks/gyroflow/binary/libgyroflow.dylib; sourceTree = "<group>"; };
+		2239AB7A2945983D00028B77 /* gyroflow.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = gyroflow.h; path = Frameworks/gyroflow/inc/gyroflow.h; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -114,6 +126,7 @@
 				2239AB1D2943F8F600028B77 /* Foundation.framework in Frameworks */,
 				2239AB1F2943F8F600028B77 /* AppKit.framework in Frameworks */,
 				2239AB252943F8F600028B77 /* FxPlug.framework in Frameworks */,
+				2239AB782945979800028B77 /* libgyroflow.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -142,6 +155,7 @@
 		2239AB0F2943F8F600028B77 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				2239AB772945979800028B77 /* libgyroflow.dylib */,
 				2239AB102943F8F600028B77 /* Cocoa.framework */,
 				2239AB1C2943F8F600028B77 /* Foundation.framework */,
 				2239AB1E2943F8F600028B77 /* AppKit.framework */,
@@ -180,10 +194,9 @@
 		2239AB2D2943F8F600028B77 /* Plugin */ = {
 			isa = PBXGroup;
 			children = (
+				2239AB7A2945983D00028B77 /* gyroflow.h */,
 				2239AB2E2943F8F600028B77 /* GyroflowPlugIn.h */,
 				2239AB312943F8F600028B77 /* GyroflowPlugIn.m */,
-				2239AB6E29454BC800028B77 /* GyroflowWrapper.h */,
-				2239AB6F29454BC800028B77 /* GyroflowWrapper.c */,
 				2239AB58294400CE00028B77 /* GyroflowParameters.h */,
 				2239AB56294400B500028B77 /* GyroflowParameters.m */,
 				2239AB342943F8F600028B77 /* MetalDeviceCache.h */,
@@ -238,6 +251,7 @@
 				2239AB142943F8F600028B77 /* Resources */,
 				2239AB152943F8F600028B77 /* Copy and Code Sign FxPlug.framework */,
 				2239AB162943F8F600028B77 /* Copy and Code Sign PluginManager.framework */,
+				2239AB752945960300028B77 /* Embed Libraries */,
 			);
 			buildRules = (
 			);
@@ -366,7 +380,6 @@
 				2239AB412943F8F600028B77 /* TileableRemoteGyroflow.metal in Sources */,
 				2239AB452943F8F600028B77 /* main.m in Sources */,
 				2239AB57294400B500028B77 /* GyroflowParameters.m in Sources */,
-				2239AB7129454BCB00028B77 /* GyroflowWrapper.c in Sources */,
 				2239AB322943F8F600028B77 /* GyroflowPlugIn.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -479,7 +492,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -539,7 +552,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = macosx;
@@ -558,6 +571,10 @@
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@loader_path/../Frameworks",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Frameworks/gyroflow/binary",
 				);
 				MACH_O_TYPE = mh_execute;
 				MARKETING_VERSION = "$(HARDCODED_VERSION)";
@@ -579,6 +596,10 @@
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@loader_path/../Frameworks",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Frameworks/gyroflow/binary",
 				);
 				MACH_O_TYPE = mh_execute;
 				MARKETING_VERSION = "$(HARDCODED_VERSION)";
