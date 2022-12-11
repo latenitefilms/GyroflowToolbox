@@ -8,6 +8,8 @@
 //
 // This code is heavily influenced by: https://github.com/gyroflow/gyroflow-ofx/blob/main/src/fisheyestab_v1.rs
 //
+use std::sync::Arc;
+use std::sync::atomic::AtomicBool;
 
 use gyroflow_core::{StabilizationManager, stabilization::RGBAf};
 
@@ -26,10 +28,22 @@ pub extern "C" fn processFrame(
     _buffer_size: u32,
 ) -> i32 {
     println!("[Gyroflow] FROM RUST: processFrame has been triggered!");
-        
+    
     let manager = StabilizationManager::<RGBAf>::default();
     
-    1 // Currently we're just returning one to say "success". Eventually we actually need to return useful data.
+    // TODO: For some reason passing `_path` just crashes, so currently just using a temporary hard coded path:
+    
+    let tempPath = String::from("/Users/chrishocking/Desktop/A001_06121551_C014.gyroflow");
+    let tempPathSlice = tempPath.as_str();
+        
+    match manager.import_gyroflow_file(&tempPathSlice, true, |_|(), Arc::new(AtomicBool::new(false))) {
+        Ok(_) => {
+            return 123
+        },
+        Err(e) => {
+            return -1
+        }
+    }
 }
 
 
