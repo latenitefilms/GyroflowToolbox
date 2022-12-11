@@ -10,6 +10,10 @@
 #import "TileableRemoteGyroflowShaderTypes.h"
 #import "MetalDeviceCache.h"
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #import "GyroflowParameters.h"
 
 #include "gyroflow.h"
@@ -525,26 +529,6 @@ enum {
         iosurfacePlane = 0
         allowG<…>
     */
-
-    //---------------------------------------------------------
-    // Start Gyroflow Processing:
-    //---------------------------------------------------------
-    int result;
-    unsigned long sourceWidth   = inputTexture.width;
-    unsigned long sourceHeight  = inputTexture.height;
-    const char* sourcePath      = [gyroflowFile UTF8String];
-    
-    result = start_gyroflow(sourceWidth, sourceHeight, sourcePath);
-    NSLog(@"[Gyroflow] start_gyroflow result: %d", result);
-    if (result != 321) {
-        NSString *errorMessage = [NSString stringWithFormat:@"[Gyroflow] Failed to start Gyroflow."];
-        if (outError != NULL) {
-            *outError = [NSError errorWithDomain:FxPlugErrorDomain
-                                            code:kFxError_InvalidParameter
-                                        userInfo:@{ NSLocalizedDescriptionKey : errorMessage }];
-        }
-        return NO;
-    }
     
     //---------------------------------------------------------
     // Create a CPU buffer to hold the input texture data:
@@ -558,20 +542,22 @@ enum {
     MTLRegion region = MTLRegionMake2D(0, 0, width, height);
     [inputTexture getBytes:buffer bytesPerRow:width * bytesPerPixel bytesPerImage:0 fromRegion:region mipmapLevel:0 slice:0];
     
-    // TODO: We currently don't ever free(buffer); the buffer.
-    
     //---------------------------------------------------------
-    // Process the Pixels:
+    // Process the Frame using Gyroflow:
     //---------------------------------------------------------
-    long long timestamp             = [frameToRender floatValue] * [frameRate floatValue];
-    long long fovValue              = [fov longLongValue];
-    long long smoothnessValue       = [smoothness longLongValue];
-    long long lensCorrectionValue   = [lensCorrection longLongValue];
+    unsigned long   sourceWidth             = inputTexture.width;
+    unsigned long   sourceHeight            = inputTexture.height;
+    const char*     sourcePath              = [gyroflowFile UTF8String];
+    long long       sourceTimestamp         = [frameToRender floatValue] * [frameRate floatValue];
+    long long       sourceFOV               = [fov longLongValue];
+    long long       sourceSmoothness        = [smoothness longLongValue];
+    long long       sourceLensCorrection    = [lensCorrection longLongValue];
     
-    result = process_pixels(&timestamp, &fovValue, &smoothnessValue, &lensCorrectionValue, buffer, bufferSize);
-    NSLog(@"[Gyroflow] process_pixels result: %d", result);
-    if (result != 321) {
-        NSString *errorMessage = [NSString stringWithFormat:@"[Gyroflow] Failed to process pixels."];
+    int result = processFrame(sourceWidth, sourceHeight, sourcePath, &sourceTimestamp, &sourceFOV, &sourceSmoothness, &sourceLensCorrection, buffer, bufferSize);
+    if (result == 321) {
+        NSLog(@"[Gyroflow] processFrame was successful!");
+    } else {
+        NSString *errorMessage = [NSString stringWithFormat:@"[Gyroflow] Failed to process frame using Gyroflow."];
         if (outError != NULL) {
             *outError = [NSError errorWithDomain:FxPlugErrorDomain
                                             code:kFxError_InvalidParameter
@@ -580,6 +566,8 @@ enum {
         return NO;
     }
     
+    free(buffer);
+
     //---------------------------------------------------------
     // Create our new Processed Texture:
     //---------------------------------------------------------
@@ -597,22 +585,7 @@ enum {
             [processedTexture replaceRegion:MTLRegionMake2D(x, y, 1, 1) mipmapLevel:0 withBytes:bytes bytesPerRow:4];
         }
     }
-        
-    //---------------------------------------------------------
-    // Stop Gyroflow Processing:
-    //---------------------------------------------------------
-    result = stop_gyroflow();
-    NSLog(@"[Gyroflow] stop_gyroflow result: %d", result);
-    if (result != 321) {
-        NSString *errorMessage = [NSString stringWithFormat:@"[Gyroflow] Failed to stop Gyroflow."];
-        if (outError != NULL) {
-            *outError = [NSError errorWithDomain:FxPlugErrorDomain
-                                            code:kFxError_InvalidParameter
-                                        userInfo:@{ NSLocalizedDescriptionKey : errorMessage }];
-        }
-        return NO;
-    }
-    
+
     //---------------------------------------------------------
     // Debugging:
     //---------------------------------------------------------
@@ -621,11 +594,11 @@ enum {
     debugMessage = [debugMessage stringByAppendingFormat:@"inputTexture.height: %lu\n", (unsigned long)inputTexture.height];
     debugMessage = [debugMessage stringByAppendingFormat:@"frameToRender: %@\n", frameToRender];
     debugMessage = [debugMessage stringByAppendingFormat:@"frameRate: %@\n", frameRate];
-    debugMessage = [debugMessage stringByAppendingFormat:@"timestamp: %lld\n", timestamp];
+    debugMessage = [debugMessage stringByAppendingFormat:@"timestamp: %lld\n", sourceTimestamp];
     debugMessage = [debugMessage stringByAppendingFormat:@"gyroflowFile: %@\n", gyroflowFile];
-    debugMessage = [debugMessage stringByAppendingFormat:@"fov: %@\n", fov];
-    debugMessage = [debugMessage stringByAppendingFormat:@"smoothness: %@\n", smoothness];
-    debugMessage = [debugMessage stringByAppendingFormat:@"lensCorrection: %@\n", lensCorrection];
+    debugMessage = [debugMessage stringByAppendingFormat:@"fov: %lld\n", sourceFOV];
+    debugMessage = [debugMessage stringByAppendingFormat:@"smoothness: %lld\n", sourceSmoothness];
+    debugMessage = [debugMessage stringByAppendingFormat:@"lensCorrection: %lld\n", sourceLensCorrection];
     debugMessage = [debugMessage stringByAppendingFormat:@"outputWidth: %f\n", outputWidth];
     debugMessage = [debugMessage stringByAppendingFormat:@"outputHeight: %f\n", outputHeight];
     NSLog(@"%@", debugMessage);

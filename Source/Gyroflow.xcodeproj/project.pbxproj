@@ -105,7 +105,8 @@
 		2239AB5B29453BB400028B77 /* GyroflowFCP.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = GyroflowFCP.icns; path = Resources/GyroflowFCP.icns; sourceTree = "<group>"; };
 		2239AB6C2945471500028B77 /* Motion Templates */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "Motion Templates"; path = "Gyroflow/Wrapper Application/Resources/Motion Templates"; sourceTree = "<group>"; };
 		2239AB772945979800028B77 /* libgyroflow.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libgyroflow.dylib; path = Frameworks/gyroflow/binary/libgyroflow.dylib; sourceTree = "<group>"; };
-		2239AB7A2945983D00028B77 /* gyroflow.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = gyroflow.h; path = Frameworks/gyroflow/inc/gyroflow.h; sourceTree = SOURCE_ROOT; };
+		2239AB7A2945983D00028B77 /* gyroflow.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = gyroflow.h; path = Gyroflow/gyroflow.h; sourceTree = SOURCE_ROOT; };
+		2239AB7C2945A69100028B77 /* lib.rs */ = {isa = PBXFileReference; lastKnownFileType = file; name = lib.rs; path = Frameworks/gyroflow/src/lib.rs; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -169,6 +170,7 @@
 		2239AB282943F8F600028B77 /* Gyroflow */ = {
 			isa = PBXGroup;
 			children = (
+				2239AB7B2945A67600028B77 /* Rust */,
 				2239AB592944150B00028B77 /* Configuration */,
 				2239AB292943F8F600028B77 /* Wrapper Application */,
 				2239AB2D2943F8F600028B77 /* Plugin */,
@@ -194,7 +196,6 @@
 		2239AB2D2943F8F600028B77 /* Plugin */ = {
 			isa = PBXGroup;
 			children = (
-				2239AB7A2945983D00028B77 /* gyroflow.h */,
 				2239AB2E2943F8F600028B77 /* GyroflowPlugIn.h */,
 				2239AB312943F8F600028B77 /* GyroflowPlugIn.m */,
 				2239AB58294400CE00028B77 /* GyroflowParameters.h */,
@@ -218,6 +219,15 @@
 			);
 			path = Configuration;
 			sourceTree = SOURCE_ROOT;
+		};
+		2239AB7B2945A67600028B77 /* Rust */ = {
+			isa = PBXGroup;
+			children = (
+				2239AB7C2945A69100028B77 /* lib.rs */,
+				2239AB7A2945983D00028B77 /* gyroflow.h */,
+			);
+			name = Rust;
+			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
