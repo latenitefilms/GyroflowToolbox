@@ -21,17 +21,32 @@ void NSLog(CFStringRef format, ...);
 }
 
 bool startGyroflow(unsigned long width, unsigned long height, const char* path) {
+    
+    // TODO: Currently this doesn't do anything.
+    
     WriteToConsole("[Gyroflow] Starting Gyroflow...");
     WriteToConsole("[Gyroflow] width: %lu\n height: %lu\n path: %s", width, height, path);
     return true;
 }
 
-bool processPixels(int64_t* timestamp, int64_t* fov, int64_t* smoothness, int64_t* lensCorrection, int buffer, int size) {
-    WriteToConsole("[Gyroflow] Processing Pixels!");
+bool processPixels(int64_t* timestamp, int64_t* fov, int64_t* smoothness, int64_t* lensCorrection, uint8_t* buffer, unsigned long bufferSize) {
+    
+    // TODO: Currently this doesn't do anything.
+    
+    WriteToConsole("[Gyroflow] Processing Pixels...");
+    WriteToConsole("[Gyroflow] timestamp: %lld", *timestamp);
+    WriteToConsole("[Gyroflow] fov: %lld", *fov);
+    WriteToConsole("[Gyroflow] smoothness: %lld", *smoothness);
+    WriteToConsole("[Gyroflow] lensCorrection: %lld", *lensCorrection);
+    WriteToConsole("[Gyroflow] bufferSize: %lu", bufferSize);
     return true;
 }
 
+
 bool stopGyroflow(void) {
+    
+    // TODO: Currently this doesn't do anything.
+    
     WriteToConsole("[Gyroflow] Stopping Gyroflow!");
     return true;
 }

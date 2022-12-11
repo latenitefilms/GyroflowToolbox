@@ -493,7 +493,7 @@ enum {
     // Setup our input texture:
     //---------------------------------------------------------
     id<MTLTexture> inputTexture = [sourceImages[0] metalTextureForDevice:[deviceCache deviceWithRegistryID:sourceImages[0].deviceRegistryID]];
-    
+
     /*
     [Gyroflow] inputTexture.debugDescription: <AGXG13XFamilyTexture: 0x141f31800>
         label = <none>
@@ -525,7 +525,7 @@ enum {
         iosurfacePlane = 0
         allowG<…>
     */
-    
+
     //---------------------------------------------------------
     // Start Gyroflow Processing:
     //---------------------------------------------------------
@@ -544,6 +544,20 @@ enum {
     }
     
     //---------------------------------------------------------
+    // Create a CPU buffer to hold the input texture data:
+    //---------------------------------------------------------
+    NSUInteger width                = inputTexture.width;
+    NSUInteger height               = inputTexture.height;
+    NSUInteger bytesPerPixel        = 4;
+    NSUInteger bufferSize           = width * height * bytesPerPixel;
+    uint8_t *buffer                 = (uint8_t*)malloc(bufferSize);
+
+    MTLRegion region = MTLRegionMake2D(0, 0, width, height);
+    [inputTexture getBytes:buffer bytesPerRow:width * bytesPerPixel bytesPerImage:0 fromRegion:region mipmapLevel:0 slice:0];
+    
+    // TODO: We currently don't ever free(buffer); the buffer.
+    
+    //---------------------------------------------------------
     // Process the Pixels:
     //---------------------------------------------------------
     long long timestamp             = [frameToRender floatValue] * [frameRate floatValue];
@@ -551,7 +565,7 @@ enum {
     long long smoothnessValue       = [smoothness longLongValue];
     long long lensCorrectionValue   = [lensCorrection longLongValue];
     
-    if (!processPixels(&timestamp, &fovValue, &smoothnessValue, &lensCorrectionValue, 1, 1)) {
+    if (!processPixels(&timestamp, &fovValue, &smoothnessValue, &lensCorrectionValue, buffer, bufferSize)) {
         NSString *errorMessage = [NSString stringWithFormat:@"[Gyroflow] Failed to process pixels."];
         if (outError != NULL) {
             *outError = [NSError errorWithDomain:FxPlugErrorDomain
