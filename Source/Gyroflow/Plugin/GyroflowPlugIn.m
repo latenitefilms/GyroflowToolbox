@@ -529,11 +529,14 @@ enum {
     //---------------------------------------------------------
     // Start Gyroflow Processing:
     //---------------------------------------------------------
+    int result;
     unsigned long sourceWidth   = inputTexture.width;
     unsigned long sourceHeight  = inputTexture.height;
     const char* sourcePath      = [gyroflowFile UTF8String];
     
-    if (!start_gyroflow(sourceWidth, sourceHeight, sourcePath)) {
+    result = start_gyroflow(sourceWidth, sourceHeight, sourcePath);
+    NSLog(@"[Gyroflow] start_gyroflow result: %d", result);
+    if (result != 321) {
         NSString *errorMessage = [NSString stringWithFormat:@"[Gyroflow] Failed to start Gyroflow."];
         if (outError != NULL) {
             *outError = [NSError errorWithDomain:FxPlugErrorDomain
@@ -565,7 +568,9 @@ enum {
     long long smoothnessValue       = [smoothness longLongValue];
     long long lensCorrectionValue   = [lensCorrection longLongValue];
     
-    if (!process_pixels(&timestamp, &fovValue, &smoothnessValue, &lensCorrectionValue, buffer, bufferSize)) {
+    result = process_pixels(&timestamp, &fovValue, &smoothnessValue, &lensCorrectionValue, buffer, bufferSize);
+    NSLog(@"[Gyroflow] process_pixels result: %d", result);
+    if (result != 321) {
         NSString *errorMessage = [NSString stringWithFormat:@"[Gyroflow] Failed to process pixels."];
         if (outError != NULL) {
             *outError = [NSError errorWithDomain:FxPlugErrorDomain
@@ -596,7 +601,9 @@ enum {
     //---------------------------------------------------------
     // Stop Gyroflow Processing:
     //---------------------------------------------------------
-    if (!stop_gyroflow()) {
+    result = stop_gyroflow();
+    NSLog(@"[Gyroflow] stop_gyroflow result: %d", result);
+    if (result != 321) {
         NSString *errorMessage = [NSString stringWithFormat:@"[Gyroflow] Failed to stop Gyroflow."];
         if (outError != NULL) {
             *outError = [NSError errorWithDomain:FxPlugErrorDomain
