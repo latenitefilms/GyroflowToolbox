@@ -1,3 +1,5 @@
+use gyroflow_core::{StabilizationManager, stabilization::RGBAf};
+
 extern crate libc;
 
 #[no_mangle]
@@ -12,6 +14,6 @@ pub extern "C" fn processFrame(
     _buffer: &mut [u8],
     _buffer_size: u32,
 ) -> i32 {
-    println!("[Gyroflow] processFrame has been triggered!");
+    println!("[Gyroflow] FROM RUST: processFrame has been triggered!");
     321
 }

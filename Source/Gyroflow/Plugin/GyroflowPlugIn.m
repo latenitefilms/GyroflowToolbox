@@ -554,9 +554,9 @@ enum {
     long long       sourceLensCorrection    = [lensCorrection longLongValue];
     
     int result = processFrame(sourceWidth, sourceHeight, sourcePath, &sourceTimestamp, &sourceFOV, &sourceSmoothness, &sourceLensCorrection, buffer, bufferSize);
-    if (result == 321) {
-        NSLog(@"[Gyroflow] processFrame was successful!");
-    } else {
+    NSLog(@"[Gyroflow] processFrame result: %d", result);
+    
+    if (result == -1) {
         NSString *errorMessage = [NSString stringWithFormat:@"[Gyroflow] Failed to process frame using Gyroflow."];
         if (outError != NULL) {
             *outError = [NSError errorWithDomain:FxPlugErrorDomain
@@ -569,23 +569,57 @@ enum {
     free(buffer);
 
     //---------------------------------------------------------
-    // Create our new Processed Texture:
+    // Modify the existing input texture:
     //---------------------------------------------------------
     
-    // TODO: Currently this is just making all the pixels pink.
+    // TODO: Currently we're just replacing half the pixels with random colours, but eventually we should replace all pixels with the data from Gyroflow.
     
-    MTLTextureDescriptor *descriptor = [[MTLTextureDescriptor alloc] init];
-    descriptor.pixelFormat = MTLPixelFormatRGBA8Unorm;
-    descriptor.width = inputTexture.width;
-    descriptor.height = inputTexture.height;
-    id<MTLTexture> processedTexture = [[deviceCache deviceWithRegistryID:sourceImages[0].deviceRegistryID] newTextureWithDescriptor:descriptor];
-    char bytes[] = {255, 0, 255, 255};
-    for (int y = 0; y < inputTexture.height; y++) {
-        for (int x = 0; x < inputTexture.width; x++) {
-            [processedTexture replaceRegion:MTLRegionMake2D(x, y, 1, 1) mipmapLevel:0 withBytes:bytes bytesPerRow:4];
-        }
+    //---------------------------------------------------------
+    // Create an NSData object to hold the bytes for the random
+    // colors. We'll assume that each pixel is represented by
+    // 4 floats, for the red, green, blue, and alpha channels.
+    //---------------------------------------------------------
+    const int theBytesPerPixel = 4 * sizeof(float);
+    unsigned long theBytesPerRow = theBytesPerPixel * inputTexture.width;
+
+    //---------------------------------------------------------
+    // Calculate the number of rows in the first half of the
+    // texture.
+    //---------------------------------------------------------
+    unsigned long halfHeight = inputTexture.height / 2;
+
+    //---------------------------------------------------------
+    // Create the NSData object to hold the bytes for the
+    // random colors.
+    //---------------------------------------------------------
+    NSMutableData *data = [NSMutableData dataWithLength:theBytesPerRow * halfHeight];
+
+    //---------------------------------------------------------
+    // Generate random colors and write them to the data
+    // object.
+    //---------------------------------------------------------
+    float *colors = data.mutableBytes;
+    for (int i = 0; i < data.length / sizeof(float); i += 4) {
+      colors[i]         = (float)arc4random() / UINT32_MAX;     // random red value
+      colors[i + 1]     = (float)arc4random() / UINT32_MAX;     // random green value
+      colors[i + 2]     = (float)arc4random() / UINT32_MAX;     // random blue value
+      colors[i + 3]     = 1.0;                                  // opaque alpha value
     }
 
+    //---------------------------------------------------------
+    // Set up the MTLRegion structure to specify the region of
+    // the texture to replace.
+    //---------------------------------------------------------
+    MTLRegion theRegion = {
+      {0, halfHeight, 0},                       // the origin of the region, which is the top-left corner of the bottom half
+      {inputTexture.width, halfHeight, 1}       // the size of the region, which is the full width and the bottom half of the height
+    };
+
+    //---------------------------------------------------------
+    // Replace the region of the texture with the random colors.
+    //---------------------------------------------------------
+    [inputTexture replaceRegion:theRegion mipmapLevel:0 withBytes:data.bytes bytesPerRow:theBytesPerRow];
+            
     //---------------------------------------------------------
     // Debugging:
     //---------------------------------------------------------
@@ -739,7 +773,7 @@ enum {
     // Sets a texture for the fragment function at an index
     // in the texture argument table:
     //---------------------------------------------------------
-    [commandEncoder setFragmentTexture:processedTexture
+    [commandEncoder setFragmentTexture:inputTexture
                                atIndex:BTI_InputImage];
     
     //---------------------------------------------------------
