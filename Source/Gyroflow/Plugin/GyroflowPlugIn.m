@@ -12,6 +12,8 @@
 
 #import "GyroflowParameters.h"
 
+#include "GyroflowWrapper.h"
+
 //---------------------------------------------------------
 // Plugin Parameter Constants:
 //---------------------------------------------------------
@@ -267,6 +269,12 @@ enum {
     params.frameToRender = frameToRender;
     
     //---------------------------------------------------------
+    // Frame Rate:
+    //---------------------------------------------------------
+    Float64 frameRate = [timingAPI timelineFpsNumeratorForEffect:self] / [timingAPI timelineFpsDenominatorForEffect:self];
+    params.frameRate = [[[NSNumber alloc] initWithFloat:frameRate] autorelease];
+    
+    //---------------------------------------------------------
     // Gyroflow File:
     //---------------------------------------------------------
     NSString *gyroflowFile;
@@ -439,6 +447,7 @@ enum {
     // Get the parameter data:
     //---------------------------------------------------------
     NSNumber *frameToRender     = params.frameToRender;
+    NSNumber *frameRate         = params.frameRate;
     NSString *gyroflowFile      = params.gyroflowFile;
     NSNumber *fov               = params.fov;
     NSNumber *smoothness        = params.smoothness;
@@ -476,7 +485,7 @@ enum {
     //---------------------------------------------------------
     // Create a new Command Buffer:
     //---------------------------------------------------------
-    id<MTLCommandBuffer>    commandBuffer   = [commandQueue commandBuffer];
+    id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
     commandBuffer.label = @"GyroFlow Command Buffer";
     [commandBuffer enqueue];
     
@@ -485,13 +494,113 @@ enum {
     //---------------------------------------------------------
     id<MTLTexture> inputTexture = [sourceImages[0] metalTextureForDevice:[deviceCache deviceWithRegistryID:sourceImages[0].deviceRegistryID]];
     
-    // TODO: Send inputTexture to GyroFlow and get back a new texture
-
+    /*
+    [Gyroflow] inputTexture.debugDescription: <AGXG13XFamilyTexture: 0x141f31800>
+        label = <none>
+        textureType = MTLTextureType2D
+        pixelFormat = MTLPixelFormatRGBA16Float
+        width = 1920
+        height = 1080
+        depth = 1
+        arrayLength = 1
+        mipmapLevelCount = 1
+        sampleCount = 1
+        cpuCacheMode = MTLCPUCacheModeDefaultCache
+        storageMode = MTLStorageModeManaged
+        hazardTrackingMode = MTLHazardTrackingModeTracked
+        resourceOptions = MTLResourceCPUCacheModeDefaultCache MTLResourceStorageModeManaged MTLResourceHazardTrackingModeTracked
+        usage = MTLTextureUsageShaderRead
+        shareable = 0
+        framebufferOnly = 0
+        purgeableState = MTLPurgeableStateNonVolatile
+        swizzle = [MTLTextureSwizzleRed, MTLTextureSwizzleGreen, MTLTextureSwizzleBlue, MTLTextureSwizzleAlpha]
+        isCompressed = 0
+        parentTexture = <null>
+        parentRelativeLevel = 0
+        parentRelativeSlice = 0
+        buffer = <null>
+        bufferOffset = 0
+        bufferBytesPerRow = 0
+        iosurface = 0x600000688c30
+        iosurfacePlane = 0
+        allowG<…>
+    */
+    
+    //---------------------------------------------------------
+    // Start Gyroflow Processing:
+    //---------------------------------------------------------
+    unsigned long sourceWidth   = inputTexture.width;
+    unsigned long sourceHeight  = inputTexture.height;
+    const char* sourcePath      = [gyroflowFile UTF8String];
+    
+    if (!startGyroflow(sourceWidth, sourceHeight, sourcePath)) {
+        NSString *errorMessage = [NSString stringWithFormat:@"[Gyroflow] Failed to start Gyroflow."];
+        if (outError != NULL) {
+            *outError = [NSError errorWithDomain:FxPlugErrorDomain
+                                            code:kFxError_InvalidParameter
+                                        userInfo:@{ NSLocalizedDescriptionKey : errorMessage }];
+        }
+        return NO;
+    }
+    
+    //---------------------------------------------------------
+    // Process the Pixels:
+    //---------------------------------------------------------
+    long long timestamp             = [frameToRender floatValue] * [frameRate floatValue];
+    long long fovValue              = [fov longLongValue];
+    long long smoothnessValue       = [smoothness longLongValue];
+    long long lensCorrectionValue   = [lensCorrection longLongValue];
+    
+    if (!processPixels(&timestamp, &fovValue, &smoothnessValue, &lensCorrectionValue, 1, 1)) {
+        NSString *errorMessage = [NSString stringWithFormat:@"[Gyroflow] Failed to process pixels."];
+        if (outError != NULL) {
+            *outError = [NSError errorWithDomain:FxPlugErrorDomain
+                                            code:kFxError_InvalidParameter
+                                        userInfo:@{ NSLocalizedDescriptionKey : errorMessage }];
+        }
+        return NO;
+    }
+    
+    //---------------------------------------------------------
+    // Create our new Processed Texture:
+    //---------------------------------------------------------
+    
+    // TODO: Currently this is just making all the pixels pink.
+    
+    MTLTextureDescriptor *descriptor = [[MTLTextureDescriptor alloc] init];
+    descriptor.pixelFormat = MTLPixelFormatRGBA8Unorm;
+    descriptor.width = inputTexture.width;
+    descriptor.height = inputTexture.height;
+    id<MTLTexture> processedTexture = [[deviceCache deviceWithRegistryID:sourceImages[0].deviceRegistryID] newTextureWithDescriptor:descriptor];
+    char bytes[] = {255, 0, 255, 255};
+    for (int y = 0; y < inputTexture.height; y++) {
+        for (int x = 0; x < inputTexture.width; x++) {
+            [processedTexture replaceRegion:MTLRegionMake2D(x, y, 1, 1) mipmapLevel:0 withBytes:bytes bytesPerRow:4];
+        }
+    }
+        
+    //---------------------------------------------------------
+    // Stop Gyroflow Processing:
+    //---------------------------------------------------------
+    if (!stopGyroflow()) {
+        NSString *errorMessage = [NSString stringWithFormat:@"[Gyroflow] Failed to stop Gyroflow."];
+        if (outError != NULL) {
+            *outError = [NSError errorWithDomain:FxPlugErrorDomain
+                                            code:kFxError_InvalidParameter
+                                        userInfo:@{ NSLocalizedDescriptionKey : errorMessage }];
+        }
+        return NO;
+    }
+    
     //---------------------------------------------------------
     // Debugging:
     //---------------------------------------------------------
     NSString *debugMessage = [NSString stringWithFormat:@"[Gyroflow] RENDERING A FRAME:\n"];
+    debugMessage = [debugMessage stringByAppendingFormat:@"inputTexture.width: %lu\n", (unsigned long)inputTexture.width];
+    debugMessage = [debugMessage stringByAppendingFormat:@"inputTexture.height: %lu\n", (unsigned long)inputTexture.height];
     debugMessage = [debugMessage stringByAppendingFormat:@"frameToRender: %@\n", frameToRender];
+    debugMessage = [debugMessage stringByAppendingFormat:@"frameRate: %@\n", frameRate];
+    debugMessage = [debugMessage stringByAppendingFormat:@"timestamp: %lld\n", timestamp];
     debugMessage = [debugMessage stringByAppendingFormat:@"gyroflowFile: %@\n", gyroflowFile];
     debugMessage = [debugMessage stringByAppendingFormat:@"fov: %@\n", fov];
     debugMessage = [debugMessage stringByAppendingFormat:@"smoothness: %@\n", smoothness];
@@ -500,53 +609,7 @@ enum {
     debugMessage = [debugMessage stringByAppendingFormat:@"outputHeight: %f\n", outputHeight];
     NSLog(@"%@", debugMessage);
         
-    /*
-    -------------------------
-    DATA TO SEND TO GYROFLOW:
-    -------------------------
-    float outputWidth
-    float outputHeight
-     
-    NSNumber *frameToRender
-    NSString *gyroflowFile
-    NSNumber *fov
-    NSNumber *smoothness
-    NSNumber *lensCorrection
-    */
-    
-    /*
-     -------------------
-     NOTES FROM DISCORD:
-     -------------------
-     
-     init(width, height, gyroflow_file_path),
-     process(timestamp, buffer pointers, sizes),
-     destroy
-     
-     AdrianEddy writes:
-     
-     the overall idea of gyroflow_core is this:
-     1. Create an instance of StabilizationManager with correct underlying processing pixel format (in OpenFX it's 32-bit float RGBA, so StabilizationManager<RGBAf> (line 35 and 49)
-     2. Call import_gyroflow_file
-     3. Set additional params like set_size, interpolation and whatever else is specific to the processing environment (lines 64-74)
-     4. Call invalidate_smoothing() and recompute_blocking() just to be sure everything is calculated and up-to-date
-     5.  Now get the the timestamp and source pixels from your host, in this case it uses RGBA 32-bit float buffer, and call:
-     let out = stab.process_pixels(timestamp_us, &mut BufferDescription {
-         input_size:  (width, height, stride),
-         output_size: (output_width, output_height, output_stride),
-         input_rect: None, // optional
-         output_rect: None, // optional
-         buffers: BufferSource::Cpu {
-             input:  unsafe { std::slice::from_raw_parts_mut(src_buf.ptr_mut(0), src_buf.bytes()) },
-             output: unsafe { std::slice::from_raw_parts_mut(dst_buf.ptr_mut(0), dst_buf.bytes()) }
-         }
-     });
-      (lines 237-246)
-     You can also supply OpenCL buffer if the host supports it (CUDA and Metal surfaces are not supported yet, but they will be)
-
-     and that's basically it
-     line numbers from https://github.com/gyroflow/gyroflow-ofx/blob/main/src/fisheyestab_v1.rs
-     */
+    NSLog(@"[Gyroflow] inputTexture.debugDescription: %@", inputTexture.debugDescription);
 
     //---------------------------------------------------------
     // Setup our output texture:
@@ -682,7 +745,7 @@ enum {
     // Sets a texture for the fragment function at an index
     // in the texture argument table:
     //---------------------------------------------------------
-    [commandEncoder setFragmentTexture:inputTexture
+    [commandEncoder setFragmentTexture:processedTexture
                                atIndex:BTI_InputImage];
     
     //---------------------------------------------------------

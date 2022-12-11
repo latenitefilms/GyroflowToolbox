@@ -13,6 +13,7 @@
 @implementation GyroflowParameters
 
 @synthesize frameToRender;
+@synthesize frameRate;
 @synthesize gyroflowFile;
 @synthesize fov;
 @synthesize smoothness;
@@ -25,6 +26,7 @@
 
 - (void)dealloc {
     [frameToRender release];
+    [frameRate release];
     [gyroflowFile release];
     [fov release];
     [smoothness release];
@@ -36,6 +38,7 @@
 - (id)initWithCoder:(NSCoder *)decoder {
     if (self = [super init]) {
         self.frameToRender          = [decoder decodeObjectOfClass:[NSNumber class] forKey:@"frameToRender"];
+        self.frameRate              = [decoder decodeObjectOfClass:[NSNumber class] forKey:@"frameRate"];
         self.gyroflowFile           = [decoder decodeObjectOfClass:[NSString class] forKey:@"gyroflowFile"];
         self.fov                    = [decoder decodeObjectOfClass:[NSNumber class] forKey:@"fov"];
         self.smoothness             = [decoder decodeObjectOfClass:[NSNumber class] forKey:@"smoothness"];
@@ -46,6 +49,7 @@
 
 - (void)encodeWithCoder:(NSCoder *)encoder {
     [encoder encodeObject:frameToRender     forKey:@"frameToRender"];
+    [encoder encodeObject:frameRate         forKey:@"frameRate"];
     [encoder encodeObject:gyroflowFile      forKey:@"gyroflowFile"];
     [encoder encodeObject:fov               forKey:@"fov"];
     [encoder encodeObject:smoothness        forKey:@"smoothness"];
