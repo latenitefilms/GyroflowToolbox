@@ -75,8 +75,7 @@ pub extern "C" fn processFrame(
     // -------------------------------------------------------------------------------
     let path_pointer = unsafe { CStr::from_ptr(path) };
     let path_string = path_pointer.to_string_lossy();
-    
-    
+
     //---------------------------------------------------------
     // Import the Gyroflow File:
     //---------------------------------------------------------
