@@ -51,7 +51,7 @@ pub extern "C" fn processFrame(
     fov: f64,
     smoothness: f64,
     lens_correction: f64,
-    in_buffer: *const c_uchar,
+    in_buffer: *mut c_uchar, // TODO: I temporarily changed this from *const to try get the Rust code to actually build
     in_buffer_size: u32,
     out_buffer: *mut c_uchar,
     out_buffer_size: u32
@@ -116,15 +116,15 @@ pub extern "C" fn processFrame(
             // Send data in and get data out:
             //---------------------------------------------------------
             {
-                let mut stab = manager.stabilization.write();
-                let out = stab.process_pixels(timestamp, &mut BufferDescription {
+                let stab = manager.stabilization.write();
+                stab.process_pixels(timestamp, &mut BufferDescription {
                     input_size:  (output_width, output_height, input_stride),   // TODO: The last value is "stride" - what do I use?
                     output_size: (output_width, output_height, output_stride),  // TODO: The last value is "stride" - what do I use?
                     input_rect: None,                                           // TODO: Do I need this?
                     output_rect: None,                                          // TODO: Do I need this?
                     buffers: BufferSource::Cpu {
-                        input:  std::slice::from_raw_parts(&mut in_buffer, input_buffer_size),
-                        output: std::slice::from_raw_parts(&mut out_buffer, output_buffer_size)
+                        input:  unsafe { std::slice::from_raw_parts_mut(in_buffer, input_buffer_size) },
+                        output: unsafe { std::slice::from_raw_parts_mut(out_buffer, output_buffer_size) }
                     }
                 });
             }
@@ -132,7 +132,7 @@ pub extern "C" fn processFrame(
             let result = CString::new("DONE").unwrap();
             return result.into_raw()
         },
-        Err(e) => {
+        Err(_) => { // TODO: Can I get useful error messages from this function?
             let result = CString::new("Failed to import Gyroflow File.").unwrap();
             return result.into_raw()
         }
