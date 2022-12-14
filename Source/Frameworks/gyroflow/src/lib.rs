@@ -34,6 +34,9 @@ use std::os::raw::c_char;                   // Allows us to use `*const c_uchar`
 use std::ffi::CStr;                         // Allows us to use `CStr`
 use std::ffi::CString;                      // Allows us to use `CString`
 
+//---------------------------------------------------------
+// Import Gyroflow Core:
+//---------------------------------------------------------
 use gyroflow_core::{StabilizationManager, stabilization::RGBAf16};
 use gyroflow_core::gpu::{ BufferDescription, BufferSource };
 
@@ -73,9 +76,10 @@ pub extern "C" fn processFrame(
     let path_pointer = unsafe { CStr::from_ptr(path) };
     let path_string = path_pointer.to_string_lossy();
     
-    // same story with buffer, _buffer: &mut [u8] is a Rust type, you have to use C-compatible pointer
-    // _buffer: *mut u8 and then std::slice::from_raw_parts(buffer, size); https://doc.rust-lang.org/std/slice/fn.from_raw_parts.html
     
+    //---------------------------------------------------------
+    // Import the Gyroflow File:
+    //---------------------------------------------------------
     match manager.import_gyroflow_file(&path_string, true, |_|(), Arc::new(AtomicBool::new(false))) {
         Ok(_) => {
             //---------------------------------------------------------
@@ -90,13 +94,6 @@ pub extern "C" fn processFrame(
             // TODO: Is the below code actually correct?
             let output_width: usize = width as usize;
             let output_height: usize = height as usize;
-            
-            let input_buffer_size: usize = in_buffer_size as usize;
-            let output_buffer_size: usize = out_buffer_size as usize;
-                        
-            let input_stride: usize = 0;
-            let output_stride: usize = 0;
-            
             manager.set_output_size(output_width, output_height);
 
             //---------------------------------------------------------
@@ -134,6 +131,12 @@ pub extern "C" fn processFrame(
             //---------------------------------------------------------
             // Send data in and get data out:
             //---------------------------------------------------------
+            let input_buffer_size: usize = in_buffer_size as usize;
+            let output_buffer_size: usize = out_buffer_size as usize;
+                        
+            let input_stride: usize = 0;
+            let output_stride: usize = 0;
+            
             manager.stabilization.write().process_pixels(timestamp, &mut BufferDescription {
                 input_size:  (output_width, output_height, input_stride),   // TODO: The last value is "stride" - what do I use?
                 output_size: (output_width, output_height, output_stride),  // TODO: The last value is "stride" - what do I use?
