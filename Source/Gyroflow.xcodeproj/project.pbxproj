@@ -105,8 +105,9 @@
 		2239AB5B29453BB400028B77 /* GyroflowFCP.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = GyroflowFCP.icns; path = Resources/GyroflowFCP.icns; sourceTree = "<group>"; };
 		2239AB6C2945471500028B77 /* Motion Templates */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "Motion Templates"; path = "Gyroflow/Wrapper Application/Resources/Motion Templates"; sourceTree = "<group>"; };
 		2239AB772945979800028B77 /* libgyroflow.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libgyroflow.dylib; path = Frameworks/gyroflow/binary/libgyroflow.dylib; sourceTree = "<group>"; };
-		2239AB7A2945983D00028B77 /* gyroflow.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = gyroflow.h; path = Gyroflow/gyroflow.h; sourceTree = SOURCE_ROOT; };
-		2239AB7C2945A69100028B77 /* lib.rs */ = {isa = PBXFileReference; lastKnownFileType = file; name = lib.rs; path = Frameworks/gyroflow/src/lib.rs; sourceTree = SOURCE_ROOT; };
+		2239AB7A2945983D00028B77 /* gyroflow.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = gyroflow.h; path = Frameworks/gyroflow/inc/gyroflow.h; sourceTree = SOURCE_ROOT; };
+		2239AB7C2945A69100028B77 /* lib.rs */ = {isa = PBXFileReference; lastKnownFileType = text; name = lib.rs; path = Frameworks/gyroflow/src/lib.rs; sourceTree = SOURCE_ROOT; };
+		22E4989F29492E8100580F67 /* Cargo.toml */ = {isa = PBXFileReference; lastKnownFileType = file; name = Cargo.toml; path = Frameworks/gyroflow/Cargo.toml; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -225,6 +226,7 @@
 			children = (
 				2239AB7C2945A69100028B77 /* lib.rs */,
 				2239AB7A2945983D00028B77 /* gyroflow.h */,
+				22E4989F29492E8100580F67 /* Cargo.toml */,
 			);
 			name = Rust;
 			sourceTree = "<group>";

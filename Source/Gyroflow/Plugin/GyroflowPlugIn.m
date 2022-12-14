@@ -531,33 +531,61 @@ enum {
     */
     
     //---------------------------------------------------------
-    // Create a CPU buffer to hold the input texture data:
+    // Create a memory buffer to hold the input texture data:
     //---------------------------------------------------------
     NSUInteger width                = inputTexture.width;
     NSUInteger height               = inputTexture.height;
     NSUInteger bytesPerPixel        = 4;
     NSUInteger bufferSize           = width * height * bytesPerPixel;
-    uint8_t *buffer                 = (uint8_t*)malloc(bufferSize);
-
+    
+    const unsigned char* sourceBuffer;
+    
     MTLRegion region = MTLRegionMake2D(0, 0, width, height);
-    [inputTexture getBytes:buffer bytesPerRow:width * bytesPerPixel bytesPerImage:0 fromRegion:region mipmapLevel:0 slice:0];
+    [inputTexture getBytes:&sourceBuffer bytesPerRow:width * bytesPerPixel bytesPerImage:0 fromRegion:region mipmapLevel:0 slice:0];
     
     //---------------------------------------------------------
     // Process the Frame using Gyroflow:
     //---------------------------------------------------------
-    unsigned long   sourceWidth             = inputTexture.width;
-    unsigned long   sourceHeight            = inputTexture.height;
+    uint32_t        sourceWidth             = (uint32_t)inputTexture.width;
+    uint32_t        sourceHeight            = (uint32_t)inputTexture.height;
     const char*     sourcePath              = [gyroflowFile UTF8String];
-    long long       sourceTimestamp         = [frameToRender floatValue] * [frameRate floatValue];
-    long long       sourceFOV               = [fov longLongValue];
-    long long       sourceSmoothness        = [smoothness longLongValue];
-    long long       sourceLensCorrection    = [lensCorrection longLongValue];
+    int64_t         sourceTimestamp         = [frameToRender floatValue] * [frameRate floatValue];
+    double          sourceFOV               = [fov doubleValue];
+    double          sourceSmoothness        = [smoothness doubleValue];
+    double          sourceLensCorrection    = [lensCorrection doubleValue];
+    uint32_t        sourceBufferSize        = (uint32_t)bufferSize;
+    unsigned char*  outputBuffer            = NULL;
+    uint32_t        outputBufferSize        = 0;
     
-    int result = processFrame(sourceWidth, sourceHeight, sourcePath, &sourceTimestamp, &sourceFOV, &sourceSmoothness, &sourceLensCorrection, buffer, bufferSize);
-    NSLog(@"[Gyroflow] processFrame result: %d", result);
+    //---------------------------------------------------------
+    // Trigger the Gyroflow Rust Function:
+    //---------------------------------------------------------
+    const char* result = processFrame(
+                                      sourceWidth,              // uint32_t
+                                      sourceHeight,             // uint32_t
+                                      sourcePath,               // const char*
+                                      sourceTimestamp,          // int64_t
+                                      sourceFOV,                // double
+                                      sourceSmoothness,         // double
+                                      sourceLensCorrection,     // double
+                                      sourceBuffer,             // const unsigned char*
+                                      sourceBufferSize,         // uint32_t
+                                      outputBuffer,             // unsigned char*
+                                      outputBufferSize          // uint32_t
+                                      );
     
-    if (result == -1) {
-        NSString *errorMessage = [NSString stringWithFormat:@"[Gyroflow] Failed to process frame using Gyroflow."];
+    //---------------------------------------------------------
+    // Convert the result to a NSString:
+    //---------------------------------------------------------
+    NSString *resultString = [NSString stringWithUTF8String: result];
+    NSLog(@"[Gyroflow] processFrame result: %@", resultString);
+    
+    //---------------------------------------------------------
+    // If the result isn't "DONE" then abort:
+    //---------------------------------------------------------
+    /*
+    if (![resultString isEqualToString:@"DONE"]) {
+        NSString *errorMessage = [NSString stringWithFormat:@"[Gyroflow] Rust function failed with error: %@", resultString];
         if (outError != NULL) {
             *outError = [NSError errorWithDomain:FxPlugErrorDomain
                                             code:kFxError_InvalidParameter
@@ -565,60 +593,12 @@ enum {
         }
         return NO;
     }
-    
-    free(buffer);
-
-    //---------------------------------------------------------
-    // Modify the existing input texture:
-    //---------------------------------------------------------
-    
-    // TODO: Currently we're just replacing half the pixels with random colours, but eventually we should replace all pixels with the data from Gyroflow.
+     */
     
     //---------------------------------------------------------
-    // Create an NSData object to hold the bytes for the random
-    // colors. We'll assume that each pixel is represented by
-    // 4 floats, for the red, green, blue, and alpha channels.
+    // Replace the texture data:
     //---------------------------------------------------------
-    const int theBytesPerPixel = 4 * sizeof(float);
-    unsigned long theBytesPerRow = theBytesPerPixel * inputTexture.width;
-
-    //---------------------------------------------------------
-    // Calculate the number of rows in the first half of the
-    // texture.
-    //---------------------------------------------------------
-    unsigned long halfHeight = inputTexture.height / 2;
-
-    //---------------------------------------------------------
-    // Create the NSData object to hold the bytes for the
-    // random colors.
-    //---------------------------------------------------------
-    NSMutableData *data = [NSMutableData dataWithLength:theBytesPerRow * halfHeight];
-
-    //---------------------------------------------------------
-    // Generate random colors and write them to the data
-    // object.
-    //---------------------------------------------------------
-    float *colors = data.mutableBytes;
-    for (int i = 0; i < data.length / sizeof(float); i += 4) {
-      colors[i]         = (float)arc4random() / UINT32_MAX;     // random red value
-      colors[i + 1]     = (float)arc4random() / UINT32_MAX;     // random green value
-      colors[i + 2]     = (float)arc4random() / UINT32_MAX;     // random blue value
-      colors[i + 3]     = 1.0;                                  // opaque alpha value
-    }
-
-    //---------------------------------------------------------
-    // Set up the MTLRegion structure to specify the region of
-    // the texture to replace.
-    //---------------------------------------------------------
-    MTLRegion theRegion = {
-      {0, halfHeight, 0},                       // the origin of the region, which is the top-left corner of the bottom half
-      {inputTexture.width, halfHeight, 1}       // the size of the region, which is the full width and the bottom half of the height
-    };
-
-    //---------------------------------------------------------
-    // Replace the region of the texture with the random colors.
-    //---------------------------------------------------------
-    [inputTexture replaceRegion:theRegion mipmapLevel:0 withBytes:data.bytes bytesPerRow:theBytesPerRow];
+    //[inputTexture replaceRegion:region mipmapLevel:0 withBytes:outputBuffer bytesPerRow:outputBufferSize];
             
     //---------------------------------------------------------
     // Debugging:
@@ -630,9 +610,9 @@ enum {
     debugMessage = [debugMessage stringByAppendingFormat:@"frameRate: %@\n", frameRate];
     debugMessage = [debugMessage stringByAppendingFormat:@"timestamp: %lld\n", sourceTimestamp];
     debugMessage = [debugMessage stringByAppendingFormat:@"gyroflowFile: %@\n", gyroflowFile];
-    debugMessage = [debugMessage stringByAppendingFormat:@"fov: %lld\n", sourceFOV];
-    debugMessage = [debugMessage stringByAppendingFormat:@"smoothness: %lld\n", sourceSmoothness];
-    debugMessage = [debugMessage stringByAppendingFormat:@"lensCorrection: %lld\n", sourceLensCorrection];
+    debugMessage = [debugMessage stringByAppendingFormat:@"fov: %f\n", sourceFOV];
+    debugMessage = [debugMessage stringByAppendingFormat:@"smoothness: %f\n", sourceSmoothness];
+    debugMessage = [debugMessage stringByAppendingFormat:@"lensCorrection: %f\n", sourceLensCorrection];
     debugMessage = [debugMessage stringByAppendingFormat:@"outputWidth: %f\n", outputWidth];
     debugMessage = [debugMessage stringByAppendingFormat:@"outputHeight: %f\n", outputHeight];
     NSLog(@"%@", debugMessage);
