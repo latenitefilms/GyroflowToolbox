@@ -37,6 +37,9 @@ use std::ffi::CString;                      // Allows us to use `CString`
 use gyroflow_core::{StabilizationManager, stabilization::RGBAf16};
 use gyroflow_core::gpu::{ BufferDescription, BufferSource };
 
+//---------------------------------------------------------
+// Add C support:
+//---------------------------------------------------------
 extern crate libc;
 
 //---------------------------------------------------------
@@ -86,7 +89,7 @@ pub extern "C" fn processFrame(
             //---------------------------------------------------------
             // TODO: Is the below code actually correct?
             let output_width: usize = width as usize;
-            let output_height: usize = width as usize;
+            let output_height: usize = height as usize;
             
             let input_buffer_size: usize = in_buffer_size as usize;
             let output_buffer_size: usize = out_buffer_size as usize;
@@ -99,10 +102,26 @@ pub extern "C" fn processFrame(
             //---------------------------------------------------------
             // Set the Interpolation:
             //---------------------------------------------------------
-            {
-                let mut stab = manager.stabilization.write();
-                stab.interpolation = gyroflow_core::stabilization::Interpolation::Lanczos4;
-            }
+            manager.stabilization.write().interpolation = gyroflow_core::stabilization::Interpolation::Lanczos4;
+            
+            //---------------------------------------------------------
+            // Set the FOV:
+            //---------------------------------------------------------
+            manager.params.write().fov = fov;
+            manager.recompute_undistortion();
+        
+            //---------------------------------------------------------
+            // Set the Lens Correction:
+            //---------------------------------------------------------
+            manager.params.write().lens_correction_amount = lens_correction;
+            manager.recompute_adaptive_zoom();
+            manager.recompute_undistortion();
+                        
+            //---------------------------------------------------------
+            // Set the Smoothness:
+            //---------------------------------------------------------
+            manager.smoothing.write().current_mut().set_parameter("smoothness", smoothness);
+            manager.recompute_blocking();
             
             //---------------------------------------------------------
             // Invalidate & Recompute, to make sure everything is
@@ -115,20 +134,17 @@ pub extern "C" fn processFrame(
             //---------------------------------------------------------
             // Send data in and get data out:
             //---------------------------------------------------------
-            {
-                let stab = manager.stabilization.write();
-                stab.process_pixels(timestamp, &mut BufferDescription {
-                    input_size:  (output_width, output_height, input_stride),   // TODO: The last value is "stride" - what do I use?
-                    output_size: (output_width, output_height, output_stride),  // TODO: The last value is "stride" - what do I use?
-                    input_rect: None,                                           // TODO: Do I need this?
-                    output_rect: None,                                          // TODO: Do I need this?
-                    buffers: BufferSource::Cpu {
-                        input:  unsafe { std::slice::from_raw_parts_mut(in_buffer, input_buffer_size) },
-                        output: unsafe { std::slice::from_raw_parts_mut(out_buffer, output_buffer_size) }
-                    }
-                });
-            }
-            
+            manager.stabilization.write().process_pixels(timestamp, &mut BufferDescription {
+                input_size:  (output_width, output_height, input_stride),   // TODO: The last value is "stride" - what do I use?
+                output_size: (output_width, output_height, output_stride),  // TODO: The last value is "stride" - what do I use?
+                input_rect: None,                                           // TODO: Do I need this?
+                output_rect: None,                                          // TODO: Do I need this?
+                buffers: BufferSource::Cpu {
+                    input:  unsafe { std::slice::from_raw_parts_mut(in_buffer, input_buffer_size) },
+                    output: unsafe { std::slice::from_raw_parts_mut(out_buffer, output_buffer_size) }
+                }
+            });
+
             let result = CString::new("DONE").unwrap();
             return result.into_raw()
         },
