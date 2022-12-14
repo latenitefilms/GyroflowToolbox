@@ -496,7 +496,8 @@ enum {
     //---------------------------------------------------------
     // Setup our input texture:
     //---------------------------------------------------------
-    id<MTLTexture> inputTexture = [sourceImages[0] metalTextureForDevice:[deviceCache deviceWithRegistryID:sourceImages[0].deviceRegistryID]];
+    id<MTLDevice> inputDevice       = [deviceCache deviceWithRegistryID:sourceImages[0].deviceRegistryID];
+    id<MTLTexture> inputTexture     = [sourceImages[0] metalTextureForDevice:inputDevice];
 
     /*
     [Gyroflow] inputTexture.debugDescription: <AGXG13XFamilyTexture: 0x141f31800>
@@ -529,22 +530,60 @@ enum {
         iosurfacePlane = 0
         allowG<…>
     */
+        
+    // TODO: Having a MTLBuffer is probably unnecessary - but currently I'm just trying to get usable data from the MTLTexture.
     
     //---------------------------------------------------------
-    // Create a memory buffer to hold the input texture data:
+    // Create a new MTLBuffer to hold the copied data:
     //---------------------------------------------------------
-    NSUInteger width                = inputTexture.width;
-    NSUInteger height               = inputTexture.height;
-    NSUInteger bytesPerPixel        = 4;
-    NSUInteger bufferSize           = width * height * bytesPerPixel;
+    id<MTLBuffer> buffer = [inputDevice newBufferWithLength:inputTexture.width * inputTexture.height * 4 * sizeof(float)
+                                                    options:MTLResourceStorageModeShared];
+ 
+    //---------------------------------------------------------
+    // Copy the texture into the buffer:
+    //---------------------------------------------------------
+    MTLRegion region = MTLRegionMake2D(0, 0, inputTexture.width, inputTexture.height);
+    [inputTexture getBytes:buffer.contents
+               bytesPerRow:inputTexture.width * 4 * sizeof(float)
+             bytesPerImage:0
+                fromRegion:region
+               mipmapLevel:0
+                     slice:0];
     
-    const unsigned char* sourceBuffer;
-    
-    MTLRegion region = MTLRegionMake2D(0, 0, width, height);
-    [inputTexture getBytes:&sourceBuffer bytesPerRow:width * bytesPerPixel bytesPerImage:0 fromRegion:region mipmapLevel:0 slice:0];
+    NSLog(@"[Gyroflow] MTLBuffer: %@", buffer);
+    /*
+     [Gyroflow] MTLBuffer: <AGXG13XFamilyBuffer: 0x14100f580>
+         label = <none>
+         length = 33177600
+         cpuCacheMode = MTLCPUCacheModeDefaultCache
+         storageMode = MTLStorageModeShared
+         hazardTrackingMode = MTLHazardTrackingModeTracked
+         resourceOptions = MTLResourceCPUCacheModeDefaultCache MTLResourceStorageModeShared MTLResourceHazardTrackingModeTracked
+         purgeableState = MTLPurgeableStateNonVolatile
+     */
     
     //---------------------------------------------------------
-    // Process the Frame using Gyroflow:
+    // Get a pointer to the buffer's data:
+    //---------------------------------------------------------
+    uint32_t sourceBufferSize = (uint32_t)buffer.length;
+            
+    //---------------------------------------------------------
+    // Allocate a new buffer to hold the copied data:
+    //---------------------------------------------------------
+    const unsigned char *sourceBuffer = (const unsigned char *)malloc(buffer.length);
+
+    //---------------------------------------------------------
+    // Copy the buffer's data into the new buffer:
+    //---------------------------------------------------------
+    memcpy((void *)sourceBuffer, buffer.contents, buffer.length);
+    
+    NSLog(@"[Gyroflow] BEFORE sourceBuffer: %s", sourceBuffer);
+    NSLog(@"[Gyroflow] BEFORE sourceBufferSize: %u", sourceBufferSize);
+    
+    // TODO: For some reason the sourceBuffer only returns "˚;\^F%\^CÄ", and I have no idea why?
+    
+    //---------------------------------------------------------
+    // Collect all the Parameters for Gyroflow:
     //---------------------------------------------------------
     uint32_t        sourceWidth             = (uint32_t)inputTexture.width;
     uint32_t        sourceHeight            = (uint32_t)inputTexture.height;
@@ -553,9 +592,12 @@ enum {
     double          sourceFOV               = [fov doubleValue];
     double          sourceSmoothness        = [smoothness doubleValue];
     double          sourceLensCorrection    = [lensCorrection doubleValue];
-    uint32_t        sourceBufferSize        = (uint32_t)bufferSize;
+    
+    //---------------------------------------------------------
+    // Setup the Output Buffer to get the data back from:
+    //---------------------------------------------------------
     unsigned char*  outputBuffer            = NULL;
-    uint32_t        outputBufferSize        = 0;
+    uint32_t        outputBufferSize        = sizeof(outputBuffer);
     
     //---------------------------------------------------------
     // Trigger the Gyroflow Rust Function:
@@ -598,11 +640,28 @@ enum {
     //---------------------------------------------------------
     // Replace the texture data:
     //---------------------------------------------------------
-    //[inputTexture replaceRegion:region mipmapLevel:0 withBytes:outputBuffer bytesPerRow:outputBufferSize];
+    if ([resultString isEqualToString:@"DONE"]) {
+        NSString *debugMessage = [NSString stringWithFormat:@"[Gyroflow] RENDERING A FRAME:\n"];
+        debugMessage = [debugMessage stringByAppendingFormat:@"sourceBuffer: %s\n", sourceBuffer];
+        debugMessage = [debugMessage stringByAppendingFormat:@"sourceBufferSize: %u\n", sourceBufferSize];
+        debugMessage = [debugMessage stringByAppendingFormat:@"outputBuffer: %s\n", outputBuffer];
+        debugMessage = [debugMessage stringByAppendingFormat:@"outputBufferSize: %u\n", outputBufferSize];
+        NSLog(@"%@", debugMessage);
+        /*
+         [Gyroflow] RENDERING A FRAME:
+         sourceBuffer: ˚;\^F%\^CÄ
+         sourceBufferSize: 33177600
+         outputBuffer: (null)
+         outputBufferSize: 8
+         */
+        
+        //[inputTexture replaceRegion:region mipmapLevel:0 withBytes:outputBuffer bytesPerRow:bytesPerRow];
+    }
             
     //---------------------------------------------------------
     // Debugging:
     //---------------------------------------------------------
+    /*
     NSString *debugMessage = [NSString stringWithFormat:@"[Gyroflow] RENDERING A FRAME:\n"];
     debugMessage = [debugMessage stringByAppendingFormat:@"inputTexture.width: %lu\n", (unsigned long)inputTexture.width];
     debugMessage = [debugMessage stringByAppendingFormat:@"inputTexture.height: %lu\n", (unsigned long)inputTexture.height];
@@ -616,8 +675,9 @@ enum {
     debugMessage = [debugMessage stringByAppendingFormat:@"outputWidth: %f\n", outputWidth];
     debugMessage = [debugMessage stringByAppendingFormat:@"outputHeight: %f\n", outputHeight];
     NSLog(@"%@", debugMessage);
-        
-    NSLog(@"[Gyroflow] inputTexture.debugDescription: %@", inputTexture.debugDescription);
+    */
+    
+    //NSLog(@"[Gyroflow] inputTexture.debugDescription: %@", inputTexture.debugDescription);
 
     //---------------------------------------------------------
     // Setup our output texture:
