@@ -20,7 +20,7 @@ const char* processFrame(
     double                      fov,
     double                      smoothness,
     double                      lens_correction,
-    const unsigned char*        in_buffer,
+    unsigned char*              in_buffer,
     uint32_t                    in_buffer_size,
     unsigned char*              out_buffer,
     uint32_t                    out_buffer_size

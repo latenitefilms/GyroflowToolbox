@@ -63,7 +63,7 @@ pub extern "C" fn processFrame(
     fov: f64,
     smoothness: f64,
     lens_correction: f64,
-    in_buffer: *mut c_uchar, // TODO: I temporarily changed this from *const to try get the Rust code to actually build
+    in_buffer: *mut c_uchar,
     in_buffer_size: u32,
     out_buffer: *mut c_uchar,
     out_buffer_size: u32

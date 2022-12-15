@@ -563,15 +563,17 @@ enum {
      */
     
     //---------------------------------------------------------
-    // Get a pointer to the buffer's data:
+    // Set the buffer sizes based on the MTLBuffer:
     //---------------------------------------------------------
     uint32_t sourceBufferSize = (uint32_t)buffer.length;
-            
+    uint32_t outputBufferSize = (uint32_t)buffer.length;
+    
     //---------------------------------------------------------
-    // Allocate a new buffer to hold the copied data:
+    // Allocate a new buffers to hold the copied data:
     //---------------------------------------------------------
-    const unsigned char *sourceBuffer = (const unsigned char *)malloc(buffer.length);
-
+    unsigned char *sourceBuffer       = (unsigned char *)malloc(buffer.length);
+    unsigned char *outputBuffer       = (unsigned char *)malloc(buffer.length);
+    
     //---------------------------------------------------------
     // Copy the buffer's data into the new buffer:
     //---------------------------------------------------------
@@ -590,13 +592,7 @@ enum {
     double          sourceFOV               = [fov doubleValue];
     double          sourceSmoothness        = [smoothness doubleValue];
     double          sourceLensCorrection    = [lensCorrection doubleValue];
-    
-    //---------------------------------------------------------
-    // Setup the Output Buffer to get the data back from:
-    //---------------------------------------------------------
-    unsigned char *outputBuffer             = (unsigned char *)malloc(buffer.length);
-    uint32_t outputBufferSize               = sizeof(outputBuffer);
-    
+
     //---------------------------------------------------------
     // Trigger the Gyroflow Rust Function:
     //---------------------------------------------------------
@@ -608,7 +604,7 @@ enum {
                                       sourceFOV,                // double
                                       sourceSmoothness,         // double
                                       sourceLensCorrection,     // double
-                                      sourceBuffer,             // const unsigned char*
+                                      sourceBuffer,             // unsigned char*
                                       sourceBufferSize,         // uint32_t
                                       outputBuffer,             // unsigned char*
                                       outputBufferSize          // uint32_t
@@ -645,13 +641,6 @@ enum {
         debugMessage = [debugMessage stringByAppendingFormat:@"outputBuffer: %s\n", outputBuffer];
         debugMessage = [debugMessage stringByAppendingFormat:@"outputBufferSize: %u\n", outputBufferSize];
         NSLog(@"%@", debugMessage);
-        /*
-         [Gyroflow] RENDERING A FRAME:
-         sourceBuffer: ˚;\^F%\^CÄ
-         sourceBufferSize: 33177600
-         outputBuffer: (null)
-         outputBufferSize: 8
-         */
         
         [inputTexture replaceRegion:region mipmapLevel:0 withBytes:outputBuffer bytesPerRow:inputTexture.width * 4 * 2];
     }
