@@ -56,8 +56,9 @@ extern crate oslog;
 //---------------------------------------------------------
 use lazy_static::*;
 use lru::LruCache;
+use std::sync::Mutex;
 lazy_static! {
-    static ref CACHE: LruCache<String, Arc<StabilizationManager<RGBAf16>>> = LruCache::new(std::num::NonZeroUsize::new(1).unwrap());
+    static ref CACHE: Mutex<LruCache<String, Arc<StabilizationManager<RGBAf16>>>> = Mutex::new(LruCache::new(std::num::NonZeroUsize::new(1).unwrap()));
 }
 
 //---------------------------------------------------------
@@ -77,6 +78,11 @@ pub extern "C" fn processFrame(
     out_buffer: *mut c_uchar,
     out_buffer_size: u32
 ) -> *const c_char {
+    //---------------------------------------------------------
+    // Setup our cache:
+    //---------------------------------------------------------
+    let mut cache = CACHE.lock().unwrap();
+    
     //---------------------------------------------------------
     // Write to NSLog:
     //---------------------------------------------------------
@@ -111,7 +117,7 @@ pub extern "C" fn processFrame(
     // Cache the manager:
     //---------------------------------------------------------
     let key = format!("{path_string}{width}{height}");
-    let manager = if let Some(manager) = CACHE.get(&key) {
+    let manager = if let Some(manager) = cache.get(&key) {
         //---------------------------------------------------------
         // Already cached:
         //---------------------------------------------------------
@@ -179,8 +185,8 @@ pub extern "C" fn processFrame(
             }
         }
             
-        CACHE.put(key.to_owned(), Arc::new(manager));
-        CACHE.get(&key).unwrap().clone()
+        cache.put(key.to_owned(), Arc::new(manager));
+        cache.get(&key).unwrap().clone()
     };
 
     //---------------------------------------------------------
