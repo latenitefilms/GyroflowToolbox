@@ -96,7 +96,7 @@ pub extern "C" fn processFrame(
     std::fs::write("/Users/chrishocking/Desktop/log.txt", format!("error: {:?}", e));
     }    
     
-    log::info!("[Gyroflow] Hello from Rust land!");
+    //log::info!("[Gyroflow] Hello from Rust land!");
     
     // -------------------------------------------------------------------------------
     // You can't use &str across FFI boundary, it's a Rust type.
@@ -121,13 +121,13 @@ pub extern "C" fn processFrame(
         //---------------------------------------------------------
         // Already cached:
         //---------------------------------------------------------
-        log::info!("[Gyroflow] USING CACHE");
+        //log::info!("[Gyroflow] USING CACHE");
         manager.clone()
     } else {
         //---------------------------------------------------------
         // Need to create a new cache:
         //---------------------------------------------------------
-        log::info!("[Gyroflow] CREATE NEW CACHE");
+        //log::info!("[Gyroflow] CREATE NEW CACHE");
 
         //---------------------------------------------------------
         // Setup the Gyroflow Manager:
@@ -201,6 +201,7 @@ pub extern "C" fn processFrame(
     //---------------------------------------------------------
     // Write debugging information to Console.app:
     //---------------------------------------------------------
+    /*
     log::info!("[Gyroflow] width: {:?}", width);
     log::info!("[Gyroflow] height: {:?}", height);
     log::info!("[Gyroflow] path: {:?}", path);
@@ -215,6 +216,7 @@ pub extern "C" fn processFrame(
     log::info!("[Gyroflow] output_height: {:?}", output_height);
     log::info!("[Gyroflow] input_stride: {:?}", input_stride);
     log::info!("[Gyroflow] output_stride: {:?}", output_stride);
+    */
     
     //---------------------------------------------------------
     // Stabilization time!
@@ -233,7 +235,7 @@ pub extern "C" fn processFrame(
     //---------------------------------------------------------
     // Output the Stabilization result to the Console:
     //---------------------------------------------------------
-    log::info!("[Gyroflow] stabilization_result: {:?}", &stabilization_result);
+    //log::info!("[Gyroflow] stabilization_result: {:?}", &stabilization_result);
 
     //---------------------------------------------------------
     // Return "DONE":

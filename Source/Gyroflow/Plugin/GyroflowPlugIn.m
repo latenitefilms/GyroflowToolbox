@@ -313,23 +313,37 @@ enum {
     CMTime startTimeOfInputToFilter = kCMTimeZero;
     [timingAPI startTimeForEffect:&startTimeOfInputToFilter];
     
+    //NSLog(@"[Gyroflow] startTimeOfInputToFilter: %@", (__bridge NSString *)CMTimeCopyDescription(kCFAllocatorDefault, startTimeOfInputToFilter));
+
     CMTime startTimeOfInputToFilterInTimelineTime = kCMTimeZero;
     [timingAPI timelineTime:&startTimeOfInputToFilterInTimelineTime fromInputTime:startTimeOfInputToFilter];
+    
+    //NSLog(@"[Gyroflow] startTimeOfInputToFilterInTimelineTime: %@", (__bridge NSString *)CMTimeCopyDescription(kCFAllocatorDefault, startTimeOfInputToFilterInTimelineTime));
     
     Float64 timelineTimeMinusStartTimeOfInputToFilterNumerator = (Float64)timelineTime.value * (Float64)startTimeOfInputToFilterInTimelineTime.timescale - (Float64)startTimeOfInputToFilterInTimelineTime.value * (Float64)timelineTime.timescale;
     Float64 timelineTimeMinusStartTimeOfInputToFilterDenominator = (Float64)timelineTime.timescale * (Float64)startTimeOfInputToFilterInTimelineTime.timescale;
         
     unsigned long long frame = ( (timelineTimeMinusStartTimeOfInputToFilterNumerator / timelineTimeMinusStartTimeOfInputToFilterDenominator) / ((Float64)timelineFrameDuration.value / (Float64)timelineFrameDuration.timescale) );
 
+    //---------------------------------------------------------
+    // Increase the frame by 1, so first frame of clip is 1:
+    //---------------------------------------------------------
+    frame = frame + 1;
+    
     NSNumber *frameToRender = [[[NSNumber alloc] initWithUnsignedLongLong:frame] autorelease];
-
     params.frameToRender = frameToRender;
     
     //---------------------------------------------------------
     // Frame Rate:
     //---------------------------------------------------------
-    Float64 frameRate = [timingAPI timelineFpsNumeratorForEffect:self] / [timingAPI timelineFpsDenominatorForEffect:self];
-    params.frameRate = [[[NSNumber alloc] initWithFloat:frameRate] autorelease];
+    Float64 timelineFpsNumerator    = [timingAPI timelineFpsNumeratorForEffect:self];
+    Float64 timelineFpsDenominator  = [timingAPI timelineFpsDenominatorForEffect:self];
+    Float64 frameRate               = timelineFpsNumerator / timelineFpsDenominator;
+    params.frameRate                = [[[NSNumber alloc] initWithFloat:frameRate] autorelease];
+    
+    //NSLog(@"[Gyroflow] timelineFpsNumerator: %f", timelineFpsNumerator);
+    //NSLog(@"[Gyroflow] timelineFpsDenominator: %f", timelineFpsDenominator);
+    //NSLog(@"[Gyroflow] frameRate: %f", frameRate);
     
     //---------------------------------------------------------
     // Gyroflow File:
@@ -552,100 +566,43 @@ enum {
     id<MTLDevice> inputDevice       = [deviceCache deviceWithRegistryID:sourceImages[0].deviceRegistryID];
     id<MTLTexture> inputTexture     = [sourceImages[0] metalTextureForDevice:inputDevice];
 
-    /*
-    [Gyroflow] inputTexture.debugDescription: <AGXG13XFamilyTexture: 0x141f31800>
-        label = <none>
-        textureType = MTLTextureType2D
-        pixelFormat = MTLPixelFormatRGBA16Float
-        width = 1920
-        height = 1080
-        depth = 1
-        arrayLength = 1
-        mipmapLevelCount = 1
-        sampleCount = 1
-        cpuCacheMode = MTLCPUCacheModeDefaultCache
-        storageMode = MTLStorageModeManaged
-        hazardTrackingMode = MTLHazardTrackingModeTracked
-        resourceOptions = MTLResourceCPUCacheModeDefaultCache MTLResourceStorageModeManaged MTLResourceHazardTrackingModeTracked
-        usage = MTLTextureUsageShaderRead
-        shareable = 0
-        framebufferOnly = 0
-        purgeableState = MTLPurgeableStateNonVolatile
-        swizzle = [MTLTextureSwizzleRed, MTLTextureSwizzleGreen, MTLTextureSwizzleBlue, MTLTextureSwizzleAlpha]
-        isCompressed = 0
-        parentTexture = <null>
-        parentRelativeLevel = 0
-        parentRelativeSlice = 0
-        buffer = <null>
-        bufferOffset = 0
-        bufferBytesPerRow = 0
-        iosurface = 0x600000688c30
-        iosurfacePlane = 0
-        allowG<…>
-    */
-        
-    // TODO: Having a MTLBuffer is probably unnecessary - but currently I'm just trying to get usable data from the MTLTexture.
+    //---------------------------------------------------------
+    // Calculate the Buffer Size:
+    //---------------------------------------------------------
+    unsigned long bufferSize        = inputTexture.width * inputTexture.height * 4 * 2;
+    unsigned long bytesPerRow       = inputTexture.width * 4 * 2;
+    uint32_t sourceBufferSize       = (uint32_t)bufferSize;
+    uint32_t outputBufferSize       = (uint32_t)bufferSize;
     
     //---------------------------------------------------------
-    // Create a new MTLBuffer to hold the copied data:
+    // Setup input and output buffers:
     //---------------------------------------------------------
-    id<MTLBuffer> buffer = [inputDevice newBufferWithLength:inputTexture.width * inputTexture.height * 4 * 2
-                                                    options:MTLResourceStorageModeShared];
+    unsigned char *sourceBuffer     = (unsigned char *)malloc(bufferSize);
+    unsigned char *outputBuffer     = (unsigned char *)malloc(bufferSize);
     
     //---------------------------------------------------------
-    // Copy the texture into the buffer:
+    // Copy the texture data into the buffer:
     //---------------------------------------------------------
-    MTLRegion region = MTLRegionMake2D(0, 0, inputTexture.width, inputTexture.height);
-    [inputTexture getBytes:buffer.contents
-               bytesPerRow:inputTexture.width * 4 * 2
+    [inputTexture getBytes:sourceBuffer
+               bytesPerRow:inputTexture.width * 4
              bytesPerImage:0
-                fromRegion:region
+                fromRegion:MTLRegionMake2D(0, 0, inputTexture.width, inputTexture.height)
                mipmapLevel:0
                      slice:0];
-    
-    NSLog(@"[Gyroflow] MTLBuffer: %@", buffer);
-    /*
-     [Gyroflow] MTLBuffer: <AGXG13XFamilyBuffer: 0x14100f580>
-         label = <none>
-         length = 33177600
-         cpuCacheMode = MTLCPUCacheModeDefaultCache
-         storageMode = MTLStorageModeShared
-         hazardTrackingMode = MTLHazardTrackingModeTracked
-         resourceOptions = MTLResourceCPUCacheModeDefaultCache MTLResourceStorageModeShared MTLResourceHazardTrackingModeTracked
-         purgeableState = MTLPurgeableStateNonVolatile
-     */
-    
-    //---------------------------------------------------------
-    // Set the buffer sizes based on the MTLBuffer:
-    //---------------------------------------------------------
-    uint32_t sourceBufferSize = (uint32_t)buffer.length;
-    uint32_t outputBufferSize = (uint32_t)buffer.length;
-    
-    //---------------------------------------------------------
-    // Allocate a new buffers to hold the copied data:
-    //---------------------------------------------------------
-    unsigned char *sourceBuffer       = (unsigned char *)malloc(buffer.length);
-    unsigned char *outputBuffer       = (unsigned char *)malloc(buffer.length);
-    
-    //---------------------------------------------------------
-    // Copy the buffer's data into the new buffer:
-    //---------------------------------------------------------
-    memcpy((void *)sourceBuffer, buffer.contents, buffer.length);
-    
-    //NSLog(@"[Gyroflow] BEFORE sourceBuffer: %s", sourceBuffer);
-    //NSLog(@"[Gyroflow] BEFORE sourceBufferSize: %u", sourceBufferSize);
-    
+
     //---------------------------------------------------------
     // Collect all the Parameters for Gyroflow:
     //---------------------------------------------------------
     uint32_t        sourceWidth             = (uint32_t)inputTexture.width;
     uint32_t        sourceHeight            = (uint32_t)inputTexture.height;
     const char*     sourcePath              = [gyroflowFile UTF8String];
-    int64_t         sourceTimestamp         = ([frameToRender floatValue] / [frameRate floatValue]) * 1000000.0;
+    int64_t         sourceTimestamp         = ([frameToRender floatValue] / [frameRate floatValue]) * 1000000.0; //(renderTime.value / renderTime.timescale) * 1000000.0;
     double          sourceFOV               = [fov doubleValue];
     double          sourceSmoothness        = [smoothness doubleValue];
     double          sourceLensCorrection    = [lensCorrection doubleValue];
 
+    //NSLog(@"[Gyroflow] renderTime: %@", (__bridge NSString *)CMTimeCopyDescription(kCFAllocatorDefault, renderTime));
+    
     //---------------------------------------------------------
     // Trigger the Gyroflow Rust Function:
     //---------------------------------------------------------
@@ -664,53 +621,23 @@ enum {
                                       );
     
     //---------------------------------------------------------
-    // Convert the result to a NSString:
+    // If successful, replace the texture data:
     //---------------------------------------------------------
     NSString *resultString = [NSString stringWithUTF8String: result];
-    NSLog(@"[Gyroflow] processFrame result: %@", resultString);
-    
-    //---------------------------------------------------------
-    // If the result isn't "DONE" then abort:
-    //---------------------------------------------------------
-    /*
-    if (![resultString isEqualToString:@"DONE"]) {
-        NSString *errorMessage = [NSString stringWithFormat:@"[Gyroflow] Rust function failed with error: %@", resultString];
-        if (outError != NULL) {
-            *outError = [NSError errorWithDomain:FxPlugErrorDomain
-                                            code:kFxError_InvalidParameter
-                                        userInfo:@{ NSLocalizedDescriptionKey : errorMessage }];
-        }
-        return NO;
-    }
-     */
-    
-    //---------------------------------------------------------
-    // Replace the texture data:
-    //---------------------------------------------------------
     if ([resultString isEqualToString:@"DONE"]) {
-        /*
-        NSString *debugMessage = [NSString stringWithFormat:@"[Gyroflow] RENDERING A FRAME:\n"];
-        debugMessage = [debugMessage stringByAppendingFormat:@"sourceBuffer: %s\n", sourceBuffer];
-        debugMessage = [debugMessage stringByAppendingFormat:@"sourceBufferSize: %u\n", sourceBufferSize];
-        debugMessage = [debugMessage stringByAppendingFormat:@"outputBuffer: %s\n", outputBuffer];
-        debugMessage = [debugMessage stringByAppendingFormat:@"outputBufferSize: %u\n", outputBufferSize];
-        NSLog(@"%@", debugMessage);
-        */
-        // TODO: Remote this after testing...
-        //memcpy(outputBuffer, sourceBuffer, sourceBufferSize);
-        
-        [inputTexture replaceRegion:region mipmapLevel:0 withBytes:outputBuffer bytesPerRow:inputTexture.width * 4 * 2];
+        MTLRegion region = MTLRegionMake2D(0, 0, inputTexture.width, inputTexture.height);
+        [inputTexture replaceRegion:region mipmapLevel:0 withBytes:outputBuffer bytesPerRow:bytesPerRow];
     }
             
     //---------------------------------------------------------
     // Debugging:
     //---------------------------------------------------------
-    /*
     NSString *debugMessage = [NSString stringWithFormat:@"[Gyroflow] RENDERING A FRAME:\n"];
+    debugMessage = [debugMessage stringByAppendingFormat:@"processFrame result: %@\n", resultString];
     debugMessage = [debugMessage stringByAppendingFormat:@"inputTexture.width: %lu\n", (unsigned long)inputTexture.width];
     debugMessage = [debugMessage stringByAppendingFormat:@"inputTexture.height: %lu\n", (unsigned long)inputTexture.height];
     debugMessage = [debugMessage stringByAppendingFormat:@"frameToRender: %@\n", frameToRender];
-    debugMessage = [debugMessage stringByAppendingFormat:@"frameRate: %@\n", frameRate];
+    debugMessage = [debugMessage stringByAppendingFormat:@"frameRate: %f\n", [frameRate floatValue]];
     debugMessage = [debugMessage stringByAppendingFormat:@"timestamp: %lld\n", sourceTimestamp];
     debugMessage = [debugMessage stringByAppendingFormat:@"gyroflowFile: %@\n", gyroflowFile];
     debugMessage = [debugMessage stringByAppendingFormat:@"fov: %f\n", sourceFOV];
@@ -719,7 +646,6 @@ enum {
     debugMessage = [debugMessage stringByAppendingFormat:@"outputWidth: %f\n", outputWidth];
     debugMessage = [debugMessage stringByAppendingFormat:@"outputHeight: %f\n", outputHeight];
     NSLog(@"%@", debugMessage);
-    */
     
     //NSLog(@"[Gyroflow] inputTexture.debugDescription: %@", inputTexture.debugDescription);
 
