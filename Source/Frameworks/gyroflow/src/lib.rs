@@ -154,8 +154,29 @@ pub extern "C" fn processFrame(
                         
             let input_stride: usize = output_width * 4 * 2;
             let output_stride: usize = output_width * 4 * 2;
+                    
+
+            //---------------------------------------------------------
+            // Write debugging information to Console.app:
+            //---------------------------------------------------------
+            log::info!("[Gyroflow] width: {:?}", width);
+            log::info!("[Gyroflow] height: {:?}", height);
+            log::info!("[Gyroflow] path: {:?}", path);
+            log::info!("[Gyroflow] timestamp: {:?}", timestamp);
+            log::info!("[Gyroflow] fov: {:?}", fov);
+            log::info!("[Gyroflow] smoothness: {:?}", smoothness);
+            log::info!("[Gyroflow] lens_correction: {:?}", lens_correction);
+            log::info!("[Gyroflow] in_buffer_size: {:?}", in_buffer_size);
+            log::info!("[Gyroflow] out_buffer_size: {:?}", out_buffer_size);
+            log::info!("[Gyroflow] output_width: {:?}", output_width);
+            log::info!("[Gyroflow] output_height: {:?}", output_height);
+            log::info!("[Gyroflow] input_stride: {:?}", input_stride);
+            log::info!("[Gyroflow] output_stride: {:?}", output_stride);
             
-            manager.stabilization.write().process_pixels(timestamp, &mut BufferDescription {
+            //---------------------------------------------------------
+            // Stabilization time!
+            //---------------------------------------------------------
+            let stabilization_result = manager.stabilization.write().process_pixels(timestamp, &mut BufferDescription {
                 input_size:  (output_width, output_height, input_stride),
                 output_size: (output_width, output_height, output_stride),
                 input_rect: None,
@@ -165,11 +186,22 @@ pub extern "C" fn processFrame(
                     output: unsafe { std::slice::from_raw_parts_mut(out_buffer, output_buffer_size) }
                 }
             });
+            
+            //---------------------------------------------------------
+            // Output the Stabilization result to the Console:
+            //---------------------------------------------------------
+            log::info!("[Gyroflow] stabilization_result: {:?}", &stabilization_result);
 
+            //---------------------------------------------------------
+            // Return "DONE":
+            //---------------------------------------------------------
             let result = CString::new("DONE").unwrap();
             return result.into_raw()
         },
         Err(e) => {
+            //---------------------------------------------------------
+            // Return an error message is something fails:
+            //---------------------------------------------------------
             let result = CString::new(format!("[Gyroflow] Failed to import Gyroflow File: {:?}", e)).unwrap();
             return result.into_raw()
         }

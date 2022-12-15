@@ -536,7 +536,7 @@ enum {
     //---------------------------------------------------------
     // Create a new MTLBuffer to hold the copied data:
     //---------------------------------------------------------
-    id<MTLBuffer> buffer = [inputDevice newBufferWithLength:inputTexture.width * inputTexture.height * 4 * sizeof(float)
+    id<MTLBuffer> buffer = [inputDevice newBufferWithLength:inputTexture.width * inputTexture.height * 4 * 2
                                                     options:MTLResourceStorageModeShared];
     
     //---------------------------------------------------------
@@ -579,8 +579,8 @@ enum {
     //---------------------------------------------------------
     memcpy((void *)sourceBuffer, buffer.contents, buffer.length);
     
-    NSLog(@"[Gyroflow] BEFORE sourceBuffer: %s", sourceBuffer);
-    NSLog(@"[Gyroflow] BEFORE sourceBufferSize: %u", sourceBufferSize);
+    //NSLog(@"[Gyroflow] BEFORE sourceBuffer: %s", sourceBuffer);
+    //NSLog(@"[Gyroflow] BEFORE sourceBufferSize: %u", sourceBufferSize);
     
     //---------------------------------------------------------
     // Collect all the Parameters for Gyroflow:
@@ -635,12 +635,16 @@ enum {
     // Replace the texture data:
     //---------------------------------------------------------
     if ([resultString isEqualToString:@"DONE"]) {
+        /*
         NSString *debugMessage = [NSString stringWithFormat:@"[Gyroflow] RENDERING A FRAME:\n"];
         debugMessage = [debugMessage stringByAppendingFormat:@"sourceBuffer: %s\n", sourceBuffer];
         debugMessage = [debugMessage stringByAppendingFormat:@"sourceBufferSize: %u\n", sourceBufferSize];
         debugMessage = [debugMessage stringByAppendingFormat:@"outputBuffer: %s\n", outputBuffer];
         debugMessage = [debugMessage stringByAppendingFormat:@"outputBufferSize: %u\n", outputBufferSize];
         NSLog(@"%@", debugMessage);
+        */
+        // TODO: Remote this after testing...
+        //memcpy(outputBuffer, sourceBuffer, sourceBufferSize);
         
         [inputTexture replaceRegion:region mipmapLevel:0 withBytes:outputBuffer bytesPerRow:inputTexture.width * 4 * 2];
     }
