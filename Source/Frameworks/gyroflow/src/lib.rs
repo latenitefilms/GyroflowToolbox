@@ -71,6 +71,9 @@ pub extern "C" fn processFrame(
     //---------------------------------------------------------
     // Write to NSLog:
     //---------------------------------------------------------
+    
+    // TODO: This should only run once, otherwise it'll crash:
+    
     if let Err(e) = oslog::OsLogger::new("com.latenitefilms.GyroflowForFinalCutPro")
            .level_filter(log::LevelFilter::Debug)
            .category_level_filter("Settings", log::LevelFilter::Trace)
@@ -100,17 +103,21 @@ pub extern "C" fn processFrame(
     match manager.import_gyroflow_file(&path_string, true, |_|(), Arc::new(AtomicBool::new(false))) {
         Ok(_) => {
             //---------------------------------------------------------
-            // Set the Output Size:
+            // Convert the output width and height to `usize`:
             //---------------------------------------------------------
             let output_width: usize = width as usize;
             let output_height: usize = height as usize;
-            manager.set_output_size(output_width, output_height);
 
             //---------------------------------------------------------
             // Set the Input Size:
             //---------------------------------------------------------
             manager.set_size(output_width, output_height);
             
+            //---------------------------------------------------------
+            // Set the Output Size:
+            //---------------------------------------------------------
+            manager.set_output_size(output_width, output_height);
+
             //---------------------------------------------------------
             // Set the Interpolation:
             //---------------------------------------------------------
@@ -120,20 +127,16 @@ pub extern "C" fn processFrame(
             // Set the FOV:
             //---------------------------------------------------------
             manager.params.write().fov = fov;
-            manager.recompute_undistortion();
         
             //---------------------------------------------------------
             // Set the Lens Correction:
             //---------------------------------------------------------
             manager.params.write().lens_correction_amount = lens_correction;
-            manager.recompute_adaptive_zoom();
-            manager.recompute_undistortion();
                         
             //---------------------------------------------------------
             // Set the Smoothness:
             //---------------------------------------------------------
             manager.smoothing.write().current_mut().set_parameter("smoothness", smoothness);
-            manager.recompute_blocking();
             
             //---------------------------------------------------------
             // Invalidate & Recompute, to make sure everything is
@@ -149,14 +152,14 @@ pub extern "C" fn processFrame(
             let input_buffer_size: usize = in_buffer_size as usize;
             let output_buffer_size: usize = out_buffer_size as usize;
                         
-            let input_stride: usize = output_height * 4 * 2;
-            let output_stride: usize = output_height * 4 * 2;
+            let input_stride: usize = output_width * 4 * 2;
+            let output_stride: usize = output_width * 4 * 2;
             
             manager.stabilization.write().process_pixels(timestamp, &mut BufferDescription {
-                input_size:  (output_width, output_height, input_stride),   // TODO: The last value is "stride" - what do I use?
-                output_size: (output_width, output_height, output_stride),  // TODO: The last value is "stride" - what do I use?
-                input_rect: None,                                           // TODO: Do I need this?
-                output_rect: None,                                          // TODO: Do I need this?
+                input_size:  (output_width, output_height, input_stride),
+                output_size: (output_width, output_height, output_stride),
+                input_rect: None,
+                output_rect: None,
                 buffers: BufferSource::Cpu {
                     input:  unsafe { std::slice::from_raw_parts_mut(in_buffer, input_buffer_size) },
                     output: unsafe { std::slice::from_raw_parts_mut(out_buffer, output_buffer_size) }
@@ -166,12 +169,9 @@ pub extern "C" fn processFrame(
             let result = CString::new("DONE").unwrap();
             return result.into_raw()
         },
-        Err(_) => { // TODO: Can I get useful error messages from this function?
-            let result = CString::new("Failed to import Gyroflow File.").unwrap();
+        Err(e) => {
+            let result = CString::new(format!("[Gyroflow] Failed to import Gyroflow File: {:?}", e)).unwrap();
             return result.into_raw()
         }
     }
 }
-
-
-
