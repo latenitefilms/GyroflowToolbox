@@ -92,11 +92,6 @@ pub extern "C" fn processFrame(
     
     log::info!("[Gyroflow] Hello from Rust land!");
     
-    //---------------------------------------------------------
-    // Setup the Gyroflow Manager:
-    //---------------------------------------------------------
-    let manager = StabilizationManager::<RGBAf16>::default();
-    
     // -------------------------------------------------------------------------------
     // You can't use &str across FFI boundary, it's a Rust type.
     // You have to use C-compatible char pointer, so path: *const c_char and then
@@ -127,7 +122,12 @@ pub extern "C" fn processFrame(
         // Need to create a new cache:
         //---------------------------------------------------------
         log::info!("[Gyroflow] CREATE NEW CACHE");
-        
+
+        //---------------------------------------------------------
+        // Setup the Gyroflow Manager:
+        //---------------------------------------------------------
+        let manager = StabilizationManager::<RGBAf16>::default();
+
         //---------------------------------------------------------
         // Import the Gyroflow File:
         //---------------------------------------------------------
@@ -175,13 +175,12 @@ pub extern "C" fn processFrame(
                 //---------------------------------------------------------
                 // Return an error message is something fails:
                 //---------------------------------------------------------
-                let result = CString::new(format!("[Gyroflow] Failed to import Gyroflow File: {:?}", e)).unwrap();
-                return result.into_raw()
+                log::error!("[Gyroflow] Failed to import Gyroflow File: {:?}", e);
             }
-            
-            CACHE.put(key.to_owned(), Arc::new(manager));
-            CACHE.get(&key).unwrap().clone()
         }
+            
+        CACHE.put(key.to_owned(), Arc::new(manager));
+        CACHE.get(&key).unwrap().clone()
     };
 
     //---------------------------------------------------------
