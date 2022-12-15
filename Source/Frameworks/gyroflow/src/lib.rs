@@ -46,6 +46,13 @@ use gyroflow_core::gpu::{ BufferDescription, BufferSource };
 extern crate libc;
 
 //---------------------------------------------------------
+// Add NSLog support:
+//---------------------------------------------------------
+extern crate log;
+extern crate oslog;
+use oslog::OsLogger;
+
+//---------------------------------------------------------
 // The "Process Frame" function:
 //---------------------------------------------------------
 #[no_mangle]
@@ -62,6 +69,23 @@ pub extern "C" fn processFrame(
     out_buffer: *mut c_uchar,
     out_buffer_size: u32
 ) -> *const c_char {
+    
+    {
+        // TODO: The below code crashes:
+        
+        /*
+        OsLogger::new("com.latenitefilms.GyroflowForFinalCutPro")
+               .level_filter(log::LevelFilter::Debug)
+               .category_level_filter("Settings", log::LevelFilter::Trace)
+               .init()
+               .unwrap();
+        */
+    
+        // TODO: The below code doesn't write to macOS Console:
+        
+        log::debug!("[Gyroflow] Debug");
+    }
+    
     //---------------------------------------------------------
     // Setup the Gyroflow Manager:
     //---------------------------------------------------------
