@@ -50,7 +50,6 @@ extern crate libc;
 //---------------------------------------------------------
 extern crate log;
 extern crate oslog;
-use oslog::OsLogger;
 
 //---------------------------------------------------------
 // The "Process Frame" function:
@@ -74,13 +73,13 @@ pub extern "C" fn processFrame(
         // TODO: The below code crashes:
         
         /*
-        OsLogger::new("com.latenitefilms.GyroflowForFinalCutPro")
+        oslog::OsLogger::new("com.latenitefilms.GyroflowForFinalCutPro")
                .level_filter(log::LevelFilter::Debug)
                .category_level_filter("Settings", log::LevelFilter::Trace)
                .init()
                .unwrap();
         */
-    
+
         // TODO: The below code doesn't write to macOS Console:
         
         log::debug!("[Gyroflow] Debug");

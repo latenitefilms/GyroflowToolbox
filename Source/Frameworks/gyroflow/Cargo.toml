@@ -15,4 +15,4 @@ serde_json = { version = "*", features = ["preserve_order"] }
 libc = "0.2"
 gyroflow-core = { git = "https://github.com/gyroflow/gyroflow.git", default-features = false, rev = "52290ab" }
 log = "0.4.17"
-oslog = { git = "https://github.com/steven-joruk/oslog" }
+oslog = "0.2.0"
