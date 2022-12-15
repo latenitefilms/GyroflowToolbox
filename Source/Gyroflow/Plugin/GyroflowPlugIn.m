@@ -538,13 +538,13 @@ enum {
     //---------------------------------------------------------
     id<MTLBuffer> buffer = [inputDevice newBufferWithLength:inputTexture.width * inputTexture.height * 4 * sizeof(float)
                                                     options:MTLResourceStorageModeShared];
- 
+    
     //---------------------------------------------------------
     // Copy the texture into the buffer:
     //---------------------------------------------------------
     MTLRegion region = MTLRegionMake2D(0, 0, inputTexture.width, inputTexture.height);
     [inputTexture getBytes:buffer.contents
-               bytesPerRow:inputTexture.width * 4 * sizeof(float)
+               bytesPerRow:inputTexture.width * 4 * 2
              bytesPerImage:0
                 fromRegion:region
                mipmapLevel:0
@@ -580,8 +580,6 @@ enum {
     NSLog(@"[Gyroflow] BEFORE sourceBuffer: %s", sourceBuffer);
     NSLog(@"[Gyroflow] BEFORE sourceBufferSize: %u", sourceBufferSize);
     
-    // TODO: For some reason the sourceBuffer only returns "˚;\^F%\^CÄ", and I have no idea why?
-    
     //---------------------------------------------------------
     // Collect all the Parameters for Gyroflow:
     //---------------------------------------------------------
@@ -596,8 +594,8 @@ enum {
     //---------------------------------------------------------
     // Setup the Output Buffer to get the data back from:
     //---------------------------------------------------------
-    unsigned char*  outputBuffer            = NULL;
-    uint32_t        outputBufferSize        = sizeof(outputBuffer);
+    unsigned char *outputBuffer             = (unsigned char *)malloc(buffer.length);
+    uint32_t outputBufferSize               = sizeof(outputBuffer);
     
     //---------------------------------------------------------
     // Trigger the Gyroflow Rust Function:
@@ -655,7 +653,7 @@ enum {
          outputBufferSize: 8
          */
         
-        //[inputTexture replaceRegion:region mipmapLevel:0 withBytes:outputBuffer bytesPerRow:bytesPerRow];
+        [inputTexture replaceRegion:region mipmapLevel:0 withBytes:outputBuffer bytesPerRow:inputTexture.width * 4 * 2];
     }
             
     //---------------------------------------------------------

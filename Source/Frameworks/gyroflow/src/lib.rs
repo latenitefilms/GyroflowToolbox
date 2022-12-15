@@ -68,22 +68,17 @@ pub extern "C" fn processFrame(
     out_buffer: *mut c_uchar,
     out_buffer_size: u32
 ) -> *const c_char {
+    //---------------------------------------------------------
+    // Write to NSLog:
+    //---------------------------------------------------------
+    if let Err(e) = oslog::OsLogger::new("com.latenitefilms.GyroflowForFinalCutPro")
+           .level_filter(log::LevelFilter::Debug)
+           .category_level_filter("Settings", log::LevelFilter::Trace)
+           .init() {
+    std::fs::write("/Users/chrishocking/Desktop/log.txt", format!("error: {:?}", e));
+    }    
     
-    {
-        // TODO: The below code crashes:
-        
-        /*
-        oslog::OsLogger::new("com.latenitefilms.GyroflowForFinalCutPro")
-               .level_filter(log::LevelFilter::Debug)
-               .category_level_filter("Settings", log::LevelFilter::Trace)
-               .init()
-               .unwrap();
-        */
-
-        // TODO: The below code doesn't write to macOS Console:
-        
-        log::debug!("[Gyroflow] Debug");
-    }
+    log::info!("[Gyroflow] Hello from Rust land!");
     
     //---------------------------------------------------------
     // Setup the Gyroflow Manager:
@@ -105,19 +100,17 @@ pub extern "C" fn processFrame(
     match manager.import_gyroflow_file(&path_string, true, |_|(), Arc::new(AtomicBool::new(false))) {
         Ok(_) => {
             //---------------------------------------------------------
-            // Set the Size:
-            //---------------------------------------------------------
-            // TODO: Work out what values to put in `set_size`:
-            //manager.set_size(src_rect.2, src_rect.3);
-            
-            //---------------------------------------------------------
             // Set the Output Size:
             //---------------------------------------------------------
-            // TODO: Is the below code actually correct?
             let output_width: usize = width as usize;
             let output_height: usize = height as usize;
             manager.set_output_size(output_width, output_height);
 
+            //---------------------------------------------------------
+            // Set the Input Size:
+            //---------------------------------------------------------
+            manager.set_size(output_width, output_height);
+            
             //---------------------------------------------------------
             // Set the Interpolation:
             //---------------------------------------------------------
@@ -156,8 +149,8 @@ pub extern "C" fn processFrame(
             let input_buffer_size: usize = in_buffer_size as usize;
             let output_buffer_size: usize = out_buffer_size as usize;
                         
-            let input_stride: usize = 0;
-            let output_stride: usize = 0;
+            let input_stride: usize = output_height * 4 * 2;
+            let output_stride: usize = output_height * 4 * 2;
             
             manager.stabilization.write().process_pixels(timestamp, &mut BufferDescription {
                 input_size:  (output_width, output_height, input_stride),   // TODO: The last value is "stride" - what do I use?
