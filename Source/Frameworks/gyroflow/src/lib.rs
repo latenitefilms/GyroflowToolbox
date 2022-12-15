@@ -162,6 +162,7 @@ pub extern "C" fn processFrame(
             log::info!("[Gyroflow] width: {:?}", width);
             log::info!("[Gyroflow] height: {:?}", height);
             log::info!("[Gyroflow] path: {:?}", path);
+            log::info!("[Gyroflow] path_string: {:?}", path_string);            
             log::info!("[Gyroflow] timestamp: {:?}", timestamp);
             log::info!("[Gyroflow] fov: {:?}", fov);
             log::info!("[Gyroflow] smoothness: {:?}", smoothness);
