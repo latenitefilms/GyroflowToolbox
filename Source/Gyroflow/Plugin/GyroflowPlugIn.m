@@ -588,7 +588,7 @@ enum {
     uint32_t        sourceWidth             = (uint32_t)inputTexture.width;
     uint32_t        sourceHeight            = (uint32_t)inputTexture.height;
     const char*     sourcePath              = [gyroflowFile UTF8String];
-    int64_t         sourceTimestamp         = [frameToRender floatValue] * [frameRate floatValue];
+    int64_t         sourceTimestamp         = 0; //([frameToRender floatValue] / [frameRate floatValue]) * 1000000;
     double          sourceFOV               = [fov doubleValue];
     double          sourceSmoothness        = [smoothness doubleValue];
     double          sourceLensCorrection    = [lensCorrection doubleValue];
