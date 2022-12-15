@@ -52,6 +52,15 @@ extern crate log;
 extern crate oslog;
 
 //---------------------------------------------------------
+// Setup Caching:
+//---------------------------------------------------------
+use lazy_static::*;
+use lru::LruCache;
+lazy_static! {
+    static ref CACHE: LruCache<String, Arc<StabilizationManager<RGBAf16>>> = LruCache::new(std::num::NonZeroUsize::new(1).unwrap());
+}
+
+//---------------------------------------------------------
 // The "Process Frame" function:
 //---------------------------------------------------------
 #[no_mangle]
@@ -98,115 +107,133 @@ pub extern "C" fn processFrame(
     let path_string = path_pointer.to_string_lossy();
 
     //---------------------------------------------------------
-    // Import the Gyroflow File:
+    // Convert the output width and height to `usize`:
     //---------------------------------------------------------
-    match manager.import_gyroflow_file(&path_string, true, |_|(), Arc::new(AtomicBool::new(false))) {
-        Ok(_) => {
-            //---------------------------------------------------------
-            // Convert the output width and height to `usize`:
-            //---------------------------------------------------------
-            let output_width: usize = width as usize;
-            let output_height: usize = height as usize;
-
-            //---------------------------------------------------------
-            // Set the Input Size:
-            //---------------------------------------------------------
-            manager.set_size(output_width, output_height);
-            
-            //---------------------------------------------------------
-            // Set the Output Size:
-            //---------------------------------------------------------
-            manager.set_output_size(output_width, output_height);
-
-            //---------------------------------------------------------
-            // Set the Interpolation:
-            //---------------------------------------------------------
-            manager.stabilization.write().interpolation = gyroflow_core::stabilization::Interpolation::Lanczos4;
-            
-            //---------------------------------------------------------
-            // Set the FOV:
-            //---------------------------------------------------------
-            manager.params.write().fov = fov;
+    let output_width: usize = width as usize;
+    let output_height: usize = height as usize;
+    
+    //---------------------------------------------------------
+    // Cache the manager:
+    //---------------------------------------------------------
+    let key = format!("{path_string}{width}{height}");
+    let manager = if let Some(manager) = CACHE.get(&key) {
+        //---------------------------------------------------------
+        // Already cached:
+        //---------------------------------------------------------
+        log::info!("[Gyroflow] USING CACHE");
+        manager.clone()
+    } else {
+        //---------------------------------------------------------
+        // Need to create a new cache:
+        //---------------------------------------------------------
+        log::info!("[Gyroflow] CREATE NEW CACHE");
         
-            //---------------------------------------------------------
-            // Set the Lens Correction:
-            //---------------------------------------------------------
-            manager.params.write().lens_correction_amount = lens_correction;
-                        
-            //---------------------------------------------------------
-            // Set the Smoothness:
-            //---------------------------------------------------------
-            manager.smoothing.write().current_mut().set_parameter("smoothness", smoothness);
-            
-            //---------------------------------------------------------
-            // Invalidate & Recompute, to make sure everything is
-            // up-to-date:
-            //---------------------------------------------------------
-            manager.invalidate_smoothing();
-            manager.recompute_blocking();
-            manager.params.write().calculate_ramped_timestamps(&manager.keyframes.read());
-                         
-            //---------------------------------------------------------
-            // Send data in and get data out:
-            //---------------------------------------------------------
-            let input_buffer_size: usize = in_buffer_size as usize;
-            let output_buffer_size: usize = out_buffer_size as usize;
-                        
-            let input_stride: usize = output_width * 4 * 2;
-            let output_stride: usize = output_width * 4 * 2;
-                    
+        //---------------------------------------------------------
+        // Import the Gyroflow File:
+        //---------------------------------------------------------
+        match manager.import_gyroflow_file(&path_string, true, |_|(), Arc::new(AtomicBool::new(false))) {
+            Ok(_) => {
+                //---------------------------------------------------------
+                // Set the Input Size:
+                //---------------------------------------------------------
+                manager.set_size(output_width, output_height);
+                
+                //---------------------------------------------------------
+                // Set the Output Size:
+                //---------------------------------------------------------
+                manager.set_output_size(output_width, output_height);
 
-            //---------------------------------------------------------
-            // Write debugging information to Console.app:
-            //---------------------------------------------------------
-            log::info!("[Gyroflow] width: {:?}", width);
-            log::info!("[Gyroflow] height: {:?}", height);
-            log::info!("[Gyroflow] path: {:?}", path);
-            log::info!("[Gyroflow] path_string: {:?}", path_string);
-            log::info!("[Gyroflow] timestamp: {:?}", timestamp);
-            log::info!("[Gyroflow] fov: {:?}", fov);
-            log::info!("[Gyroflow] smoothness: {:?}", smoothness);
-            log::info!("[Gyroflow] lens_correction: {:?}", lens_correction);
-            log::info!("[Gyroflow] in_buffer_size: {:?}", in_buffer_size);
-            log::info!("[Gyroflow] out_buffer_size: {:?}", out_buffer_size);
-            log::info!("[Gyroflow] output_width: {:?}", output_width);
-            log::info!("[Gyroflow] output_height: {:?}", output_height);
-            log::info!("[Gyroflow] input_stride: {:?}", input_stride);
-            log::info!("[Gyroflow] output_stride: {:?}", output_stride);
+                //---------------------------------------------------------
+                // Set the Interpolation:
+                //---------------------------------------------------------
+                manager.stabilization.write().interpolation = gyroflow_core::stabilization::Interpolation::Lanczos4;
+                
+                //---------------------------------------------------------
+                // Set the FOV:
+                //---------------------------------------------------------
+                manager.params.write().fov = fov;
             
-            manager.stabilization.write().init_size(nalgebra::Vector4::new(1.0, 0.0, 0.0, 1.0), (width as usize, height as usize), (output_width, output_height));
+                //---------------------------------------------------------
+                // Set the Lens Correction:
+                //---------------------------------------------------------
+                manager.params.write().lens_correction_amount = lens_correction;
+                            
+                //---------------------------------------------------------
+                // Set the Smoothness:
+                //---------------------------------------------------------
+                manager.smoothing.write().current_mut().set_parameter("smoothness", smoothness);
+                
+                //---------------------------------------------------------
+                // Invalidate & Recompute, to make sure everything is
+                // up-to-date:
+                //---------------------------------------------------------
+                manager.invalidate_smoothing();
+                manager.recompute_blocking();
+                manager.params.write().calculate_ramped_timestamps(&manager.keyframes.read());
+            },
+            Err(e) => {
+                //---------------------------------------------------------
+                // Return an error message is something fails:
+                //---------------------------------------------------------
+                let result = CString::new(format!("[Gyroflow] Failed to import Gyroflow File: {:?}", e)).unwrap();
+                return result.into_raw()
+            }
             
-            //---------------------------------------------------------
-            // Stabilization time!
-            //---------------------------------------------------------
-            let stabilization_result = manager.stabilization.write().process_pixels(timestamp, &mut BufferDescription {
-                input_size:  (output_width, output_height, input_stride),
-                output_size: (output_width, output_height, output_stride),
-                input_rect: None,
-                output_rect: None,
-                buffers: BufferSource::Cpu {
-                    input:  unsafe { std::slice::from_raw_parts_mut(in_buffer, input_buffer_size) },
-                    output: unsafe { std::slice::from_raw_parts_mut(out_buffer, output_buffer_size) }
-                }
-            });
-            
-            //---------------------------------------------------------
-            // Output the Stabilization result to the Console:
-            //---------------------------------------------------------
-            log::info!("[Gyroflow] stabilization_result: {:?}", &stabilization_result);
-
-            //---------------------------------------------------------
-            // Return "DONE":
-            //---------------------------------------------------------
-            let result = CString::new("DONE").unwrap();
-            return result.into_raw()
-        },
-        Err(e) => {
-            //---------------------------------------------------------
-            // Return an error message is something fails:
-            //---------------------------------------------------------
-            let result = CString::new(format!("[Gyroflow] Failed to import Gyroflow File: {:?}", e)).unwrap();
-            return result.into_raw()
+            CACHE.put(key.to_owned(), Arc::new(manager));
+            CACHE.get(&key).unwrap().clone()
         }
-    }
+    };
+
+    //---------------------------------------------------------
+    // Send data in and get data out:
+    //---------------------------------------------------------
+    let input_buffer_size: usize = in_buffer_size as usize;
+    let output_buffer_size: usize = out_buffer_size as usize;
+                
+    let input_stride: usize = output_width * 4 * 2;
+    let output_stride: usize = output_width * 4 * 2;
+    
+    //---------------------------------------------------------
+    // Write debugging information to Console.app:
+    //---------------------------------------------------------
+    log::info!("[Gyroflow] width: {:?}", width);
+    log::info!("[Gyroflow] height: {:?}", height);
+    log::info!("[Gyroflow] path: {:?}", path);
+    log::info!("[Gyroflow] path_string: {:?}", path_string);
+    log::info!("[Gyroflow] timestamp: {:?}", timestamp);
+    log::info!("[Gyroflow] fov: {:?}", fov);
+    log::info!("[Gyroflow] smoothness: {:?}", smoothness);
+    log::info!("[Gyroflow] lens_correction: {:?}", lens_correction);
+    log::info!("[Gyroflow] in_buffer_size: {:?}", in_buffer_size);
+    log::info!("[Gyroflow] out_buffer_size: {:?}", out_buffer_size);
+    log::info!("[Gyroflow] output_width: {:?}", output_width);
+    log::info!("[Gyroflow] output_height: {:?}", output_height);
+    log::info!("[Gyroflow] input_stride: {:?}", input_stride);
+    log::info!("[Gyroflow] output_stride: {:?}", output_stride);
+    
+    //---------------------------------------------------------
+    // Stabilization time!
+    //---------------------------------------------------------
+    let stabilization_result = manager.process_pixels(timestamp, &mut BufferDescription {
+        input_size:  (output_width, output_height, input_stride),
+        output_size: (output_width, output_height, output_stride),
+        input_rect: None,
+        output_rect: None,
+        buffers: BufferSource::Cpu {
+            input:  unsafe { std::slice::from_raw_parts_mut(in_buffer, input_buffer_size) },
+            output: unsafe { std::slice::from_raw_parts_mut(out_buffer, output_buffer_size) }
+        }
+    });
+    
+    //---------------------------------------------------------
+    // Output the Stabilization result to the Console:
+    //---------------------------------------------------------
+    log::info!("[Gyroflow] stabilization_result: {:?}", &stabilization_result);
+
+    //---------------------------------------------------------
+    // Return "DONE":
+    //---------------------------------------------------------
+    let result = CString::new("DONE").unwrap();
+    return result.into_raw()
+    
 }

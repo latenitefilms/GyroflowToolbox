@@ -13,7 +13,8 @@ argh = "*"
 serde = { version = "*", features = ["derive"] }
 serde_json = { version = "*", features = ["preserve_order"] }
 libc = "0.2"
-gyroflow-core = { git = "https://github.com/gyroflow/gyroflow.git", default-features = false, rev = "52290ab" }
+gyroflow-core = { git = "https://github.com/gyroflow/gyroflow.git", features = ["use-opencl"], rev = "bc80350" }
 log = "0.4.17"
 oslog = "0.2.0"
-nalgebra = "0.31"
+lazy_static = "1.4"
+lru = "0.8"
