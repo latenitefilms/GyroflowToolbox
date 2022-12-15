@@ -162,7 +162,7 @@ pub extern "C" fn processFrame(
             log::info!("[Gyroflow] width: {:?}", width);
             log::info!("[Gyroflow] height: {:?}", height);
             log::info!("[Gyroflow] path: {:?}", path);
-            log::info!("[Gyroflow] path_string: {:?}", path_string);            
+            log::info!("[Gyroflow] path_string: {:?}", path_string);
             log::info!("[Gyroflow] timestamp: {:?}", timestamp);
             log::info!("[Gyroflow] fov: {:?}", fov);
             log::info!("[Gyroflow] smoothness: {:?}", smoothness);
@@ -173,6 +173,8 @@ pub extern "C" fn processFrame(
             log::info!("[Gyroflow] output_height: {:?}", output_height);
             log::info!("[Gyroflow] input_stride: {:?}", input_stride);
             log::info!("[Gyroflow] output_stride: {:?}", output_stride);
+            
+            manager.stabilization.write().init_size(nalgebra::Vector4::new(1.0, 0.0, 0.0, 1.0), (width as usize, height as usize), (output_width, output_height));
             
             //---------------------------------------------------------
             // Stabilization time!
