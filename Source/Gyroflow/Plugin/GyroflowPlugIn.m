@@ -564,22 +564,22 @@ enum {
     //---------------------------------------------------------
     // Calculate the Buffer Size:
     //---------------------------------------------------------
-    unsigned long bufferSize        = inputTexture.width * inputTexture.height * 4 * 2;
+    unsigned long bufferLength      = inputTexture.width * inputTexture.height * 4 * 2;
     unsigned long bytesPerRow       = inputTexture.width * 4 * 2;
-    uint32_t sourceBufferSize       = (uint32_t)bufferSize;
-    uint32_t outputBufferSize       = (uint32_t)bufferSize;
+    uint32_t sourceBufferSize       = (uint32_t)bufferLength;
+    uint32_t outputBufferSize       = (uint32_t)bufferLength;
     
     //---------------------------------------------------------
     // Setup input and output buffers:
     //---------------------------------------------------------
-    unsigned char *sourceBuffer     = (unsigned char *)malloc(bufferSize);
-    unsigned char *outputBuffer     = (unsigned char *)malloc(bufferSize);
+    unsigned char *sourceBuffer     = (unsigned char *)malloc(bufferLength);
+    unsigned char *outputBuffer     = (unsigned char *)malloc(bufferLength);
     
     //---------------------------------------------------------
     // Copy the texture data into the buffer:
     //---------------------------------------------------------
     [inputTexture getBytes:sourceBuffer
-               bytesPerRow:inputTexture.width * 4
+               bytesPerRow:bytesPerRow
              bytesPerImage:0
                 fromRegion:MTLRegionMake2D(0, 0, inputTexture.width, inputTexture.height)
                mipmapLevel:0
