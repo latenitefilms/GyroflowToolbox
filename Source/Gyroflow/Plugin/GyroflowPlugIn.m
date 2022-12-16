@@ -323,14 +323,9 @@ enum {
     Float64 timelineTimeMinusStartTimeOfInputToFilterNumerator = (Float64)timelineTime.value * (Float64)startTimeOfInputToFilterInTimelineTime.timescale - (Float64)startTimeOfInputToFilterInTimelineTime.value * (Float64)timelineTime.timescale;
     Float64 timelineTimeMinusStartTimeOfInputToFilterDenominator = (Float64)timelineTime.timescale * (Float64)startTimeOfInputToFilterInTimelineTime.timescale;
         
-    unsigned long long frame = ( (timelineTimeMinusStartTimeOfInputToFilterNumerator / timelineTimeMinusStartTimeOfInputToFilterDenominator) / ((Float64)timelineFrameDuration.value / (Float64)timelineFrameDuration.timescale) );
-
-    //---------------------------------------------------------
-    // Increase the frame by 1, so first frame of clip is 1:
-    //---------------------------------------------------------
-    frame = frame + 1;
+    Float64 frame = ( ((Float64)timelineTimeMinusStartTimeOfInputToFilterNumerator / (Float64)timelineTimeMinusStartTimeOfInputToFilterDenominator) / ((Float64)timelineFrameDuration.value / (Float64)timelineFrameDuration.timescale) );
     
-    NSNumber *frameToRender = [[[NSNumber alloc] initWithUnsignedLongLong:frame] autorelease];
+    NSNumber *frameToRender = [[[NSNumber alloc] initWithFloat:frame] autorelease];
     params.frameToRender = frameToRender;
     
     //---------------------------------------------------------
@@ -596,7 +591,7 @@ enum {
     uint32_t        sourceWidth             = (uint32_t)inputTexture.width;
     uint32_t        sourceHeight            = (uint32_t)inputTexture.height;
     const char*     sourcePath              = [gyroflowFile UTF8String];
-    int64_t         sourceTimestamp         = ([frameToRender floatValue] / [frameRate floatValue]) * 1000000.0; //(renderTime.value / renderTime.timescale) * 1000000.0;
+    int64_t         sourceTimestamp         = ([frameToRender floatValue] / [frameRate floatValue]) * 1000000.0;
     double          sourceFOV               = [fov doubleValue];
     double          sourceSmoothness        = [smoothness doubleValue];
     double          sourceLensCorrection    = [lensCorrection doubleValue];

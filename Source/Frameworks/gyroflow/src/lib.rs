@@ -62,6 +62,21 @@ lazy_static! {
 }
 
 //---------------------------------------------------------
+// We only want to run the `NSLog` code once:
+//---------------------------------------------------------
+lazy_static! {
+    static ref SETUP_LOGGER: fn() = || {
+        if let Err(e) = oslog::OsLogger::new("com.latenitefilms.GyroflowForFinalCutPro")
+               .level_filter(log::LevelFilter::Debug)
+               .category_level_filter("Settings", log::LevelFilter::Trace)
+               .init()
+        {
+            log::error!("[Gyroflow] Failed to setup logger: {:?}", e);
+        }
+    };
+}
+
+//---------------------------------------------------------
 // The "Process Frame" function:
 //---------------------------------------------------------
 #[no_mangle]
@@ -84,17 +99,9 @@ pub extern "C" fn processFrame(
     let mut cache = CACHE.lock().unwrap();
     
     //---------------------------------------------------------
-    // Write to NSLog:
+    // Setting our NSLog Logger (only once):
     //---------------------------------------------------------
-    
-    // TODO: This should only run once, otherwise it'll crash:
-    
-    if let Err(e) = oslog::OsLogger::new("com.latenitefilms.GyroflowForFinalCutPro")
-           .level_filter(log::LevelFilter::Debug)
-           .category_level_filter("Settings", log::LevelFilter::Trace)
-           .init() {
-    std::fs::write("/Users/chrishocking/Desktop/log.txt", format!("error: {:?}", e));
-    }    
+    SETUP_LOGGER();
     
     //log::info!("[Gyroflow] Hello from Rust land!");
     
@@ -121,13 +128,13 @@ pub extern "C" fn processFrame(
         //---------------------------------------------------------
         // Already cached:
         //---------------------------------------------------------
-        //log::info!("[Gyroflow] USING CACHE");
+        //log::info!("[Gyroflow] Using Cached Manager");
         manager.clone()
     } else {
         //---------------------------------------------------------
         // Need to create a new cache:
         //---------------------------------------------------------
-        //log::info!("[Gyroflow] CREATE NEW CACHE");
+        //log::info!("[Gyroflow] The Cached Manager doesn't exist - so creating new cache item");
 
         //---------------------------------------------------------
         // Setup the Gyroflow Manager:
@@ -149,6 +156,11 @@ pub extern "C" fn processFrame(
                 //---------------------------------------------------------
                 manager.set_output_size(output_width, output_height);
 
+                //---------------------------------------------------------
+                // Invert the Frame Buffer:
+                //---------------------------------------------------------
+                manager.params.write().framebuffer_inverted = true;
+                
                 //---------------------------------------------------------
                 // Set the Interpolation:
                 //---------------------------------------------------------
@@ -235,7 +247,7 @@ pub extern "C" fn processFrame(
     //---------------------------------------------------------
     // Output the Stabilization result to the Console:
     //---------------------------------------------------------
-    //log::info!("[Gyroflow] stabilization_result: {:?}", &stabilization_result);
+    log::info!("[Gyroflow] stabilization_result: {:?}", &stabilization_result);
 
     //---------------------------------------------------------
     // Return "DONE":
