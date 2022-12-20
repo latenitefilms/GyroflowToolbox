@@ -10,7 +10,7 @@ Gyroflow Toolbox allows you to take the stabilised data from Gyroflow and use it
 
 ## Credits
 
-This repo was thrown together by [Chris Hocking](https://github.com/latenitefilms).
+This repository was thrown together by [Chris Hocking](https://github.com/latenitefilms).
 
 However, none of this would be possible without the incredible [Gyroflow](https://github.com/gyroflow/gyroflow) project and the incredibly help and support from their main developer, [AdrianEddy](https://github.com/AdrianEddy).
 
