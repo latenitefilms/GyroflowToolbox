@@ -1,6 +1,6 @@
 //
 //  MetalDeviceCache.h
-//  Gyroflow for Final Cut Pro
+//  Gyroflow Toolbox
 //
 //  Created by Chris Hocking on 10/12/2022.
 //

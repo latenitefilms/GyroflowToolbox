@@ -25,4 +25,3 @@ typedef struct Vertex2D {
 } Vertex2D;
 
 #endif /* TileableRemoteGyroflowShaderTypes_h */
-

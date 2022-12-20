@@ -110,13 +110,6 @@ fragment float4 fragmentShader(RasterizerData in [[stage_in]],
     half4 colorSample = colorTexture.sample(textureSampler, in.textureCoordinate);
     
     //---------------------------------------------------------
-    // Force black for transparent pixels:
-    //---------------------------------------------------------
-    if (colorSample.r == 0 && colorSample.g == 0 && colorSample.b == 0) {
-        colorSample = half4(0, 0, 0, 1);
-    }
-    
-    //---------------------------------------------------------
     // We return the color of the texture:
     //---------------------------------------------------------
     return float4(colorSample);

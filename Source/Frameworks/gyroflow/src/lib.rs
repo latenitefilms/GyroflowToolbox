@@ -1,62 +1,36 @@
 //
 //  lib.rs
-//  Gyroflow for Final Cut Pro
+//  Gyroflow Toolbox
 //
 //  Created by Chris Hocking on 10/12/2022.
 //
 
-// -------------------------------------------------------------------------------
-// NOTES:
-// -------------------------------------------------------------------------------
-//
-// This code is heavily influenced by:
-// https://github.com/gyroflow/gyroflow-ofx/blob/main/src/fisheyestab_v1.rs
-//
-// ...and AdrianEddy's comments on the Gyroflow Discord.
-//
-// i32 = int32_t
-// u32 = uint32_t
-// i64 = int64_t
-// f64 = double
-//
-// *const c_char = const char *
-// *mut c_uchar  = unsigned char *
-//
-// -------------------------------------------------------------------------------
+//---------------------------------------------------------
+// Import External Crates:
+//---------------------------------------------------------
+extern crate libc;                          // Raw FFI bindings to platform libraries like libc
+extern crate log;                           // A lightweight logging facade
+extern crate oslog;                         // A minimal safe wrapper around Apple's Logging system
 
 //---------------------------------------------------------
-// Import Libraries:
-//---------------------------------------------------------
-use libc::c_uchar;                          // Allows us to use `*const c_uchar`
-use std::sync::Arc;                         // Adds Atomic Reference Count support
-use std::sync::atomic::AtomicBool;          // The AtomicBool type is a type of atomic variable that can be used in concurrent (multi-threaded) contexts.
-use std::os::raw::c_char;                   // Allows us to use `*const c_uchar`
-use std::ffi::CStr;                         // Allows us to use `CStr`
-use std::ffi::CString;                      // Allows us to use `CString`
-
-//---------------------------------------------------------
-// Import Gyroflow Core:
+// Local name bindings:
 //---------------------------------------------------------
 use gyroflow_core::{StabilizationManager, stabilization::RGBAf16};
 use gyroflow_core::gpu::{ BufferDescription, BufferSource };
 
-//---------------------------------------------------------
-// Add C support:
-//---------------------------------------------------------
-extern crate libc;
+use lazy_static::*;                         // A macro for declaring lazily evaluated statics
+use libc::c_uchar;                          // Allows us to use `*const c_uchar`
+use lru::LruCache;                          // A LRU cache implementation
+use std::ffi::CStr;                         // Allows us to use `CStr`
+use std::ffi::CString;                      // Allows us to use `CString`
+use std::os::raw::c_char;                   // Allows us to use `*const c_uchar`
+use std::sync::Arc;                         // Adds Atomic Reference Count support
+use std::sync::atomic::AtomicBool;          // The AtomicBool type is a type of atomic variable that can be used in concurrent (multi-threaded) contexts.
+use std::sync::Mutex;                       // A mutual exclusion primitive useful for protecting shared data
 
 //---------------------------------------------------------
-// Add NSLog support:
+// We only want to setup the Gyroflow Manager once:
 //---------------------------------------------------------
-extern crate log;
-extern crate oslog;
-
-//---------------------------------------------------------
-// Setup Caching:
-//---------------------------------------------------------
-use lazy_static::*;
-use lru::LruCache;
-use std::sync::Mutex;
 lazy_static! {
     static ref CACHE: Mutex<LruCache<String, Arc<StabilizationManager<RGBAf16>>>> = Mutex::new(LruCache::new(std::num::NonZeroUsize::new(1).unwrap()));
 }
@@ -64,9 +38,12 @@ lazy_static! {
 //---------------------------------------------------------
 // We only want to run the `NSLog` code once:
 //---------------------------------------------------------
+
+// TODO: I'm not sure this "run once" code actually works as intended?
+
 lazy_static! {
     static ref SETUP_LOGGER: fn() = || {
-        if let Err(e) = oslog::OsLogger::new("com.latenitefilms.GyroflowForFinalCutPro")
+        if let Err(e) = oslog::OsLogger::new("com.latenitefilms.GyroflowToolbox")
                .level_filter(log::LevelFilter::Debug)
                .category_level_filter("Settings", log::LevelFilter::Trace)
                .init()
@@ -84,6 +61,7 @@ pub extern "C" fn processFrame(
     width: u32,
     height: u32,
     path: *const c_char,
+    data: *const c_char,
     timestamp: i64,
     fov: f64,
     smoothness: f64,
@@ -97,14 +75,12 @@ pub extern "C" fn processFrame(
     // Setup our cache:
     //---------------------------------------------------------
     let mut cache = CACHE.lock().unwrap();
-    
+
     //---------------------------------------------------------
     // Setting our NSLog Logger (only once):
     //---------------------------------------------------------
     SETUP_LOGGER();
-    
-    //log::info!("[Gyroflow] Hello from Rust land!");
-    
+
     // -------------------------------------------------------------------------------
     // You can't use &str across FFI boundary, it's a Rust type.
     // You have to use C-compatible char pointer, so path: *const c_char and then
@@ -119,38 +95,36 @@ pub extern "C" fn processFrame(
     //---------------------------------------------------------
     let output_width: usize = width as usize;
     let output_height: usize = height as usize;
-    
+
     //---------------------------------------------------------
     // Cache the manager:
     //---------------------------------------------------------
-    let key = format!("{path_string}{width}{height}");
-    let manager = if let Some(manager) = cache.get(&key) {
+    let cache_key = format!("{path_string}{width}{height}");
+    let manager = if let Some(manager) = cache.get(&cache_key) {
         //---------------------------------------------------------
         // Already cached:
         //---------------------------------------------------------
-        //log::info!("[Gyroflow] Using Cached Manager");
         manager.clone()
     } else {
-        //---------------------------------------------------------
-        // Need to create a new cache:
-        //---------------------------------------------------------
-        //log::info!("[Gyroflow] The Cached Manager doesn't exist - so creating new cache item");
-
         //---------------------------------------------------------
         // Setup the Gyroflow Manager:
         //---------------------------------------------------------
         let manager = StabilizationManager::<RGBAf16>::default();
 
         //---------------------------------------------------------
-        // Import the Gyroflow File:
+        // Import the Gyroflow Data:
         //---------------------------------------------------------
-        match manager.import_gyroflow_file(&path_string, true, |_|(), Arc::new(AtomicBool::new(false))) {
+        let data_slice: &[u8] = unsafe {
+            CStr::from_ptr(data).to_bytes()
+        };
+        let mut is_preset = false;
+        match manager.import_gyroflow_data(&data_slice, true, None, |_|(), Arc::new(AtomicBool::new(false)), &mut is_preset) {
             Ok(_) => {
                 //---------------------------------------------------------
                 // Set the Input Size:
                 //---------------------------------------------------------
                 manager.set_size(output_width, output_height);
-                
+
                 //---------------------------------------------------------
                 // Set the Output Size:
                 //---------------------------------------------------------
@@ -160,27 +134,27 @@ pub extern "C" fn processFrame(
                 // Invert the Frame Buffer:
                 //---------------------------------------------------------
                 manager.params.write().framebuffer_inverted = true;
-                
+
                 //---------------------------------------------------------
                 // Set the Interpolation:
                 //---------------------------------------------------------
                 manager.stabilization.write().interpolation = gyroflow_core::stabilization::Interpolation::Lanczos4;
-                
+
                 //---------------------------------------------------------
                 // Set the FOV:
                 //---------------------------------------------------------
                 manager.params.write().fov = fov;
-            
+
                 //---------------------------------------------------------
                 // Set the Lens Correction:
                 //---------------------------------------------------------
                 manager.params.write().lens_correction_amount = lens_correction;
-                            
+
                 //---------------------------------------------------------
                 // Set the Smoothness:
                 //---------------------------------------------------------
                 manager.smoothing.write().current_mut().set_parameter("smoothness", smoothness);
-                
+
                 //---------------------------------------------------------
                 // Invalidate & Recompute, to make sure everything is
                 // up-to-date:
@@ -193,12 +167,12 @@ pub extern "C" fn processFrame(
                 //---------------------------------------------------------
                 // Return an error message is something fails:
                 //---------------------------------------------------------
-                log::error!("[Gyroflow] Failed to import Gyroflow File: {:?}", e);
+                log::error!("[Gyroflow Toolbox] Failed to import Gyroflow File: {:?}", e);
             }
         }
-            
-        cache.put(key.to_owned(), Arc::new(manager));
-        cache.get(&key).unwrap().clone()
+
+        cache.put(cache_key.to_owned(), Arc::new(manager));
+        cache.get(&cache_key).unwrap().clone()
     };
 
     //---------------------------------------------------------
@@ -206,10 +180,10 @@ pub extern "C" fn processFrame(
     //---------------------------------------------------------
     let input_buffer_size: usize = in_buffer_size as usize;
     let output_buffer_size: usize = out_buffer_size as usize;
-                
+
     let input_stride: usize = output_width * 4 * 2;
     let output_stride: usize = output_width * 4 * 2;
-    
+
     //---------------------------------------------------------
     // Write debugging information to Console.app:
     //---------------------------------------------------------
@@ -229,7 +203,7 @@ pub extern "C" fn processFrame(
     log::info!("[Gyroflow] input_stride: {:?}", input_stride);
     log::info!("[Gyroflow] output_stride: {:?}", output_stride);
     */
-    
+
     //---------------------------------------------------------
     // Stabilization time!
     //---------------------------------------------------------
@@ -243,16 +217,15 @@ pub extern "C" fn processFrame(
             output: unsafe { std::slice::from_raw_parts_mut(out_buffer, output_buffer_size) }
         }
     });
-    
+
     //---------------------------------------------------------
     // Output the Stabilization result to the Console:
     //---------------------------------------------------------
-    log::info!("[Gyroflow] stabilization_result: {:?}", &stabilization_result);
+    //log::info!("[Gyroflow Toolbox] stabilization_result: {:?}", &stabilization_result);
 
     //---------------------------------------------------------
     // Return "DONE":
     //---------------------------------------------------------
     let result = CString::new("DONE").unwrap();
     return result.into_raw()
-    
 }

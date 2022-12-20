@@ -1,6 +1,6 @@
 //
 //  MetalDeviceCache.m
-//  Gyroflow for Final Cut Pro
+//  Gyroflow Toolbox
 //
 //  Created by Chris Hocking on 10/12/2022.
 //
@@ -92,7 +92,7 @@ static MetalDeviceCache*   gDeviceCache    = nil;
         // a pipeline state:
         //---------------------------------------------------------
         MTLRenderPipelineDescriptor *pipelineStateDescriptor = [[[MTLRenderPipelineDescriptor alloc] init] autorelease];
-        pipelineStateDescriptor.label = @"BRAW Pipeline";
+        pipelineStateDescriptor.label = @"Gyroflow Toolbox Pipeline";
         pipelineStateDescriptor.vertexFunction = vertexFunction;
         pipelineStateDescriptor.fragmentFunction = fragmentFunction;
         pipelineStateDescriptor.colorAttachments[0].pixelFormat = pixFormat;
@@ -103,7 +103,7 @@ static MetalDeviceCache*   gDeviceCache    = nil;
                                                                               error:&error];
         if (error != nil)
         {
-            NSLog (@"Error generating BRAW pipeline state: %@", error);
+            NSLog (@"Error generating Gyroflow Toolbox pipeline state: %@", error);
         }
         
         if (_commandQueueCache != nil)

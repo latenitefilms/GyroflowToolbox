@@ -1,9 +1,13 @@
 //
 //  GyroflowParameters.m
-//  Gyroflow for Final Cut Pro
+//  Gyroflow Toolbox
 //
 //  Created by Chris Hocking on 10/12/2022.
 //
+
+//---------------------------------------------------------
+// Import Headers:
+//---------------------------------------------------------
 #import <Foundation/Foundation.h>
 #import "GyroflowParameters.h"
 
@@ -12,9 +16,9 @@
 //---------------------------------------------------------
 @implementation GyroflowParameters
 
-@synthesize frameToRender;
-@synthesize frameRate;
-@synthesize gyroflowFile;
+@synthesize gyroflowPath;
+@synthesize gyroflowData;
+@synthesize timestamp;
 @synthesize fov;
 @synthesize smoothness;
 @synthesize lensCorrection;
@@ -25,9 +29,9 @@
 }
 
 - (void)dealloc {
-    [frameToRender release];
-    [frameRate release];
-    [gyroflowFile release];
+    [gyroflowPath release];
+    [gyroflowData release];
+    [timestamp release];
     [fov release];
     [smoothness release];
     [lensCorrection release];
@@ -37,9 +41,9 @@
 
 - (id)initWithCoder:(NSCoder *)decoder {
     if (self = [super init]) {
-        self.frameToRender          = [decoder decodeObjectOfClass:[NSNumber class] forKey:@"frameToRender"];
-        self.frameRate              = [decoder decodeObjectOfClass:[NSNumber class] forKey:@"frameRate"];
-        self.gyroflowFile           = [decoder decodeObjectOfClass:[NSString class] forKey:@"gyroflowFile"];
+        self.gyroflowPath           = [decoder decodeObjectOfClass:[NSString class] forKey:@"gyroflowPath"];
+        self.gyroflowData           = [decoder decodeObjectOfClass:[NSString class] forKey:@"gyroflowData"];
+        self.timestamp              = [decoder decodeObjectOfClass:[NSNumber class] forKey:@"timestamp"];
         self.fov                    = [decoder decodeObjectOfClass:[NSNumber class] forKey:@"fov"];
         self.smoothness             = [decoder decodeObjectOfClass:[NSNumber class] forKey:@"smoothness"];
         self.lensCorrection         = [decoder decodeObjectOfClass:[NSNumber class] forKey:@"lensCorrection"];
@@ -48,9 +52,9 @@
 }
 
 - (void)encodeWithCoder:(NSCoder *)encoder {
-    [encoder encodeObject:frameToRender     forKey:@"frameToRender"];
-    [encoder encodeObject:frameRate         forKey:@"frameRate"];
-    [encoder encodeObject:gyroflowFile      forKey:@"gyroflowFile"];
+    [encoder encodeObject:gyroflowPath      forKey:@"gyroflowPath"];
+    [encoder encodeObject:gyroflowData      forKey:@"gyroflowData"];
+    [encoder encodeObject:timestamp         forKey:@"timestamp"];
     [encoder encodeObject:fov               forKey:@"fov"];
     [encoder encodeObject:smoothness        forKey:@"smoothness"];
     [encoder encodeObject:lensCorrection    forKey:@"lensCorrection"];

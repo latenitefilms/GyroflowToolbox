@@ -8,7 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		2239AB112943F8F600028B77 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2239AB102943F8F600028B77 /* Cocoa.framework */; };
-		2239AB192943F8F600028B77 /* Gyroflow XPC Service.pluginkit in Embed PlugIns */ = {isa = PBXBuildFile; fileRef = 2239AB182943F8F600028B77 /* Gyroflow XPC Service.pluginkit */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		2239AB192943F8F600028B77 /* Gyroflow Toolbox Renderer.pluginkit in Embed PlugIns */ = {isa = PBXBuildFile; fileRef = 2239AB182943F8F600028B77 /* Gyroflow Toolbox Renderer.pluginkit */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		2239AB1D2943F8F600028B77 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2239AB1C2943F8F600028B77 /* Foundation.framework */; };
 		2239AB1F2943F8F600028B77 /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2239AB1E2943F8F600028B77 /* AppKit.framework */; };
 		2239AB212943F8F600028B77 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2239AB202943F8F600028B77 /* Accelerate.framework */; };
@@ -25,10 +25,13 @@
 		2239AB492943F8F600028B77 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 2239AB472943F8F600028B77 /* InfoPlist.strings */; };
 		2239AB4C2943F8F600028B77 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 2239AB4A2943F8F600028B77 /* Localizable.strings */; };
 		2239AB57294400B500028B77 /* GyroflowParameters.m in Sources */ = {isa = PBXBuildFile; fileRef = 2239AB56294400B500028B77 /* GyroflowParameters.m */; };
-		2239AB5C29453BB400028B77 /* GyroflowFCP.icns in Resources */ = {isa = PBXBuildFile; fileRef = 2239AB5B29453BB400028B77 /* GyroflowFCP.icns */; };
+		2239AB5C29453BB400028B77 /* GyroflowToolbox.icns in Resources */ = {isa = PBXBuildFile; fileRef = 2239AB5B29453BB400028B77 /* GyroflowToolbox.icns */; };
 		2239AB6D2945471500028B77 /* Motion Templates in Resources */ = {isa = PBXBuildFile; fileRef = 2239AB6C2945471500028B77 /* Motion Templates */; };
-		2239AB782945979800028B77 /* libgyroflow.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2239AB772945979800028B77 /* libgyroflow.dylib */; };
-		2239AB792945979800028B77 /* libgyroflow.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 2239AB772945979800028B77 /* libgyroflow.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		2239AB782945979800028B77 /* libgyroflow_toolbox.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2239AB772945979800028B77 /* libgyroflow_toolbox.dylib */; };
+		2239AB792945979800028B77 /* libgyroflow_toolbox.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 2239AB772945979800028B77 /* libgyroflow_toolbox.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		228E9E1829517D8200B2571E /* ImportGyroflowProjectView.m in Sources */ = {isa = PBXBuildFile; fileRef = 228E9E1729517D8200B2571E /* ImportGyroflowProjectView.m */; };
+		228E9E1C2951DB6900B2571E /* ReloadGyroflowProjectView.m in Sources */ = {isa = PBXBuildFile; fileRef = 228E9E1B2951DB6900B2571E /* ReloadGyroflowProjectView.m */; };
+		228E9E1E2951E32600B2571E /* GyroflowToolbox.icns in Resources */ = {isa = PBXBuildFile; fileRef = 228E9E1D2951E32600B2571E /* GyroflowToolbox.icns */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -55,7 +58,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
-				2239AB192943F8F600028B77 /* Gyroflow XPC Service.pluginkit in Embed PlugIns */,
+				2239AB192943F8F600028B77 /* Gyroflow Toolbox Renderer.pluginkit in Embed PlugIns */,
 			);
 			name = "Embed PlugIns";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -66,7 +69,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				2239AB792945979800028B77 /* libgyroflow.dylib in Embed Libraries */,
+				2239AB792945979800028B77 /* libgyroflow_toolbox.dylib in Embed Libraries */,
 			);
 			name = "Embed Libraries";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -74,9 +77,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		2239AB0D2943F8F600028B77 /* Gyroflow for Final Cut Pro.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Gyroflow for Final Cut Pro.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		2239AB0D2943F8F600028B77 /* Gyroflow Toolbox.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Gyroflow Toolbox.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		2239AB102943F8F600028B77 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
-		2239AB182943F8F600028B77 /* Gyroflow XPC Service.pluginkit */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Gyroflow XPC Service.pluginkit"; sourceTree = BUILT_PRODUCTS_DIR; };
+		2239AB182943F8F600028B77 /* Gyroflow Toolbox Renderer.pluginkit */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Gyroflow Toolbox Renderer.pluginkit"; sourceTree = BUILT_PRODUCTS_DIR; };
 		2239AB1C2943F8F600028B77 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		2239AB1E2943F8F600028B77 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
 		2239AB202943F8F600028B77 /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
@@ -102,12 +105,18 @@
 		2239AB56294400B500028B77 /* GyroflowParameters.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = GyroflowParameters.m; sourceTree = "<group>"; };
 		2239AB58294400CE00028B77 /* GyroflowParameters.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GyroflowParameters.h; sourceTree = "<group>"; };
 		2239AB5A2944150B00028B77 /* Shared.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Shared.xcconfig; sourceTree = "<group>"; };
-		2239AB5B29453BB400028B77 /* GyroflowFCP.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = GyroflowFCP.icns; path = Resources/GyroflowFCP.icns; sourceTree = "<group>"; };
-		2239AB6C2945471500028B77 /* Motion Templates */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "Motion Templates"; path = "Gyroflow/Wrapper Application/Resources/Motion Templates"; sourceTree = "<group>"; };
-		2239AB772945979800028B77 /* libgyroflow.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libgyroflow.dylib; path = Frameworks/gyroflow/binary/libgyroflow.dylib; sourceTree = "<group>"; };
+		2239AB5B29453BB400028B77 /* GyroflowToolbox.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = GyroflowToolbox.icns; sourceTree = "<group>"; };
+		2239AB6C2945471500028B77 /* Motion Templates */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "Motion Templates"; path = "Resources/Motion Templates"; sourceTree = "<group>"; };
+		2239AB772945979800028B77 /* libgyroflow_toolbox.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libgyroflow_toolbox.dylib; path = Frameworks/gyroflow/binary/libgyroflow_toolbox.dylib; sourceTree = "<group>"; };
 		2239AB7A2945983D00028B77 /* gyroflow.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = gyroflow.h; path = Frameworks/gyroflow/inc/gyroflow.h; sourceTree = SOURCE_ROOT; };
 		2239AB7C2945A69100028B77 /* lib.rs */ = {isa = PBXFileReference; lastKnownFileType = text; name = lib.rs; path = Frameworks/gyroflow/src/lib.rs; sourceTree = SOURCE_ROOT; };
-		22E4989F29492E8100580F67 /* Cargo.toml */ = {isa = PBXFileReference; lastKnownFileType = file; name = Cargo.toml; path = Frameworks/gyroflow/Cargo.toml; sourceTree = SOURCE_ROOT; };
+		228E9E1629517D8200B2571E /* ImportGyroflowProjectView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ImportGyroflowProjectView.h; sourceTree = "<group>"; };
+		228E9E1729517D8200B2571E /* ImportGyroflowProjectView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ImportGyroflowProjectView.m; sourceTree = "<group>"; };
+		228E9E1929517DDA00B2571E /* GyroflowConstants.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GyroflowConstants.h; sourceTree = "<group>"; };
+		228E9E1A2951DB6800B2571E /* ReloadGyroflowProjectView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ReloadGyroflowProjectView.h; sourceTree = "<group>"; };
+		228E9E1B2951DB6900B2571E /* ReloadGyroflowProjectView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ReloadGyroflowProjectView.m; sourceTree = "<group>"; };
+		228E9E1D2951E32600B2571E /* GyroflowToolbox.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = GyroflowToolbox.icns; path = "Gyroflow/Wrapper Application/GyroflowToolbox.icns"; sourceTree = SOURCE_ROOT; };
+		22E4989F29492E8100580F67 /* Cargo.toml */ = {isa = PBXFileReference; lastKnownFileType = text; name = Cargo.toml; path = Frameworks/gyroflow/Cargo.toml; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -128,7 +137,7 @@
 				2239AB1D2943F8F600028B77 /* Foundation.framework in Frameworks */,
 				2239AB1F2943F8F600028B77 /* AppKit.framework in Frameworks */,
 				2239AB252943F8F600028B77 /* FxPlug.framework in Frameworks */,
-				2239AB782945979800028B77 /* libgyroflow.dylib in Frameworks */,
+				2239AB782945979800028B77 /* libgyroflow_toolbox.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -138,7 +147,6 @@
 		2239AB042943F8F600028B77 = {
 			isa = PBXGroup;
 			children = (
-				2239AB6C2945471500028B77 /* Motion Templates */,
 				2239AB282943F8F600028B77 /* Gyroflow */,
 				2239AB0F2943F8F600028B77 /* Frameworks */,
 				2239AB0E2943F8F600028B77 /* Products */,
@@ -148,8 +156,8 @@
 		2239AB0E2943F8F600028B77 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				2239AB0D2943F8F600028B77 /* Gyroflow for Final Cut Pro.app */,
-				2239AB182943F8F600028B77 /* Gyroflow XPC Service.pluginkit */,
+				2239AB0D2943F8F600028B77 /* Gyroflow Toolbox.app */,
+				2239AB182943F8F600028B77 /* Gyroflow Toolbox Renderer.pluginkit */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -157,7 +165,7 @@
 		2239AB0F2943F8F600028B77 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				2239AB772945979800028B77 /* libgyroflow.dylib */,
+				2239AB772945979800028B77 /* libgyroflow_toolbox.dylib */,
 				2239AB102943F8F600028B77 /* Cocoa.framework */,
 				2239AB1C2943F8F600028B77 /* Foundation.framework */,
 				2239AB1E2943F8F600028B77 /* AppKit.framework */,
@@ -182,14 +190,10 @@
 		2239AB292943F8F600028B77 /* Wrapper Application */ = {
 			isa = PBXGroup;
 			children = (
-				2239AB5B29453BB400028B77 /* GyroflowFCP.icns */,
-				2239AB2A2943F8F600028B77 /* AppDelegate.h */,
-				2239AB2B2943F8F600028B77 /* AppDelegate.m */,
-				2239AB2F2943F8F600028B77 /* main.m */,
-				2239AB332943F8F600028B77 /* Info.plist */,
-				2239AB352943F8F600028B77 /* InfoPlist.strings */,
-				2239AB3A2943F8F600028B77 /* MainMenu.xib */,
-				2239AB422943F8F600028B77 /* SandboxEntitlements.entitlements */,
+				228E9E0E294E80C300B2571E /* Code */,
+				228E9E0F294E810600B2571E /* User Interface */,
+				228E9E10294E812300B2571E /* Resources */,
+				228E9E11294E813900B2571E /* Extras */,
 			);
 			path = "Wrapper Application";
 			sourceTree = "<group>";
@@ -197,18 +201,10 @@
 		2239AB2D2943F8F600028B77 /* Plugin */ = {
 			isa = PBXGroup;
 			children = (
-				2239AB2E2943F8F600028B77 /* GyroflowPlugIn.h */,
-				2239AB312943F8F600028B77 /* GyroflowPlugIn.m */,
-				2239AB58294400CE00028B77 /* GyroflowParameters.h */,
-				2239AB56294400B500028B77 /* GyroflowParameters.m */,
-				2239AB342943F8F600028B77 /* MetalDeviceCache.h */,
-				2239AB382943F8F600028B77 /* MetalDeviceCache.m */,
-				2239AB402943F8F600028B77 /* TileableRemoteGyroflow.metal */,
-				2239AB432943F8F600028B77 /* TileableRemoteGyroflowShaderTypes.h */,
-				2239AB442943F8F600028B77 /* main.m */,
-				2239AB462943F8F600028B77 /* Info.plist */,
-				2239AB472943F8F600028B77 /* InfoPlist.strings */,
-				2239AB4A2943F8F600028B77 /* Localizable.strings */,
+				228E9E13294E815E00B2571E /* Code */,
+				228E9E12294E815200B2571E /* Metal Device Cache */,
+				228E9E14294E816D00B2571E /* Shader */,
+				228E9E15294E817700B2571E /* Extras */,
 			);
 			path = Plugin;
 			sourceTree = "<group>";
@@ -231,6 +227,89 @@
 			name = Rust;
 			sourceTree = "<group>";
 		};
+		228E9E0E294E80C300B2571E /* Code */ = {
+			isa = PBXGroup;
+			children = (
+				2239AB2A2943F8F600028B77 /* AppDelegate.h */,
+				2239AB2B2943F8F600028B77 /* AppDelegate.m */,
+				2239AB2F2943F8F600028B77 /* main.m */,
+			);
+			name = Code;
+			sourceTree = "<group>";
+		};
+		228E9E0F294E810600B2571E /* User Interface */ = {
+			isa = PBXGroup;
+			children = (
+				2239AB3A2943F8F600028B77 /* MainMenu.xib */,
+			);
+			name = "User Interface";
+			sourceTree = "<group>";
+		};
+		228E9E10294E812300B2571E /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				2239AB6C2945471500028B77 /* Motion Templates */,
+			);
+			name = Resources;
+			sourceTree = "<group>";
+		};
+		228E9E11294E813900B2571E /* Extras */ = {
+			isa = PBXGroup;
+			children = (
+				2239AB5B29453BB400028B77 /* GyroflowToolbox.icns */,
+				2239AB332943F8F600028B77 /* Info.plist */,
+				2239AB352943F8F600028B77 /* InfoPlist.strings */,
+				2239AB422943F8F600028B77 /* SandboxEntitlements.entitlements */,
+			);
+			name = Extras;
+			sourceTree = "<group>";
+		};
+		228E9E12294E815200B2571E /* Metal Device Cache */ = {
+			isa = PBXGroup;
+			children = (
+				2239AB342943F8F600028B77 /* MetalDeviceCache.h */,
+				2239AB382943F8F600028B77 /* MetalDeviceCache.m */,
+			);
+			name = "Metal Device Cache";
+			sourceTree = "<group>";
+		};
+		228E9E13294E815E00B2571E /* Code */ = {
+			isa = PBXGroup;
+			children = (
+				228E9E1929517DDA00B2571E /* GyroflowConstants.h */,
+				2239AB2E2943F8F600028B77 /* GyroflowPlugIn.h */,
+				2239AB312943F8F600028B77 /* GyroflowPlugIn.m */,
+				2239AB58294400CE00028B77 /* GyroflowParameters.h */,
+				2239AB56294400B500028B77 /* GyroflowParameters.m */,
+				228E9E1629517D8200B2571E /* ImportGyroflowProjectView.h */,
+				228E9E1729517D8200B2571E /* ImportGyroflowProjectView.m */,
+				228E9E1A2951DB6800B2571E /* ReloadGyroflowProjectView.h */,
+				228E9E1B2951DB6900B2571E /* ReloadGyroflowProjectView.m */,
+			);
+			name = Code;
+			sourceTree = "<group>";
+		};
+		228E9E14294E816D00B2571E /* Shader */ = {
+			isa = PBXGroup;
+			children = (
+				2239AB402943F8F600028B77 /* TileableRemoteGyroflow.metal */,
+				2239AB432943F8F600028B77 /* TileableRemoteGyroflowShaderTypes.h */,
+			);
+			name = Shader;
+			sourceTree = "<group>";
+		};
+		228E9E15294E817700B2571E /* Extras */ = {
+			isa = PBXGroup;
+			children = (
+				228E9E1D2951E32600B2571E /* GyroflowToolbox.icns */,
+				2239AB442943F8F600028B77 /* main.m */,
+				2239AB462943F8F600028B77 /* Info.plist */,
+				2239AB472943F8F600028B77 /* InfoPlist.strings */,
+				2239AB4A2943F8F600028B77 /* Localizable.strings */,
+			);
+			name = Extras;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -251,7 +330,7 @@
 			);
 			name = "Wrapper Application";
 			productName = "Wrapper Application";
-			productReference = 2239AB0D2943F8F600028B77 /* Gyroflow for Final Cut Pro.app */;
+			productReference = 2239AB0D2943F8F600028B77 /* Gyroflow Toolbox.app */;
 			productType = "com.apple.product-type.application";
 		};
 		2239AB172943F8F600028B77 /* XPC Service */ = {
@@ -271,7 +350,7 @@
 			);
 			name = "XPC Service";
 			productName = "XPC Service";
-			productReference = 2239AB182943F8F600028B77 /* Gyroflow XPC Service.pluginkit */;
+			productReference = 2239AB182943F8F600028B77 /* Gyroflow Toolbox Renderer.pluginkit */;
 			productType = "com.apple.product-type.bundle";
 		};
 /* End PBXNativeTarget section */
@@ -317,7 +396,7 @@
 			files = (
 				2239AB6D2945471500028B77 /* Motion Templates in Resources */,
 				2239AB372943F8F600028B77 /* InfoPlist.strings in Resources */,
-				2239AB5C29453BB400028B77 /* GyroflowFCP.icns in Resources */,
+				2239AB5C29453BB400028B77 /* GyroflowToolbox.icns in Resources */,
 				2239AB3C2943F8F600028B77 /* MainMenu.xib in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -326,6 +405,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				228E9E1E2951E32600B2571E /* GyroflowToolbox.icns in Resources */,
 				2239AB492943F8F600028B77 /* InfoPlist.strings in Resources */,
 				2239AB4C2943F8F600028B77 /* Localizable.strings in Resources */,
 			);
@@ -388,7 +468,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				228E9E1C2951DB6900B2571E /* ReloadGyroflowProjectView.m in Sources */,
 				2239AB392943F8F600028B77 /* MetalDeviceCache.m in Sources */,
+				228E9E1829517D8200B2571E /* ImportGyroflowProjectView.m in Sources */,
 				2239AB412943F8F600028B77 /* TileableRemoteGyroflow.metal in Sources */,
 				2239AB452943F8F600028B77 /* main.m in Sources */,
 				2239AB57294400B500028B77 /* GyroflowParameters.m in Sources */,
@@ -590,8 +672,8 @@
 				);
 				MACH_O_TYPE = mh_execute;
 				MARKETING_VERSION = "$(HARDCODED_VERSION)";
-				PRODUCT_BUNDLE_IDENTIFIER = GyroflowRenderer;
-				PRODUCT_NAME = "Gyroflow $(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = GyroflowToolboxRenderer;
+				PRODUCT_NAME = "Gyroflow Toolbox Renderer";
 				SWIFT_OBJC_BRIDGING_HEADER = "Gyroflow/Plugin/XPC Service-Bridging-Header.h";
 				WRAPPER_EXTENSION = pluginkit;
 			};
@@ -615,8 +697,8 @@
 				);
 				MACH_O_TYPE = mh_execute;
 				MARKETING_VERSION = "$(HARDCODED_VERSION)";
-				PRODUCT_BUNDLE_IDENTIFIER = GyroflowRenderer;
-				PRODUCT_NAME = "Gyroflow $(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = GyroflowToolboxRenderer;
+				PRODUCT_NAME = "Gyroflow Toolbox Renderer";
 				SWIFT_OBJC_BRIDGING_HEADER = "Gyroflow/Plugin/XPC Service-Bridging-Header.h";
 				WRAPPER_EXTENSION = pluginkit;
 			};
@@ -633,8 +715,8 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				INFOPLIST_FILE = "Gyroflow/Wrapper Application/Info.plist";
 				MARKETING_VERSION = "$(HARDCODED_VERSION)";
-				PRODUCT_BUNDLE_IDENTIFIER = GyroflowForFinalCutPro;
-				PRODUCT_NAME = "Gyroflow for Final Cut Pro";
+				PRODUCT_BUNDLE_IDENTIFIER = GyroflowToolbox;
+				PRODUCT_NAME = "Gyroflow Toolbox";
 				SWIFT_OBJC_BRIDGING_HEADER = "Gyroflow/Wrapper Application/Wrapper Application-Bridging-Header.h";
 			};
 			name = Debug;
@@ -650,8 +732,8 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				INFOPLIST_FILE = "Gyroflow/Wrapper Application/Info.plist";
 				MARKETING_VERSION = "$(HARDCODED_VERSION)";
-				PRODUCT_BUNDLE_IDENTIFIER = GyroflowForFinalCutPro;
-				PRODUCT_NAME = "Gyroflow for Final Cut Pro";
+				PRODUCT_BUNDLE_IDENTIFIER = GyroflowToolbox;
+				PRODUCT_NAME = "Gyroflow Toolbox";
 				SWIFT_OBJC_BRIDGING_HEADER = "Gyroflow/Wrapper Application/Wrapper Application-Bridging-Header.h";
 			};
 			name = Release;

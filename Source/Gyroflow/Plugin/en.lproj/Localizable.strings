@@ -1,4 +1,3 @@
 /* Localized versions of Info.plist keys */
 
-"Gyroflow::FxPlug Description" = "Stabilizes footage using a Gyroflow File.";
-
+"Gyroflow Toolbox::FxPlug Description" = "Stabilizes footage using a Gyroflow Project.";

@@ -1,6 +1,6 @@
 //
 //  gyroflow.h
-//  Gyroflow for Final Cut Pro
+//  Gyroflow Toolbox
 //
 //  Created by Chris Hocking on 11/12/2022.
 //
@@ -16,6 +16,7 @@ const char* processFrame(
     uint32_t                    width,
     uint32_t                    height,
     const char*                 path,
+    const char*                 data,
     int64_t                     timestamp,
     double                      fov,
     double                      smoothness,

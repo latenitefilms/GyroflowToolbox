@@ -67,3 +67,4 @@ fastlane/test_output
 
 iOSInjectionProject/
 *.DS_Store
+Source/Frameworks/gyroflow/binary/libgyroflow_toolbox.dylib

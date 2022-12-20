@@ -1,8 +1,7 @@
 [package]
-name = "gyroflow"
+name = "gyroflow-toolbox"
 version = "1.0.0"
-authors = ["Ilya Epifanov <elijah.epifanov@gmail.com>", "Adrian <adrian.eddy@gmail.com>", "Chris Hocking <chris@latenitefilms.com>"]
-license = "GPL-3.0-or-later"
+authors = ["Chris Hocking <chris@latenitefilms.com>", "Adrian <adrian.eddy@gmail.com>"]
 edition = "2021"
 
 [lib]

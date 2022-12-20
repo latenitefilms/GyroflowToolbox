@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>GyroflowXPCService</string>
+	<string>Gyroflow Toolbox Renderer</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -48,7 +48,7 @@
 	<array>
 		<dict>
 			<key>groupName</key>
-			<string>Gyroflow</string>
+			<string>Gyroflow Toolbox</string>
 			<key>uuid</key>
 			<string>67F9D1B5-88D7-4846-B08A-192BDD739992</string>
 		</dict>
@@ -59,11 +59,11 @@
 			<key>className</key>
 			<string>GyroflowPlugIn</string>
 			<key>displayName</key>
-			<string>Gyroflow::FxPlug Name</string>
+			<string>Gyroflow Toolbox::FxPlug Name</string>
 			<key>group</key>
 			<string>67F9D1B5-88D7-4846-B08A-192BDD739992</string>
 			<key>infoString</key>
-			<string>Gyroflow::FxPlug Description</string>
+			<string>Gyroflow Toolbox::FxPlug Description</string>
 			<key>protocolNames</key>
 			<array>
 				<string>FxFilter</string>

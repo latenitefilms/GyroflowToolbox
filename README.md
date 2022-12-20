@@ -1,17 +1,25 @@
-# Gyroflow for Final Cut Pro
+# Gyroflow Toolbox
 
-Allows you to import Gyroflow Projects into Apple's Final Cut Pro.
+Allows you to import [Gyroflow](https://github.com/gyroflow/gyroflow) Projects into Apple's [Final Cut Pro](https://www.apple.com/final-cut-pro/).
 
-This is currently very much a work-in-progress proof-of-concept, and not ready for end-users.
+## What is Gyroflow?
 
-This repository only contains the FxPlug4 code. All the real magic happens in the main [Gyroflow Repo](https://github.com/gyroflow/gyroflow).
+[Gyroflow](https://github.com/gyroflow/gyroflow) is a free and open source application that can stabilize your video by using motion data from a gyroscope and optionally an accelerometer. Modern cameras record that data internally (GoPro, Sony, Insta360 etc), and Gyroflow stabilizes the captured footage precisely by using them. It can also use gyro data from an external source (eg. from Betaflight blackbox).
 
-# License
+Gyroflow Toolbox allows you to take the stabilised data from Gyroflow and use it within Final Cut Pro as an effect.
 
-This software is licensed under GNU General Public License version 3 ([LICENSE](LICENSE.md)).
+## Credits
 
-# Contribution
+This repo was thrown together by [Chris Hocking](https://github.com/latenitefilms).
 
-Unless you explicitly state otherwise, any contribution intentionally submitted
-for inclusion in the work by you, as defined in the GNU General Public License version 3, shall be
-licensed as above, without any additional terms or conditions.
+However, none of this would be possible without the incredible [Gyroflow](https://github.com/gyroflow/gyroflow) project and the incredibly help and support from their main developer, [AdrianEddy](https://github.com/AdrianEddy).
+
+## License
+
+All the code within this repository is licensed under [MIT](LICENSE.md).
+
+However, as soon as you build/compile the Rust code, it uses [`gyroflow_core`](https://github.com/gyroflow/gyroflow/tree/master/src/core) as a dependancy, which uses the [GNU General Public License v3.0](https://github.com/gyroflow/gyroflow/blob/master/LICENSE).
+
+This means that as soon as you build/compile Gyroflow Toolbox, the application falls under the same [GNU General Public License v3.0](https://github.com/gyroflow/gyroflow/blob/master/LICENSE).
+
+All Releases in this repository also fall under the same [GNU General Public License v3.0](https://github.com/gyroflow/gyroflow/blob/master/LICENSE).
