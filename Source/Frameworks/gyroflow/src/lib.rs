@@ -139,29 +139,6 @@ pub extern "C" fn processFrame(
                 // Set the Interpolation:
                 //---------------------------------------------------------
                 manager.stabilization.write().interpolation = gyroflow_core::stabilization::Interpolation::Lanczos4;
-
-                //---------------------------------------------------------
-                // Set the FOV:
-                //---------------------------------------------------------
-                manager.params.write().fov = fov;
-
-                //---------------------------------------------------------
-                // Set the Lens Correction:
-                //---------------------------------------------------------
-                manager.params.write().lens_correction_amount = lens_correction;
-
-                //---------------------------------------------------------
-                // Set the Smoothness:
-                //---------------------------------------------------------
-                manager.smoothing.write().current_mut().set_parameter("smoothness", smoothness);
-
-                //---------------------------------------------------------
-                // Invalidate & Recompute, to make sure everything is
-                // up-to-date:
-                //---------------------------------------------------------
-                manager.invalidate_smoothing();
-                manager.recompute_blocking();
-                manager.params.write().calculate_ramped_timestamps(&manager.keyframes.read());
             },
             Err(e) => {
                 //---------------------------------------------------------
@@ -175,6 +152,29 @@ pub extern "C" fn processFrame(
         cache.get(&cache_key).unwrap().clone()
     };
 
+    //---------------------------------------------------------
+    // Set the FOV:
+    //---------------------------------------------------------
+    manager.params.write().fov = fov;
+
+    //---------------------------------------------------------
+    // Set the Lens Correction:
+    //---------------------------------------------------------
+    manager.params.write().lens_correction_amount = lens_correction;
+
+    //---------------------------------------------------------
+    // Set the Smoothness:
+    //---------------------------------------------------------
+    manager.smoothing.write().current_mut().set_parameter("smoothness", smoothness);
+
+    //---------------------------------------------------------
+    // Invalidate & Recompute, to make sure everything is
+    // up-to-date:
+    //---------------------------------------------------------
+    manager.invalidate_smoothing();
+    manager.recompute_blocking();
+    manager.params.write().calculate_ramped_timestamps(&manager.keyframes.read());
+    
     //---------------------------------------------------------
     // Send data in and get data out:
     //---------------------------------------------------------
