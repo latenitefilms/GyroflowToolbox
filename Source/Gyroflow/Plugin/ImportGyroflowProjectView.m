@@ -178,7 +178,7 @@
                 id<FxParameterSettingAPI_v5> paramSetAPI = [_apiManager apiForProtocol:@protocol(FxParameterSettingAPI_v5)];
                 if (paramSetAPI == nil)
                 {
-                    NSLog(@"[Gyroflow Toolbox] Unable to retrieve FxParameterSettingAPI_v5 in 'selectFileButtonPressed'.");
+                    [self showAlertWithMessage:@"An error has occurred." info:@"Unable to retrieve FxParameterSettingAPI_v5 in 'selectFileButtonPressed'. This shouldn't happen."];
                     return;
                 }
 

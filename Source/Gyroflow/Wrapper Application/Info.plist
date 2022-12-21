@@ -32,5 +32,34 @@
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>UTImportedTypeDeclarations</key>
+	<array>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.data</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>Gyroflow Project File</string>
+			<key>UTTypeIconFile</key>
+			<string>GyroflowDocument</string>
+			<key>UTTypeIcons</key>
+			<dict>
+				<key>UTTypeIconBadgeName</key>
+				<string>GyroflowDocument</string>
+			</dict>
+			<key>UTTypeIdentifier</key>
+			<string>xyz.gyroflow.project</string>
+			<key>UTTypeReferenceURL</key>
+			<string>xyz.gyroflow</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>gyroflow</string>
+				</array>
+			</dict>
+		</dict>
+	</array>
 </dict>
 </plist>
