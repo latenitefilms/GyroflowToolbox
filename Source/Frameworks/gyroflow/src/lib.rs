@@ -51,6 +51,7 @@ lazy_static! {
 
 // TODO: We still get the "Failed to setup logger" error message - so this "run once" code doesn't seem to work:
 
+/*
 lazy_static! {
     static ref SETUP_LOGGER: fn() = || {
         if let Err(e) = oslog::OsLogger::new("com.latenitefilms.GyroflowToolbox")
@@ -62,6 +63,7 @@ lazy_static! {
         }
     };
 }
+*/
 
 //---------------------------------------------------------
 // The "Process Frame" function:
@@ -86,7 +88,7 @@ pub extern "C" fn processFrame(
     //---------------------------------------------------------
     // Setting our NSLog Logger (only once):
     //---------------------------------------------------------
-    SETUP_LOGGER();
+    //SETUP_LOGGER();
 
     // -------------------------------------------------------------------------------
     // You can't use &str across FFI boundary, it's a Rust type.
@@ -193,7 +195,7 @@ pub extern "C" fn processFrame(
                 //---------------------------------------------------------
                 // Return an error message is something fails:
                 //---------------------------------------------------------
-                log::error!("[Gyroflow Toolbox] Failed to import Gyroflow File: {:?}", e);
+                //log::error!("[Gyroflow Toolbox] Failed to import Gyroflow File: {:?}", e);
             }
         }
 

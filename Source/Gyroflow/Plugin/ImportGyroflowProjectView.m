@@ -87,7 +87,7 @@
     //---------------------------------------------------------
     id<FxCustomParameterActionAPI_v4> actionAPI = [_apiManager apiForProtocol:@protocol(FxCustomParameterActionAPI_v4)];
     if (actionAPI == nil) {
-        NSLog(@"[Gyroflow Toolbox] Unable to retrieve FxCustomParameterActionAPI_v4 in selectFileButtonPressed.");
+        [self showAlertWithMessage:@"An error has occurred." info:@"Unable to retrieve 'FxCustomParameterActionAPI_v4' in ImportGyroflowProjectView's 'buttonPressed'. This shouldn't happen."];
         return;
     }
      
@@ -120,7 +120,7 @@
             BOOL startedOK = [url startAccessingSecurityScopedResource];
             
             if (startedOK == NO) {
-                NSLog(@"[Gyroflow Toolbox] ERROR - Failed to startAccessingSecurityScopedResource.");
+                [self showAlertWithMessage:@"An error has occurred." info:@"Failed to startAccessingSecurityScopedResource. This shouldn't happen."];
                 return;
             }
 
@@ -136,10 +136,10 @@
                                                       error:&bookmarkError];
             
             if (bookmarkError != nil) {
-                NSLog(@"[Gyroflow Toolbox] ERROR - Bookmark Error: %@", [bookmarkError localizedDescription]);
+                [self showAlertWithMessage:@"An error has occurred." info:[NSString stringWithFormat:@"Failed to resolve bookmark due to:\n\n%@", [bookmarkError localizedDescription]]];
                 return;
             } else if (bookmark == nil) {
-                NSLog(@"[Gyroflow Toolbox] ERROR - Bookmark Data is nil. This shouldn't happen.");
+                [self showAlertWithMessage:@"An error has occurred." info:@"Bookmark data is nil. This shouldn't happen."];
                 return;
             } else {
                 //NSLog(@"[Gyroflow Toolbox] Bookmark created successfully for: %@", [url path]);
@@ -154,7 +154,17 @@
                 NSError *readError = nil;
                 NSString *selectedGyroflowProjectData = [NSString stringWithContentsOfURL:url encoding:NSUTF8StringEncoding error:&readError];
                 if (readError != nil) {
-                    NSLog(@"[Gyroflow Toolbox] Failed to read Gyroflow Project File due to: %@", readError.localizedDescription);
+                    [self showAlertWithMessage:@"An error has occurred." info:[NSString stringWithFormat:@"Failed to read Gyroflow Project File due to:\n\n%@", [readError localizedDescription]]];
+                    return;
+                }
+                                
+                //---------------------------------------------------------
+                // Make sure there's Processed Gyro Data in the Gyroflow
+                // Project Data:
+                //---------------------------------------------------------
+                if (![selectedGyroflowProjectData containsString:@"integrated_quaternions"]) {
+                    [self showAlertWithMessage:@"Processed Gyro Data Not Found." info:@"The Gyroflow file you imported doesn't seem to contain any processed gyro data.\n\nPlease try exporting from Gyroflow again using the 'Export project file (including processed gyro data)' option."];
+                    return;
                 }
                 
                 //---------------------------------------------------------
@@ -212,6 +222,19 @@
             [url stopAccessingSecurityScopedResource];
         }
     }    
+}
+
+//---------------------------------------------------------
+// Show Alert:
+//---------------------------------------------------------
+- (void)showAlertWithMessage:(NSString*)message info:(NSString*)info
+{
+    NSAlert *alert          = [[[NSAlert alloc] init] autorelease];
+    alert.icon              = [NSImage imageNamed:@"GyroflowToolbox"];
+    alert.alertStyle        = NSAlertStyleInformational;
+    alert.messageText       = message;
+    alert.informativeText   = info;
+    [alert runModal];
 }
 
 //---------------------------------------------------------
