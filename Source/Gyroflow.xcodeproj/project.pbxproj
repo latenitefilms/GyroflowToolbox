@@ -179,8 +179,8 @@
 		2239AB282943F8F600028B77 /* Gyroflow */ = {
 			isa = PBXGroup;
 			children = (
-				2239AB7B2945A67600028B77 /* Rust */,
 				2239AB592944150B00028B77 /* Configuration */,
+				2239AB7B2945A67600028B77 /* Rust */,
 				2239AB292943F8F600028B77 /* Wrapper Application */,
 				2239AB2D2943F8F600028B77 /* Plugin */,
 			);

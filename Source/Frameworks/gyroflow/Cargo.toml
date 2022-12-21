@@ -1,6 +1,6 @@
 [package]
 name = "gyroflow-toolbox"
-version = "1.0.0"
+version = "1.0.0-beta.1"
 authors = ["Chris Hocking <chris@latenitefilms.com>", "Adrian <adrian.eddy@gmail.com>"]
 edition = "2021"
 
@@ -17,3 +17,4 @@ log = "0.4.17"
 oslog = "0.2.0"
 lazy_static = "1.4"
 lru = "0.8"
+nalgebra = { version = "0.31", features = ["serde-serialize"] }

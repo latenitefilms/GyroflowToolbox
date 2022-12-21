@@ -15,12 +15,13 @@ extern crate oslog;                         // A minimal safe wrapper around App
 //---------------------------------------------------------
 // Local name bindings:
 //---------------------------------------------------------
-use gyroflow_core::{StabilizationManager, stabilization::RGBAf16};
+use gyroflow_core::{StabilizationManager, stabilization::RGBAf16, stabilization::RGBAf};
 use gyroflow_core::gpu::{ BufferDescription, BufferSource };
 
 use lazy_static::*;                         // A macro for declaring lazily evaluated statics
 use libc::c_uchar;                          // Allows us to use `*const c_uchar`
 use lru::LruCache;                          // A LRU cache implementation
+use nalgebra::Vector4;                      // Allows us to use `Vector4`
 use std::ffi::CStr;                         // Allows us to use `CStr`
 use std::ffi::CString;                      // Allows us to use `CString`
 use std::os::raw::c_char;                   // Allows us to use `*const c_uchar`
@@ -31,15 +32,24 @@ use std::sync::Mutex;                       // A mutual exclusion primitive usef
 //---------------------------------------------------------
 // We only want to setup the Gyroflow Manager once:
 //---------------------------------------------------------
+
+// TODO: Add support for MTLPixelFormatBGRA8Unorm & MTLPixelFormatRGBA32Float
+
+//lazy_static! {
+//    static ref EIGHT_BIT_CACHE: Mutex<LruCache<String, Arc<StabilizationManager<RGBAf16>>>> = Mutex::new(LruCache::new(std::num::NonZeroUsize::new(1).unwrap())); // TODO: Fix if BGRA8Unorm is added.
+//}
 lazy_static! {
-    static ref CACHE: Mutex<LruCache<String, Arc<StabilizationManager<RGBAf16>>>> = Mutex::new(LruCache::new(std::num::NonZeroUsize::new(1).unwrap()));
+    static ref SIXTEEN_BIT_CACHE: Mutex<LruCache<String, Arc<StabilizationManager<RGBAf16>>>> = Mutex::new(LruCache::new(std::num::NonZeroUsize::new(1).unwrap()));
 }
+//lazy_static! {
+//    static ref THIRTY_TWO_BIT_CACHE: Mutex<LruCache<String, Arc<StabilizationManager<RGBAf>>>> = Mutex::new(LruCache::new(std::num::NonZeroUsize::new(1).unwrap()));
+//}
 
 //---------------------------------------------------------
 // We only want to run the `NSLog` code once:
 //---------------------------------------------------------
 
-// TODO: I'm not sure this "run once" code actually works as intended?
+// TODO: We still get the "Failed to setup logger" error message - so this "run once" code doesn't seem to work:
 
 lazy_static! {
     static ref SETUP_LOGGER: fn() = || {
@@ -60,6 +70,8 @@ lazy_static! {
 pub extern "C" fn processFrame(
     width: u32,
     height: u32,
+    pixel_format: *const c_char,
+    number_of_bytes: i8,
     path: *const c_char,
     data: *const c_char,
     timestamp: i64,
@@ -71,11 +83,6 @@ pub extern "C" fn processFrame(
     out_buffer: *mut c_uchar,
     out_buffer_size: u32
 ) -> *const c_char {
-    //---------------------------------------------------------
-    // Setup our cache:
-    //---------------------------------------------------------
-    let mut cache = CACHE.lock().unwrap();
-
     //---------------------------------------------------------
     // Setting our NSLog Logger (only once):
     //---------------------------------------------------------
@@ -91,10 +98,36 @@ pub extern "C" fn processFrame(
     let path_string = path_pointer.to_string_lossy();
 
     //---------------------------------------------------------
+    // Get Pixel Format:
+    //---------------------------------------------------------
+    let pixel_format_pointer = unsafe { CStr::from_ptr(pixel_format) };
+    let pixel_format_string = pixel_format_pointer.to_string_lossy();
+
+    //---------------------------------------------------------
+    // Setup our cache:
+    //---------------------------------------------------------
+    
+    // TODO: Add support for MTLPixelFormatBGRA8Unorm & MTLPixelFormatRGBA32Float
+    
+    let mut cache;
+    //if pixel_format_string == "BGRA8Unorm" {
+    //    cache = EIGHT_BIT_CACHE.lock().unwrap();
+    //} else if pixel_format_string == "RGBAf16" {
+        cache = SIXTEEN_BIT_CACHE.lock().unwrap();
+    //} else if pixel_format_string == "RGBAf" {
+    //    cache = THIRTY_TWO_BIT_CACHE.lock().unwrap();
+    //}
+    
+    //---------------------------------------------------------
     // Convert the output width and height to `usize`:
     //---------------------------------------------------------
     let output_width: usize = width as usize;
     let output_height: usize = height as usize;
+    
+    //---------------------------------------------------------
+    // Convert the number of bytes to `usize`:
+    //---------------------------------------------------------
+    let number_of_bytes_value: usize = number_of_bytes as usize;
 
     //---------------------------------------------------------
     // Cache the manager:
@@ -109,7 +142,17 @@ pub extern "C" fn processFrame(
         //---------------------------------------------------------
         // Setup the Gyroflow Manager:
         //---------------------------------------------------------
-        let manager = StabilizationManager::<RGBAf16>::default();
+        
+        // TODO: Add support for MTLPixelFormatBGRA8Unorm & MTLPixelFormatRGBA32Float
+        
+        let manager;
+        //if pixel_format_string == "BGRA8Unorm" {
+        //    manager = StabilizationManager::<RGBAf16>::default();
+        //} else if pixel_format_string == "RGBAf16" {
+            manager = StabilizationManager::<RGBAf16>::default();
+        //} else if pixel_format_string == "RGBAf" {
+        //    manager = StabilizationManager::<RGBAf>::default();
+        //}
 
         //---------------------------------------------------------
         // Import the Gyroflow Data:
@@ -139,6 +182,12 @@ pub extern "C" fn processFrame(
                 // Set the Interpolation:
                 //---------------------------------------------------------
                 manager.stabilization.write().interpolation = gyroflow_core::stabilization::Interpolation::Lanczos4;
+
+                //---------------------------------------------------------
+                // Force the background color to transparent:
+                //---------------------------------------------------------
+                let background_color: Vector4<f32> = Vector4::new(0.0, 0.0, 0.0, 0.0);
+                manager.stabilization.write().set_background(background_color);
             },
             Err(e) => {
                 //---------------------------------------------------------
@@ -174,15 +223,15 @@ pub extern "C" fn processFrame(
     manager.invalidate_smoothing();
     manager.recompute_blocking();
     manager.params.write().calculate_ramped_timestamps(&manager.keyframes.read());
-    
+
     //---------------------------------------------------------
-    // Send data in and get data out:
+    // Calculate buffer size and stride:
     //---------------------------------------------------------
     let input_buffer_size: usize = in_buffer_size as usize;
     let output_buffer_size: usize = out_buffer_size as usize;
 
-    let input_stride: usize = output_width * 4 * 2;
-    let output_stride: usize = output_width * 4 * 2;
+    let input_stride: usize = output_width * 4 * number_of_bytes_value;
+    let output_stride: usize = output_width * 4 * number_of_bytes_value;
 
     //---------------------------------------------------------
     // Write debugging information to Console.app:

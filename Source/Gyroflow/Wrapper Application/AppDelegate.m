@@ -209,7 +209,7 @@
                     NSLog(@"[Gyroflow Toolbox] Bookmark created successfully for: %@", [url path]);
                 }
                 
-                NSUserDefaults *userDefaults = [[NSUserDefaults alloc] init];
+                NSUserDefaults *userDefaults = [[[NSUserDefaults alloc] init] autorelease];
                 [userDefaults setObject:bookmark forKey:@"moviesBookmarkData"];
                 
                 //---------------------------------------------------------
@@ -233,7 +233,7 @@
     //---------------------------------------------------------
     // Check to see if Motion Template is already installed:
     //---------------------------------------------------------
-    NSUserDefaults *userDefaults = [[NSUserDefaults alloc] init];
+    NSUserDefaults *userDefaults = [[[NSUserDefaults alloc] init] autorelease];
     NSData *moviesBookmarkData = [userDefaults dataForKey:@"moviesBookmarkData"];
     
     if (moviesBookmarkData == nil) {

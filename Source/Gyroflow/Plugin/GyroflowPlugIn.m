@@ -492,7 +492,7 @@
         NSLog(@"[Gyroflow Toolbox] Unable to retrieve FxTimingAPI_v4 in pluginStateAtTime.");
         if (error != NULL) {
             *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                         code:kFxError_failedToLoadTimingAPI
+                                         code:kFxError_FailedToLoadTimingAPI
                                      userInfo:@{
                                                 NSLocalizedDescriptionKey :
                                                     @"Unable to retrieve FxTimingAPI_v4 in \
@@ -509,7 +509,7 @@
         NSLog(@"[Gyroflow Toolbox] Unable to retrieve FxParameterRetrievalAPI_v6 in pluginStateAtTime.");
         if (error != NULL) {
             *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                         code:kFxError_failedToLoadParameterGetAPI
+                                         code:kFxError_FailedToLoadParameterGetAPI
                                      userInfo:@{
                                                 NSLocalizedDescriptionKey :
                                                     @"Unable to retrieve FxParameterRetrievalAPI_v6 in \
@@ -597,7 +597,7 @@
         if (error != NULL) {
             NSString* errorMessage = [NSString stringWithFormat:@"[Gyroflow Toolbox] ERROR - Failed to create newPluginState due to '%@'", [newPluginStateError localizedDescription]];
             *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                         code:kFxError_plugInStateIsNil
+                                         code:kFxError_FailedToCreatePluginState
                                      userInfo:@{ NSLocalizedDescriptionKey : errorMessage }];
         }
         return NO;
@@ -609,7 +609,7 @@
         succeeded = YES;
     } else {
         *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                     code:kFxError_plugInStateIsNil
+                                     code:kFxError_PlugInStateIsNil
                                  userInfo:@{ NSLocalizedDescriptionKey : @"[Gyroflow Toolbox] pluginState is nil in -pluginState." }];
         succeeded = NO;
     }
@@ -781,10 +781,54 @@
     id<MTLTexture> inputTexture     = [sourceImages[0] metalTextureForDevice:inputDevice];
 
     //---------------------------------------------------------
+    // Determine the Pixel Format:
+    //---------------------------------------------------------
+    int numberOfBytes;
+    NSString *inputPixelFormat;
+    if (inputTexture.pixelFormat == MTLPixelFormatBGRA8Unorm) {
+        
+        // TODO: Add support for MTLPixelFormatBGRA8Unorm
+        
+        //numberOfBytes = 1;
+        //inputPixelFormat = @"BGRA8Unorm";
+        NSString *errorMessage = [NSString stringWithFormat:@"[Gyroflow Toolbox] LIMITATION - Unsupported pixelFormat for inputTexture: MTLPixelFormatBGRA8Unorm"];
+        if (outError != NULL) {
+            *outError = [NSError errorWithDomain:FxPlugErrorDomain
+                                            code:kFxError_UnsupportedPixelFormat
+                                        userInfo:@{ NSLocalizedDescriptionKey : errorMessage }];
+        }
+        return NO;
+    } else if (inputTexture.pixelFormat == MTLPixelFormatRGBA16Float) {
+        inputPixelFormat = @"RGBAf16";
+        numberOfBytes = 2;
+    } else if (inputTexture.pixelFormat == MTLPixelFormatRGBA32Float) {
+        
+        // TODO: Add support for MTLPixelFormatRGBA32Float
+        
+        //inputPixelFormat = @"RGBAf";
+        //numberOfBytes = 4;
+        NSString *errorMessage = [NSString stringWithFormat:@"[Gyroflow Toolbox] LIMITATION - Unsupported pixelFormat for inputTexture: MTLPixelFormatRGBA32Float"];
+        if (outError != NULL) {
+            *outError = [NSError errorWithDomain:FxPlugErrorDomain
+                                            code:kFxError_UnsupportedPixelFormat
+                                        userInfo:@{ NSLocalizedDescriptionKey : errorMessage }];
+        }
+        return NO;
+    } else {
+        NSString *errorMessage = [NSString stringWithFormat:@"[Gyroflow Toolbox] BUG - Unsupported pixelFormat for inputTexture: %lu", (unsigned long)inputTexture.pixelFormat];
+        if (outError != NULL) {
+            *outError = [NSError errorWithDomain:FxPlugErrorDomain
+                                            code:kFxError_UnsupportedPixelFormat
+                                        userInfo:@{ NSLocalizedDescriptionKey : errorMessage }];
+        }
+        return NO;
+    }
+    
+    //---------------------------------------------------------
     // Calculate the Buffer Size:
     //---------------------------------------------------------
-    unsigned long bufferLength      = inputTexture.width * inputTexture.height * 4 * 2;
-    unsigned long bytesPerRow       = inputTexture.width * 4 * 2;
+    unsigned long bufferLength      = inputTexture.width * inputTexture.height * 4 * numberOfBytes;
+    unsigned long bytesPerRow       = inputTexture.width * 4 * numberOfBytes;
     uint32_t sourceBufferSize       = (uint32_t)bufferLength;
     uint32_t outputBufferSize       = (uint32_t)bufferLength;
     
@@ -809,6 +853,7 @@
     //---------------------------------------------------------
     uint32_t        sourceWidth             = (uint32_t)inputTexture.width;
     uint32_t        sourceHeight            = (uint32_t)inputTexture.height;
+    const char*     sourcePixelFormat       = [inputPixelFormat UTF8String];
     const char*     sourcePath              = [gyroflowPath UTF8String];
     const char*     sourceData              = [gyroflowData UTF8String];
     int64_t         sourceTimestamp         = [timestamp floatValue];
@@ -826,6 +871,8 @@
         const char* result = processFrame(
                               sourceWidth,              // uint32_t
                               sourceHeight,             // uint32_t
+                              sourcePixelFormat,        // const char*
+                              numberOfBytes,            // int
                               sourcePath,               // const char*
                               sourceData,               // const char*
                               sourceTimestamp,          // int64_t
@@ -1060,6 +1107,20 @@
     // so we can re-use it again:
     //---------------------------------------------------------
     [deviceCache returnCommandQueueToCache:commandQueue];
+    
+    //---------------------------------------------------------
+    // Release the Input Textures:
+    //---------------------------------------------------------
+    if (inputTexture != nil) {
+        [inputTexture setPurgeableState:MTLPurgeableStateEmpty];
+        inputTexture = nil;
+    }
+    
+    //---------------------------------------------------------
+    // Release the buffers:
+    //---------------------------------------------------------
+    free(sourceBuffer);
+    free(outputBuffer);
     
     return YES;
 }

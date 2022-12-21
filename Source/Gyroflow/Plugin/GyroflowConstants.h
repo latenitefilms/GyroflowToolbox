@@ -35,9 +35,11 @@ enum {
 // none of the above error enum values are sufficient.
 //---------------------------------------------------------
 enum {
-    kFxError_failedToLoadTimingAPI = 100010,    // Failed to load FxTimingAPI_v4
-    kFxError_failedToLoadParameterGetAPI,       // Failed to load FxParameterRetrievalAPI_v6
-    kFxError_plugInStateIsNil                   // Plugin State is `nil`
+    kFxError_FailedToLoadTimingAPI = 100010,    // Failed to load FxTimingAPI_v4
+    kFxError_FailedToLoadParameterGetAPI,       // Failed to load FxParameterRetrievalAPI_v6
+    kFxError_PlugInStateIsNil,                  // Plugin State is `nil`
+    kFxError_UnsupportedPixelFormat,            // Unsupported Pixel Format
+    kFxError_FailedToCreatePluginState          // Failed to create plugin state
 };
 
 #endif /* GyroflowConstants_h */

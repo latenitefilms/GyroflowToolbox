@@ -15,6 +15,8 @@
 const char* processFrame(
     uint32_t                    width,
     uint32_t                    height,
+    const char*                 pixel_format,
+    int                         number_of_bytes,
     const char*                 path,
     const char*                 data,
     int64_t                     timestamp,
