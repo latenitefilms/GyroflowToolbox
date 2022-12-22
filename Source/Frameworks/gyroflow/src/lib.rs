@@ -15,7 +15,7 @@ extern crate oslog;                         // A minimal safe wrapper around App
 //---------------------------------------------------------
 // Local name bindings:
 //---------------------------------------------------------
-use gyroflow_core::{StabilizationManager, stabilization::RGBAf16, stabilization::RGBAf};
+use gyroflow_core::{StabilizationManager, stabilization::RGBAf16, stabilization::RGBAf, stabilization::BGRA8};
 use gyroflow_core::gpu::{ BufferDescription, BufferSource };
 
 use once_cell::sync::OnceCell;
