@@ -6,13 +6,6 @@
 //
 
 //---------------------------------------------------------
-// Import External Crates:
-//---------------------------------------------------------
-extern crate libc;                          // Raw FFI bindings to platform libraries like libc
-extern crate log;                           // A lightweight logging facade
-extern crate oslog;                         // A minimal safe wrapper around Apple's Logging system
-
-//---------------------------------------------------------
 // Local name bindings:
 //---------------------------------------------------------
 use gyroflow_core::{StabilizationManager, stabilization::*};
@@ -36,11 +29,7 @@ use std::sync::Mutex;                       // A mutual exclusion primitive usef
 //---------------------------------------------------------
 lazy_static! {
     static ref EIGHT_BIT_CACHE: Mutex<LruCache<String, Arc<StabilizationManager<BGRA8>>>> = Mutex::new(LruCache::new(std::num::NonZeroUsize::new(1).unwrap()));
-}
-lazy_static! {
     static ref SIXTEEN_BIT_CACHE: Mutex<LruCache<String, Arc<StabilizationManager<RGBAf16>>>> = Mutex::new(LruCache::new(std::num::NonZeroUsize::new(1).unwrap()));
-}
-lazy_static! {
     static ref THIRTY_TWO_BIT_CACHE: Mutex<LruCache<String, Arc<StabilizationManager<RGBAf>>>> = Mutex::new(LruCache::new(std::num::NonZeroUsize::new(1).unwrap()));
 }
 
@@ -87,7 +76,7 @@ fn process_frame<T: PixelType>(
    //---------------------------------------------------------
    // Cache the manager:
    //---------------------------------------------------------
-   let cache_key = format!("{path_string}{width}{height}");
+   let cache_key = format!("{path_string}{output_width}{output_height}");
    let manager = if let Some(manager) = cache.get(&cache_key) {
        //---------------------------------------------------------
        // Already cached:
@@ -146,10 +135,12 @@ fn process_frame<T: PixelType>(
        cache.get(&cache_key).unwrap().clone()
    };
 
+   //---------------------------------------------------------
+   // Have parameters changed:
+   //---------------------------------------------------------
+   let mut params_changed = false;
    {
        let mut params = manager.params.write();
-       let mut params_changed = false;
-       
        //---------------------------------------------------------
        // Set the FOV:
        //---------------------------------------------------------
@@ -165,27 +156,27 @@ fn process_frame<T: PixelType>(
            params.lens_correction_amount = lens_correction;
            params_changed = true;
        }
+    }
 
-       //---------------------------------------------------------
-       // Set the Smoothness:
-       //---------------------------------------------------------
-       {
-           let mut smoothing = manager.smoothing.write();
-           if smoothing.current().get_parameter("smoothness") != smoothness {
-               smoothing.current_mut().set_parameter("smoothness", smoothness);
-               params_changed = true;
-           }
+   //---------------------------------------------------------
+   // Set the Smoothness:
+   //---------------------------------------------------------
+   {
+       let mut smoothing = manager.smoothing.write();
+       if smoothing.current().get_parameter("smoothness") != smoothness {
+           smoothing.current_mut().set_parameter("smoothness", smoothness);
+           params_changed = true;
        }
+   }
        
-       //---------------------------------------------------------
-       // If something has changed, Invalidate & Recompute, to
-       // make sure everything is up-to-date:
-       //---------------------------------------------------------
-       if params_changed {
-           manager.invalidate_smoothing();
-           manager.recompute_blocking();
-           params.calculate_ramped_timestamps(&manager.keyframes.read());
-       }
+   //---------------------------------------------------------
+   // If something has changed, Invalidate & Recompute, to
+   // make sure everything is up-to-date:
+   //---------------------------------------------------------
+   if params_changed {
+       manager.invalidate_smoothing();
+       manager.recompute_blocking();
+       manager.params.write().calculate_ramped_timestamps(&manager.keyframes.read());
    }
    
    //---------------------------------------------------------

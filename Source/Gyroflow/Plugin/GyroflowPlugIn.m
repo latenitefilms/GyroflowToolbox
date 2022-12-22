@@ -822,14 +822,26 @@
                               outputBufferSize          // uint32_t
                               );
         
-        //---------------------------------------------------------
-        // If successful, replace the texture data:
-        //---------------------------------------------------------
         NSString *resultString = [NSString stringWithUTF8String: result];
+        //NSLog(@"[Gyroflow Toolbox] resultString: %@", resultString);
         if ([resultString isEqualToString:@"DONE"]) {
+            //---------------------------------------------------------
+            // If successful, replace the texture data:
+            //---------------------------------------------------------
             MTLRegion region = MTLRegionMake2D(0, 0, inputTexture.width, inputTexture.height);
             [inputTexture replaceRegion:region mipmapLevel:0 withBytes:outputBuffer bytesPerRow:bytesPerRow];
-        }
+        } else if ([resultString isEqualToString:@"FAIL"]) {
+            //---------------------------------------------------------
+            // If we get a "FAIL" then abort:
+            //---------------------------------------------------------
+            NSString *errorMessage = @"[Gyroflow Toolbox] A fail message was received from the Rust function.";
+            if (outError != NULL) {
+                *outError = [NSError errorWithDomain:FxPlugErrorDomain
+                                                code:kFxError_InvalidParameter
+                                            userInfo:@{ NSLocalizedDescriptionKey : errorMessage }];
+            }
+            return NO;
+        }        
     }
   
     //---------------------------------------------------------
