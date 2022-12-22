@@ -74,7 +74,7 @@ After you have installed Gyroflow and Gyroflow Toolbox, you'll see a Gyroflow To
 
 You can then apply this effect to any clips that are supported by Gyroflow.
 
-From the Inspector you can then click **Launch Gyroflow**, to open the Gyrflow application.
+From the Inspector you can then click **Launch Gyroflow**, to open the Gyroflow application.
 
 ![Screenshot](Documentation/07-install.png)
 
