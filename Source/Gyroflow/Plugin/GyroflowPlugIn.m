@@ -743,34 +743,14 @@
     int numberOfBytes;
     NSString *inputPixelFormat;
     if (inputTexture.pixelFormat == MTLPixelFormatBGRA8Unorm) {
-        
-        // TODO: Add support for MTLPixelFormatBGRA8Unorm
-        
-        //numberOfBytes = 1;
-        //inputPixelFormat = @"BGRA8Unorm";
-        NSString *errorMessage = [NSString stringWithFormat:@"[Gyroflow Toolbox] LIMITATION - Unsupported pixelFormat for inputTexture: MTLPixelFormatBGRA8Unorm"];
-        if (outError != NULL) {
-            *outError = [NSError errorWithDomain:FxPlugErrorDomain
-                                            code:kFxError_UnsupportedPixelFormat
-                                        userInfo:@{ NSLocalizedDescriptionKey : errorMessage }];
-        }
-        return NO;
+        numberOfBytes = 1;
+        inputPixelFormat = @"BGRA8";
     } else if (inputTexture.pixelFormat == MTLPixelFormatRGBA16Float) {
         inputPixelFormat = @"RGBAf16";
         numberOfBytes = 2;
     } else if (inputTexture.pixelFormat == MTLPixelFormatRGBA32Float) {
-        
-        // TODO: Add support for MTLPixelFormatRGBA32Float
-        
-        //inputPixelFormat = @"RGBAf";
-        //numberOfBytes = 4;
-        NSString *errorMessage = [NSString stringWithFormat:@"[Gyroflow Toolbox] LIMITATION - Unsupported pixelFormat for inputTexture: MTLPixelFormatRGBA32Float"];
-        if (outError != NULL) {
-            *outError = [NSError errorWithDomain:FxPlugErrorDomain
-                                            code:kFxError_UnsupportedPixelFormat
-                                        userInfo:@{ NSLocalizedDescriptionKey : errorMessage }];
-        }
-        return NO;
+        inputPixelFormat = @"RGBAf";
+        numberOfBytes = 4;
     } else {
         NSString *errorMessage = [NSString stringWithFormat:@"[Gyroflow Toolbox] BUG - Unsupported pixelFormat for inputTexture: %lu", (unsigned long)inputTexture.pixelFormat];
         if (outError != NULL) {
