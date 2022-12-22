@@ -48,8 +48,8 @@ lazy_static! {
 // The "Process The Frame" function that gets triggered
 // in Rust land:
 //---------------------------------------------------------
-fn processTheFrame<T: PixelType>(
-    cache: &LruCache<String, Arc<StabilizationManager<T>>>,
+fn process_frame<T: PixelType>(
+    cache: &mut LruCache<String, Arc<StabilizationManager<T>>>,
     width: u32,
     height: u32,
     number_of_bytes: i8,
@@ -247,13 +247,13 @@ pub extern "C" fn processFrame(
     //---------------------------------------------------------
     // Setting our NSLog Logger (only once):
     //---------------------------------------------------------
-    static LOGGER: OnceCell<Mutex<Option<oslog::OsLogger>>> = OnceCell::new();
+    static LOGGER: OnceCell<Mutex<Option<()>>> = OnceCell::new();
     LOGGER.get_or_init(|| {
-       let logger = oslog::OsLogger::new("com.latenitefilms.GyroflowToolbox")
-              .level_filter(log::LevelFilter::Debug)
-              .category_level_filter("Settings", log::LevelFilter::Trace)
-              .init().ok();
-       Mutex::new(logger)
+        let logger = oslog::OsLogger::new("com.latenitefilms.GyroflowToolbox")
+            .level_filter(log::LevelFilter::Debug)
+            .category_level_filter("Settings", log::LevelFilter::Trace)
+            .init().ok();
+        Mutex::new(logger)
     });
     
     //---------------------------------------------------------
@@ -265,16 +265,20 @@ pub extern "C" fn processFrame(
     //---------------------------------------------------------
     // Actually process the frame:
     //---------------------------------------------------------
-    match pixel_format_string {
-        std::borrow::Cow::Borrowed("BGRA8Unorm") => {
-            return processTheFrame::<BGRA8>(EIGHT_BIT_CACHE.lock().unwrap(), width, height, number_of_bytes, path, data, timestamp, fov, smoothness, lens_correction, in_buffer, in_buffer_size, out_buffer, out_buffer_size);
+    match pixel_format_string.as_ref() {
+        "BGRA8Unorm" => {
+            return process_frame::<BGRA8>(&mut EIGHT_BIT_CACHE.lock().unwrap(), width, height, number_of_bytes, path, data, timestamp, fov, smoothness, lens_correction, in_buffer, in_buffer_size, out_buffer, out_buffer_size);
         },
-        std::borrow::Cow::Borrowed("RGBAf16") => {
-            return processTheFrame::<RGBAf16>(SIXTEEN_BIT_CACHE.lock().unwrap(), width, height, number_of_bytes, path, data, timestamp, fov, smoothness, lens_correction, in_buffer, in_buffer_size, out_buffer, out_buffer_size);
+        "RGBAf16" => {
+            return process_frame::<RGBAf16>(&mut SIXTEEN_BIT_CACHE.lock().unwrap(), width, height, number_of_bytes, path, data, timestamp, fov, smoothness, lens_correction, in_buffer, in_buffer_size, out_buffer, out_buffer_size);
         },
-        std::borrow::Cow::Borrowed("RGBAf") => {
-            return processTheFrame::<RGBAf>(THIRTY_TWO_BIT_CACHE.lock().unwrap(), width, height, number_of_bytes, path, data, timestamp, fov, smoothness, lens_correction, in_buffer, in_buffer_size, out_buffer, out_buffer_size);
+        "RGBAf" => {
+            return process_frame::<RGBAf>(&mut THIRTY_TWO_BIT_CACHE.lock().unwrap(), width, height, number_of_bytes, path, data, timestamp, fov, smoothness, lens_correction, in_buffer, in_buffer_size, out_buffer, out_buffer_size);
+        },
+        _ => {
+            log::error!("[Gyroflow Toolbox] Unsupported pixel format: {:?}", pixel_format_string);
+            let result = CString::new("FAIL").unwrap();
+            return result.into_raw()
         }
     }
 }
-
