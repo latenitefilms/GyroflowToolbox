@@ -67,9 +67,9 @@ It's important that you include the processed gyro data, otherwise none of the s
 
 ![Screenshot](Documentation/08-install.png)
 
-You can now press the **Import Gyroflow Project** button in the Final Cut Pro Inspector to import it.
+You can now press the **Import Project** button in the Final Cut Pro Inspector to import it.
 
-The data from the Gyroflow Project gets saved within the Final Cut Pro library. If you want to reload it, you can either re-import, or if the file is in the same path, you can press **Reload Gyroflow Project**.
+The data from the Gyroflow Project gets saved within the Final Cut Pro library. If you want to reload it, you can either re-import, or if the file is in the same path, you can press **Reload Project**.
 
 You can adjust and keyframe the FOV, Smoothness and Lens Correction within Final Cut Pro.
 
