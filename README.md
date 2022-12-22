@@ -18,8 +18,6 @@ You can find a list of all the current supported gyro sources on the [Gyroflow R
 
 - Currently all our testing has been done on MacBook Pro's (16-inch 2021, M1 Max, 64GB RAM) running **Final Cut Pro 10.6.5** and **macOS Monterey 12.5.1**. We haven't yet properly tested Intel machines, older versions of macOS, older versions of Final Cut Pro or macOS Ventura. Please [submit an issue](https://github.com/latenitefilms/GyroflowToolbox/issues) if you run into problems.
 - Currently to get from FxPlug4 to Gyroflow and back again, we're going from GPU>RAM>GPU>RAM>GPU which isn't very efficient. Hopefully eventually we'll be able to just pass a Metal Texture directly to Gyroflow. ([Issue #6](https://github.com/latenitefilms/GyroflowToolbox/issues/6))
-- Currently only 16-bit Float is supported. If Final Cut Pro or Apple Motion supply 32-bit Float and 8-bit images - it won't work. This will be fixed in a later beta. ([Issue #5](https://github.com/latenitefilms/GyroflowToolbox/issues/5))
-- The "Import Gyroflow Project" and "Reload Gyroflow Project" buttons can be cropped if the width of the Final Cut Pro Inspector is too small. ([Issue #2](https://github.com/latenitefilms/GyroflowToolbox/issues/2))
 
 ## Installation
 

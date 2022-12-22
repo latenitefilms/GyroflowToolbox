@@ -1,6 +1,6 @@
 [package]
 name = "gyroflow-toolbox"
-version = "1.0.0-beta.2"
+version = "1.0.0-beta.3"
 authors = ["Chris Hocking <chris@latenitefilms.com>", "Adrian <adrian.eddy@gmail.com>"]
 edition = "2021"
 
