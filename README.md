@@ -10,9 +10,30 @@ Gyroflow Toolbox allows you to take the stabilised data from Gyroflow and use it
 
 You will need to install the latest [Gyroflow](https://gyroflow.xyz/download) application, before using Gyroflow Toolbox.
 
+## Test Footage
+
+The Gyroflow team have kindly shared some test footage that contains gyro data on [Google Drive](https://drive.google.com/drive/folders/1sbZiLN5-sv_sGul1E_DUOluB5OMHfySh?usp=sharing).
+
 ## Supported Gyro Sources
 
 You can find a list of all the current supported gyro sources on the [Gyroflow Repository](https://github.com/gyroflow/gyroflow#supported-gyro-sources).
+
+- GoPro (HERO 5 and later)
+- Sony (a1, a7c, a7r IV, a7 IV, a7s III, a9 II, FX3, FX6, FX9, RX0 II, RX100 VII, ZV1, ZV-E10)
+- Insta360 (OneR, OneRS, SMO 4k, Go, GO2, Caddx Peanut)
+- DJI (Avata, O3 Air Unit)
+- Blackmagic RAW (*.braw)
+- RED RAW (*.r3d)
+- Betaflight blackbox (*.bfl, *.bbl, *.csv)
+- ArduPilot logs (*.bin, *.log)
+- Gyroflow [.gcsv log](https://docs.gyroflow.xyz/logging/gcsv/)
+- iOS apps: [`Sensor Logger`](https://apps.apple.com/us/app/sensor-logger/id1531582925), [`G-Field Recorder`](https://apps.apple.com/at/app/g-field-recorder/id1154585693), [`Gyro`](https://apps.apple.com/us/app/gyro-record-device-motion-data/id1161532981), [`GyroCam`](https://apps.apple.com/us/app/gyrocam-professional-camera/id1614296781)
+- Android apps: [`Sensor Logger`](https://play.google.com/store/apps/details?id=com.kelvin.sensorapp&hl=de_AT&gl=US), [`Sensor Record`](https://play.google.com/store/apps/details?id=de.martingolpashin.sensor_record), [`OpenCamera Sensors`](https://github.com/MobileRoboticsSkoltech/OpenCamera-Sensors), [`MotionCam Pro`](https://play.google.com/store/apps/details?id=com.motioncam.pro)
+- Runcam CSV (Runcam 5 Orange, iFlight GOCam GR, Runcam Thumb, Mobius Maxi 4K)
+- Hawkeye Firefly X Lite CSV
+- WitMotion (WT901SDCL binary and *.txt)
+- Vuze (VuzeXR)
+- KanDao (Obisidian Pro)
 
 ## Known Issues
 
