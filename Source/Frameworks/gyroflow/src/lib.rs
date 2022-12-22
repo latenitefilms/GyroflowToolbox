@@ -18,6 +18,7 @@ extern crate oslog;                         // A minimal safe wrapper around App
 use gyroflow_core::{StabilizationManager, stabilization::RGBAf16, stabilization::RGBAf};
 use gyroflow_core::gpu::{ BufferDescription, BufferSource };
 
+use once_cell::sync::OnceCell;
 use lazy_static::*;                         // A macro for declaring lazily evaluated statics
 use libc::c_uchar;                          // Allows us to use `*const c_uchar`
 use lru::LruCache;                          // A LRU cache implementation
@@ -32,38 +33,15 @@ use std::sync::Mutex;                       // A mutual exclusion primitive usef
 //---------------------------------------------------------
 // We only want to setup the Gyroflow Manager once:
 //---------------------------------------------------------
-
-// TODO: Add support for MTLPixelFormatBGRA8Unorm & MTLPixelFormatRGBA32Float
-
-//lazy_static! {
-//    static ref EIGHT_BIT_CACHE: Mutex<LruCache<String, Arc<StabilizationManager<RGBAf16>>>> = Mutex::new(LruCache::new(std::num::NonZeroUsize::new(1).unwrap())); // TODO: Fix if BGRA8Unorm is added.
-//}
+lazy_static! {
+    static ref EIGHT_BIT_CACHE: Mutex<LruCache<String, Arc<StabilizationManager<BGRA8>>>> = Mutex::new(LruCache::new(std::num::NonZeroUsize::new(1).unwrap()));
+}
 lazy_static! {
     static ref SIXTEEN_BIT_CACHE: Mutex<LruCache<String, Arc<StabilizationManager<RGBAf16>>>> = Mutex::new(LruCache::new(std::num::NonZeroUsize::new(1).unwrap()));
 }
-//lazy_static! {
-//    static ref THIRTY_TWO_BIT_CACHE: Mutex<LruCache<String, Arc<StabilizationManager<RGBAf>>>> = Mutex::new(LruCache::new(std::num::NonZeroUsize::new(1).unwrap()));
-//}
-
-//---------------------------------------------------------
-// We only want to run the `NSLog` code once:
-//---------------------------------------------------------
-
-// TODO: We still get the "Failed to setup logger" error message - so this "run once" code doesn't seem to work:
-
-/*
 lazy_static! {
-    static ref SETUP_LOGGER: fn() = || {
-        if let Err(e) = oslog::OsLogger::new("com.latenitefilms.GyroflowToolbox")
-               .level_filter(log::LevelFilter::Debug)
-               .category_level_filter("Settings", log::LevelFilter::Trace)
-               .init()
-        {
-            log::error!("[Gyroflow] Failed to setup logger: {:?}", e);
-        }
-    };
+    static ref THIRTY_TWO_BIT_CACHE: Mutex<LruCache<String, Arc<StabilizationManager<RGBAf>>>> = Mutex::new(LruCache::new(std::num::NonZeroUsize::new(1).unwrap()));
 }
-*/
 
 //---------------------------------------------------------
 // The "Process Frame" function:
@@ -88,7 +66,14 @@ pub extern "C" fn processFrame(
     //---------------------------------------------------------
     // Setting our NSLog Logger (only once):
     //---------------------------------------------------------
-    //SETUP_LOGGER();
+    static LOGGER: OnceCell<Mutex<Option<oslog::OsLogger>>> = OnceCell::new();
+    LOGGER.get_or_init(|| {
+       let logger = oslog::OsLogger::new("com.latenitefilms.GyroflowToolbox")
+              .level_filter(log::LevelFilter::Debug)
+              .category_level_filter("Settings", log::LevelFilter::Trace)
+              .init().ok();
+       Mutex::new(logger)
+    });
 
     // -------------------------------------------------------------------------------
     // You can't use &str across FFI boundary, it's a Rust type.
@@ -108,17 +93,14 @@ pub extern "C" fn processFrame(
     //---------------------------------------------------------
     // Setup our cache:
     //---------------------------------------------------------
-    
-    // TODO: Add support for MTLPixelFormatBGRA8Unorm & MTLPixelFormatRGBA32Float
-    
     let mut cache;
-    //if pixel_format_string == "BGRA8Unorm" {
-    //    cache = EIGHT_BIT_CACHE.lock().unwrap();
-    //} else if pixel_format_string == "RGBAf16" {
+    if pixel_format_string == "BGRA8Unorm" {
+        cache = EIGHT_BIT_CACHE.lock().unwrap();
+    } else if pixel_format_string == "RGBAf16" {
         cache = SIXTEEN_BIT_CACHE.lock().unwrap();
-    //} else if pixel_format_string == "RGBAf" {
-    //    cache = THIRTY_TWO_BIT_CACHE.lock().unwrap();
-    //}
+    } else if pixel_format_string == "RGBAf" {
+        cache = THIRTY_TWO_BIT_CACHE.lock().unwrap();
+    }
     
     //---------------------------------------------------------
     // Convert the output width and height to `usize`:
@@ -144,17 +126,14 @@ pub extern "C" fn processFrame(
         //---------------------------------------------------------
         // Setup the Gyroflow Manager:
         //---------------------------------------------------------
-        
-        // TODO: Add support for MTLPixelFormatBGRA8Unorm & MTLPixelFormatRGBA32Float
-        
         let manager;
-        //if pixel_format_string == "BGRA8Unorm" {
-        //    manager = StabilizationManager::<RGBAf16>::default();
-        //} else if pixel_format_string == "RGBAf16" {
+        if pixel_format_string == "BGRA8Unorm" {
+            manager = StabilizationManager::<BGRA8>::default();
+        } else if pixel_format_string == "RGBAf16" {
             manager = StabilizationManager::<RGBAf16>::default();
-        //} else if pixel_format_string == "RGBAf" {
-        //    manager = StabilizationManager::<RGBAf>::default();
-        //}
+        } else if pixel_format_string == "RGBAf" {
+            manager = StabilizationManager::<RGBAf>::default();
+        }
 
         //---------------------------------------------------------
         // Import the Gyroflow Data:
@@ -203,29 +182,46 @@ pub extern "C" fn processFrame(
         cache.get(&cache_key).unwrap().clone()
     };
 
-    //---------------------------------------------------------
-    // Set the FOV:
-    //---------------------------------------------------------
-    manager.params.write().fov = fov;
+    {
+        let mut params = manager.params.write();
+        let mut params_changed = false;
+        
+        //---------------------------------------------------------
+        // Set the FOV:
+        //---------------------------------------------------------
+        if params.fov != fov {
+            params.fov = fov;
+            params_changed = true;
+        }
+        
+        //---------------------------------------------------------
+        // Set the Lens Correction:
+        //---------------------------------------------------------
+        if params.lens_correction_amount != lens_correction {
+            params.lens_correction_amount = lens_correction;
+            params_changed = true;
+        }
 
-    //---------------------------------------------------------
-    // Set the Lens Correction:
-    //---------------------------------------------------------
-    manager.params.write().lens_correction_amount = lens_correction;
-
-    //---------------------------------------------------------
-    // Set the Smoothness:
-    //---------------------------------------------------------
-    manager.smoothing.write().current_mut().set_parameter("smoothness", smoothness);
-
-    //---------------------------------------------------------
-    // Invalidate & Recompute, to make sure everything is
-    // up-to-date:
-    //---------------------------------------------------------
-    manager.invalidate_smoothing();
-    manager.recompute_blocking();
-    manager.params.write().calculate_ramped_timestamps(&manager.keyframes.read());
-
+        //---------------------------------------------------------
+        // Set the Smoothness:
+        //---------------------------------------------------------
+        let mut smoothing = manager.smoothing.write();
+        if smoothing.current().get_parameter("smoothness") != smoothness {
+            smoothing.current_mut().set_parameter("smoothness", smoothness);
+            params_changed = true;
+        }
+        
+        //---------------------------------------------------------
+        // If something has changed, Invalidate & Recompute, to
+        // make sure everything is up-to-date:
+        //---------------------------------------------------------
+        if params_changed {
+            manager.invalidate_smoothing();
+            manager.recompute_blocking();
+            params.calculate_ramped_timestamps(&manager.keyframes.read());
+        }
+    }
+    
     //---------------------------------------------------------
     // Calculate buffer size and stride:
     //---------------------------------------------------------
@@ -272,7 +268,7 @@ pub extern "C" fn processFrame(
     //---------------------------------------------------------
     // Output the Stabilization result to the Console:
     //---------------------------------------------------------
-    //log::info!("[Gyroflow Toolbox] stabilization_result: {:?}", &stabilization_result);
+    log::info!("[Gyroflow Toolbox] stabilization_result: {:?}", &stabilization_result);
 
     //---------------------------------------------------------
     // Return "DONE":
