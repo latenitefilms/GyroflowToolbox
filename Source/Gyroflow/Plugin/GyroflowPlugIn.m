@@ -13,6 +13,8 @@
 #import "GyroflowPlugIn.h"
 #import "GyroflowParameters.h"
 #import "GyroflowConstants.h"
+
+#import "LaunchGyroflowView.h"
 #import "ImportGyroflowProjectView.h"
 #import "ReloadGyroflowProjectView.h"
 
@@ -123,28 +125,6 @@
 }
 
 //---------------------------------------------------------
-// "Launch Gyroflow" Button Pressed:
-//---------------------------------------------------------
-- (void)pressLaunchGyroflow
-{
-    NSString *bundleIdentifier = @"xyz.gyroflow";
-    NSURL *appURL = [[NSWorkspace sharedWorkspace] URLForApplicationWithBundleIdentifier:bundleIdentifier];
-    if (appURL) {
-        [[NSWorkspace sharedWorkspace] openURL:appURL];
-    } else {
-        NSLog(@"[Gyroflow Toolbox] Could not find app with bundle identifier: %@", bundleIdentifier);
-    }
-}
-
-//---------------------------------------------------------
-// "Reload Gyroflow Project" Button Pressed:
-//---------------------------------------------------------
-- (void)pressReloadGyroflowProject
-{
-    // TODO:
-}
-
-//---------------------------------------------------------
 // createViewForParameterID
 //
 // Provides an NSView to be associated with the given
@@ -155,7 +135,6 @@
     if (parameterID == kCB_ImportGyroflowProject) {
         NSView* view = [[ImportGyroflowProjectView alloc] initWithFrame:NSMakeRect(0, 0, 135, 32) // x y w h
                                                        andAPIManager:_apiManager];
-        
         //---------------------------------------------------------
         // It seems we need to cache the NSView, otherwise it gets
         // deallocated prematurely:
@@ -165,12 +144,20 @@
     } else if (parameterID == kCB_ReloadGyroflowProject) {
         NSView* view = [[ReloadGyroflowProjectView alloc] initWithFrame:NSMakeRect(0, 0, 135, 32) // x y w h
                                                           andAPIManager:_apiManager];
-        
         //---------------------------------------------------------
         // It seems we need to cache the NSView, otherwise it gets
         // deallocated prematurely:
         //---------------------------------------------------------
         reloadGyroflowProjectView = view;
+        return view;
+    } else if (parameterID == kCB_LaunchGyroflow) {
+        NSView* view = [[LaunchGyroflowView alloc] initWithFrame:NSMakeRect(0, 0, 135, 32) // x y w h
+                                                          andAPIManager:_apiManager];
+        //---------------------------------------------------------
+        // It seems we need to cache the NSView, otherwise it gets
+        // deallocated prematurely:
+        //---------------------------------------------------------
+        launchGyroflowView = view;
         return view;
     } else {
         NSLog(@"[Gyroflow Toolbox] BUG - createViewForParameterID requested a parameterID that we haven't allowed for: %u", (unsigned int)parameterID);
@@ -215,30 +202,14 @@
         }
         return NO;
     }
-
-    //---------------------------------------------------------
-    // START GROUP: 'Gyroflow Project'
-    //---------------------------------------------------------
-    if (![paramAPI startParameterSubGroup:@"Gyroflow Project"
-                              parameterID:kCB_GyroflowProject
-                           parameterFlags:kFxParameterFlag_DEFAULT])
-    {
-        if (error != NULL) {
-            NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox] Unable to add parameter: kCB_GyroflowProject"};
-            *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                         code:kFxError_InvalidParameter
-                                     userInfo:userInfo];
-        }
-        return NO;
-    }
     
     //---------------------------------------------------------
     // ADD PARAMETER: 'Launch Gyroflow' Button
     //---------------------------------------------------------
-    if (![paramAPI addPushButtonWithName:@"Launch Gyroflow"
+    if (![paramAPI addCustomParameterWithName:@"Launch Gyroflow"
                              parameterID:kCB_LaunchGyroflow
-                                selector:@selector(pressLaunchGyroflow)
-                          parameterFlags:kFxParameterFlag_NOT_ANIMATABLE])
+                            defaultValue:@0
+                          parameterFlags:kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE])
     {
         if (error != NULL) {
             NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox] Unable to add parameter: kCB_LaunchGyroflow"};
@@ -306,7 +277,7 @@
     if (![paramAPI addStringParameterWithName:@"Gyroflow Project Path"
                                   parameterID:kCB_GyroflowProjectPath
                                  defaultValue:@""
-                               parameterFlags:kFxParameterFlag_HIDDEN])
+                               parameterFlags:kFxParameterFlag_HIDDEN | kFxParameterFlag_NOT_ANIMATABLE])
     {
         if (error != NULL) {
             NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox] Unable to add parameter: kCB_GyroflowProjectPath"};
@@ -323,7 +294,7 @@
     if (![paramAPI addStringParameterWithName:@"Gyroflow Project Bookmark Data"
                                   parameterID:kCB_GyroflowProjectBookmarkData
                                  defaultValue:@""
-                               parameterFlags:kFxParameterFlag_HIDDEN])
+                               parameterFlags:kFxParameterFlag_HIDDEN | kFxParameterFlag_NOT_ANIMATABLE])
     {
         if (error != NULL) {
             NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox] Unable to add parameter: kCB_GyroflowProjectBookmarkData"};
@@ -340,24 +311,10 @@
     if (![paramAPI addStringParameterWithName:@"Gyroflow Project Data"
                                   parameterID:kCB_GyroflowProjectData
                                  defaultValue:@""
-                               parameterFlags:kFxParameterFlag_HIDDEN])
+                               parameterFlags:kFxParameterFlag_HIDDEN | kFxParameterFlag_NOT_ANIMATABLE])
     {
         if (error != NULL) {
             NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox] Unable to add parameter: kCB_GyroflowProjectData"};
-            *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                         code:kFxError_InvalidParameter
-                                     userInfo:userInfo];
-        }
-        return NO;
-    }
-    
-    //---------------------------------------------------------
-    // END GROUP: 'Gyroflow Project'
-    //---------------------------------------------------------
-    if (![paramAPI endParameterSubGroup])
-    {
-        if (error != NULL) {
-            NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox] Unable to add end 'Gyroflow Project' Parameter"};
             *error = [NSError errorWithDomain:FxPlugErrorDomain
                                          code:kFxError_InvalidParameter
                                      userInfo:userInfo];

@@ -36,13 +36,13 @@
         //---------------------------------------------------------
         // Add the "Import Gyroflow Project" button:
         //---------------------------------------------------------
-        NSButton *button = [[NSButton alloc]initWithFrame:NSMakeRect(-118, 0, 180, 30)]; // x y w h
+        NSButton *button = [[NSButton alloc]initWithFrame:NSMakeRect(-68, 0, 130, 30)]; // x y w h
         [button setButtonType:NSButtonTypeMomentaryPushIn];
         [button setBezelStyle: NSBezelStyleRounded];
         button.layer.backgroundColor = [NSColor colorWithCalibratedRed:66 green:66 blue:66 alpha:1].CGColor;
         button.layer.shadowColor = [NSColor blackColor].CGColor;
         [button setBordered:YES];
-        [button setTitle:@"Import Gyroflow Project"];
+        [button setTitle:@"Import Project"];
         [button setTarget:self];
         [button setAction:@selector(buttonPressed)];
         [button setAutoresizingMask: NSViewMinXMargin];
@@ -63,9 +63,7 @@
         [_cachedButton release];
     }
  
-    [super dealloc];
-    
-    NSLog(@"[Gyroflow Toolbox] Successfully deallocated ImportGyroflowProjectView.");
+    [super dealloc];    
 }
 
 //---------------------------------------------------------
@@ -111,117 +109,119 @@
     // Open the panel:
     //---------------------------------------------------------
     NSModalResponse result = [panel runModal];
-    if (result == NSModalResponseOK) {
-        NSArray *urls = [panel URLs];
-        for (id url in urls) {
-            //---------------------------------------------------------
-            // Start accessing security scoped resource:
-            //---------------------------------------------------------
-            BOOL startedOK = [url startAccessingSecurityScopedResource];
-            
-            if (startedOK == NO) {
-                [self showAlertWithMessage:@"An error has occurred." info:@"Failed to startAccessingSecurityScopedResource. This shouldn't happen."];
-                return;
-            }
+    if (result != NSModalResponseOK) {
+        return;
+    }
 
-            //---------------------------------------------------------
-            // Create a Security Scope Bookmark, so we can reload
-            // later:
-            //---------------------------------------------------------
-            NSError *bookmarkError = nil;
-            NSURLBookmarkCreationOptions bookmarkOptions = NSURLBookmarkCreationWithSecurityScope | NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess;
-            NSData *bookmark = [url bookmarkDataWithOptions:bookmarkOptions
-                             includingResourceValuesForKeys:nil
-                                              relativeToURL:nil
-                                                      error:&bookmarkError];
-            
-            if (bookmarkError != nil) {
-                [self showAlertWithMessage:@"An error has occurred." info:[NSString stringWithFormat:@"Failed to resolve bookmark due to:\n\n%@", [bookmarkError localizedDescription]]];
-                return;
-            } else if (bookmark == nil) {
-                [self showAlertWithMessage:@"An error has occurred." info:@"Bookmark data is nil. This shouldn't happen."];
-                return;
-            } else {
-                //NSLog(@"[Gyroflow Toolbox] Bookmark created successfully for: %@", [url path]);
-                
-                NSString *selectedGyroflowProjectFile            = [[url lastPathComponent] stringByDeletingPathExtension];
-                NSString *selectedGyroflowProjectPath            = [url path];
-                NSString *selectedGyroflowProjectBookmarkData    = [bookmark base64EncodedStringWithOptions:0];
-                                
-                //---------------------------------------------------------
-                // Read the Gyroflow Project Data from File:
-                //---------------------------------------------------------
-                NSError *readError = nil;
-                NSString *selectedGyroflowProjectData = [NSString stringWithContentsOfURL:url encoding:NSUTF8StringEncoding error:&readError];
-                if (readError != nil) {
-                    [self showAlertWithMessage:@"An error has occurred." info:[NSString stringWithFormat:@"Failed to read Gyroflow Project File due to:\n\n%@", [readError localizedDescription]]];
-                    return;
-                }
-                                
-                //---------------------------------------------------------
-                // Make sure there's Processed Gyro Data in the Gyroflow
-                // Project Data:
-                //---------------------------------------------------------
-                if (![selectedGyroflowProjectData containsString:@"integrated_quaternions"]) {
-                    [self showAlertWithMessage:@"Processed Gyro Data Not Found." info:@"The Gyroflow file you imported doesn't seem to contain any processed gyro data.\n\nPlease try exporting from Gyroflow again using the 'Export project file (including processed gyro data)' option."];
-                    return;
-                }
-                
-                //---------------------------------------------------------
-                // Use the Action API to allow us to change the parameters:
-                //---------------------------------------------------------
-                [actionAPI startAction:self];
-                
-                //---------------------------------------------------------
-                // Load the Parameter Set API:
-                //---------------------------------------------------------
-                id<FxParameterSettingAPI_v5> paramSetAPI = [_apiManager apiForProtocol:@protocol(FxParameterSettingAPI_v5)];
-                if (paramSetAPI == nil)
-                {
-                    [self showAlertWithMessage:@"An error has occurred." info:@"Unable to retrieve FxParameterSettingAPI_v5 in 'selectFileButtonPressed'. This shouldn't happen."];
-                    return;
-                }
+    //---------------------------------------------------------
+    // Start accessing security scoped resource:
+    //---------------------------------------------------------
+    NSURL *url = [panel URL];
+    BOOL startedOK = [url startAccessingSecurityScopedResource];
+    if (startedOK == NO) {
+        [self showAlertWithMessage:@"An error has occurred." info:@"Failed to startAccessingSecurityScopedResource. This shouldn't happen."];
+        return;
+    }
 
-                //---------------------------------------------------------
-                // Update 'Gyroflow Project Path':
-                //---------------------------------------------------------
-                [paramSetAPI setParameterFlags:kFxParameterFlag_DEFAULT toParameter:kCB_GyroflowProjectPath];
-                [paramSetAPI setStringParameterValue:selectedGyroflowProjectPath toParameter:kCB_GyroflowProjectPath];
-                [paramSetAPI setParameterFlags:kFxParameterFlag_HIDDEN toParameter:kCB_GyroflowProjectPath];
-                
-                //---------------------------------------------------------
-                // Update 'Gyroflow Project Bookmark Data':
-                //---------------------------------------------------------
-                [paramSetAPI setParameterFlags:kFxParameterFlag_DEFAULT toParameter:kCB_GyroflowProjectBookmarkData];
-                [paramSetAPI setStringParameterValue:selectedGyroflowProjectBookmarkData toParameter:kCB_GyroflowProjectBookmarkData];
-                [paramSetAPI setParameterFlags:kFxParameterFlag_HIDDEN toParameter:kCB_GyroflowProjectBookmarkData];
-                
-                //---------------------------------------------------------
-                // Update 'Gyroflow Project Data':
-                //---------------------------------------------------------
-                [paramSetAPI setParameterFlags:kFxParameterFlag_DEFAULT toParameter:kCB_GyroflowProjectData];
-                [paramSetAPI setStringParameterValue:selectedGyroflowProjectData toParameter:kCB_GyroflowProjectData];
-                [paramSetAPI setParameterFlags:kFxParameterFlag_HIDDEN toParameter:kCB_GyroflowProjectData];
-                
-                //---------------------------------------------------------
-                // Update 'Loaded Gyroflow Project' Text Box:
-                //---------------------------------------------------------
-                [paramSetAPI setParameterFlags:kFxParameterFlag_DEFAULT toParameter:kCB_LoadedGyroflowProject];
-                [paramSetAPI setStringParameterValue:selectedGyroflowProjectFile toParameter:kCB_LoadedGyroflowProject];
-                [paramSetAPI setParameterFlags:kFxParameterFlag_DISABLED | kFxParameterFlag_NOT_ANIMATABLE toParameter:kCB_LoadedGyroflowProject];
-                
-                //---------------------------------------------------------
-                // Stop Action API:
-                //---------------------------------------------------------
-                [actionAPI endAction:self];
-            }
-            
-            //---------------------------------------------------------
-            // Stop accessing security scoped resource:
-            //---------------------------------------------------------
-            [url stopAccessingSecurityScopedResource];
-        }
-    }    
+    //---------------------------------------------------------
+    // Create a Security Scope Bookmark, so we can reload
+    // later:
+    //---------------------------------------------------------
+    NSError *bookmarkError = nil;
+    NSURLBookmarkCreationOptions bookmarkOptions = NSURLBookmarkCreationWithSecurityScope | NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess;
+    NSData *bookmark = [url bookmarkDataWithOptions:bookmarkOptions
+                     includingResourceValuesForKeys:nil
+                                      relativeToURL:nil
+                                              error:&bookmarkError];
+    
+    if (bookmarkError != nil) {
+        [self showAlertWithMessage:@"An error has occurred." info:[NSString stringWithFormat:@"Failed to resolve bookmark due to:\n\n%@", [bookmarkError localizedDescription]]];
+        return;
+    } else if (bookmark == nil) {
+        [self showAlertWithMessage:@"An error has occurred." info:@"Bookmark data is nil. This shouldn't happen."];
+        return;
+    }
+    
+    NSString *selectedGyroflowProjectFile            = [[url lastPathComponent] stringByDeletingPathExtension];
+    NSString *selectedGyroflowProjectPath            = [url path];
+    NSString *selectedGyroflowProjectBookmarkData    = [bookmark base64EncodedStringWithOptions:0];
+                    
+    //---------------------------------------------------------
+    // Read the Gyroflow Project Data from File:
+    //---------------------------------------------------------
+    NSError *readError = nil;
+    NSString *selectedGyroflowProjectData = [NSString stringWithContentsOfURL:url encoding:NSUTF8StringEncoding error:&readError];
+    if (readError != nil) {
+        [self showAlertWithMessage:@"An error has occurred." info:[NSString stringWithFormat:@"Failed to read Gyroflow Project File due to:\n\n%@", [readError localizedDescription]]];
+        return;
+    }
+                    
+    //---------------------------------------------------------
+    // Make sure there's Processed Gyro Data in the Gyroflow
+    // Project Data:
+    //---------------------------------------------------------
+    if (![selectedGyroflowProjectData containsString:@"integrated_quaternions"]) {
+        [self showAlertWithMessage:@"Processed Gyro Data Not Found." info:@"The Gyroflow file you imported doesn't seem to contain any processed gyro data.\n\nPlease try exporting from Gyroflow again using the 'Export project file (including processed gyro data)' option."];
+        return;
+    }
+    
+    //---------------------------------------------------------
+    // Use the Action API to allow us to change the parameters:
+    //---------------------------------------------------------
+    [actionAPI startAction:self];
+    
+    //---------------------------------------------------------
+    // Load the Parameter Set API:
+    //---------------------------------------------------------
+    id<FxParameterSettingAPI_v5> paramSetAPI = [_apiManager apiForProtocol:@protocol(FxParameterSettingAPI_v5)];
+    if (paramSetAPI == nil)
+    {
+        [self showAlertWithMessage:@"An error has occurred." info:@"Unable to retrieve FxParameterSettingAPI_v5 in 'selectFileButtonPressed'. This shouldn't happen."];
+        return;
+    }
+
+    //---------------------------------------------------------
+    // Update 'Gyroflow Project Path':
+    //---------------------------------------------------------
+    [paramSetAPI setParameterFlags:kFxParameterFlag_DEFAULT toParameter:kCB_GyroflowProjectPath];
+    [paramSetAPI setStringParameterValue:selectedGyroflowProjectPath toParameter:kCB_GyroflowProjectPath];
+    [paramSetAPI setParameterFlags:kFxParameterFlag_HIDDEN toParameter:kCB_GyroflowProjectPath];
+    
+    //---------------------------------------------------------
+    // Update 'Gyroflow Project Bookmark Data':
+    //---------------------------------------------------------
+    [paramSetAPI setParameterFlags:kFxParameterFlag_DEFAULT toParameter:kCB_GyroflowProjectBookmarkData];
+    [paramSetAPI setStringParameterValue:selectedGyroflowProjectBookmarkData toParameter:kCB_GyroflowProjectBookmarkData];
+    [paramSetAPI setParameterFlags:kFxParameterFlag_HIDDEN toParameter:kCB_GyroflowProjectBookmarkData];
+    
+    //---------------------------------------------------------
+    // Update 'Gyroflow Project Data':
+    //---------------------------------------------------------
+    [paramSetAPI setParameterFlags:kFxParameterFlag_DEFAULT toParameter:kCB_GyroflowProjectData];
+    [paramSetAPI setStringParameterValue:selectedGyroflowProjectData toParameter:kCB_GyroflowProjectData];
+    [paramSetAPI setParameterFlags:kFxParameterFlag_HIDDEN toParameter:kCB_GyroflowProjectData];
+    
+    //---------------------------------------------------------
+    // Update 'Loaded Gyroflow Project' Text Box:
+    //---------------------------------------------------------
+    [paramSetAPI setParameterFlags:kFxParameterFlag_DEFAULT toParameter:kCB_LoadedGyroflowProject];
+    [paramSetAPI setStringParameterValue:selectedGyroflowProjectFile toParameter:kCB_LoadedGyroflowProject];
+    [paramSetAPI setParameterFlags:kFxParameterFlag_DISABLED | kFxParameterFlag_NOT_ANIMATABLE toParameter:kCB_LoadedGyroflowProject];
+    
+    //---------------------------------------------------------
+    // Stop Action API:
+    //---------------------------------------------------------
+    [actionAPI endAction:self];
+    
+    //---------------------------------------------------------
+    // Stop accessing security scoped resource:
+    //---------------------------------------------------------
+    [url stopAccessingSecurityScopedResource];
+    
+    //---------------------------------------------------------
+    // Show Victory Message:
+    //---------------------------------------------------------
+    [self showAlertWithMessage:@"Success!" info:@"The Gyroflow Project has been successfully imported.\n\nYou can now adjust the FOV, Smoothness and Lens Correction as required."];
 }
 
 //---------------------------------------------------------

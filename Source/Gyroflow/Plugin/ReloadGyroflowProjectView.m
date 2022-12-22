@@ -36,13 +36,13 @@
         //---------------------------------------------------------
         // Add the "Import Gyroflow Project" button:
         //---------------------------------------------------------
-        NSButton *button = [[NSButton alloc]initWithFrame:NSMakeRect(-118, 0, 180, 30)]; // x y w h
+        NSButton *button = [[NSButton alloc]initWithFrame:NSMakeRect(-68, 0, 130, 30)]; // x y w h
         [button setButtonType:NSButtonTypeMomentaryPushIn];
         [button setBezelStyle: NSBezelStyleRounded];
         button.layer.backgroundColor = [NSColor colorWithCalibratedRed:66 green:66 blue:66 alpha:1].CGColor;
         button.layer.shadowColor = [NSColor blackColor].CGColor;
         [button setBordered:YES];
-        [button setTitle:@"Reload Gyroflow Project"];
+        [button setTitle:@"Reload Project"];
         [button setTarget:self];
         [button setAction:@selector(buttonPressed)];
         [button setAutoresizingMask: NSViewMinXMargin];
@@ -63,9 +63,7 @@
         [_cachedButton release];
     }
  
-    [super dealloc];
-    
-    NSLog(@"[Gyroflow Toolbox] Successfully deallocated ReloadGyroflowProjectView.");
+    [super dealloc];    
 }
 
 //---------------------------------------------------------

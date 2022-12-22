@@ -9,8 +9,9 @@
 #import <FxPlug/FxPlugSDK.h>
 
 @interface GyroflowPlugIn : NSObject <FxTileableEffect> {
+    NSView* launchGyroflowView;
     NSView* importGyroflowProjectView;
-    NSView* reloadGyroflowProjectView;
+    NSView* reloadGyroflowProjectView;    
 }
 @property (assign) id<PROAPIAccessing> apiManager;
 @end
