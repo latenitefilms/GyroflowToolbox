@@ -752,6 +752,22 @@
     
     id<MTLTexture> processedTexture = [inputTexture.device newTextureWithDescriptor:descriptor];
 
+    id<MTLCommandQueue> gyroflowCommandQueue = [deviceCache commandQueueWithRegistryID:sourceImages[0].deviceRegistryID
+                                                                           pixelFormat:pixelFormat];
+
+    //---------------------------------------------------------
+    // If the Gyroflow Command Queue wasn't created, abort:
+    //---------------------------------------------------------
+    if (gyroflowCommandQueue == nil)
+    {
+        if (outError != NULL) {
+            *outError = [NSError errorWithDomain:FxPlugErrorDomain
+                                            code:kFxError_InvalidParameter
+                                        userInfo:@{ NSLocalizedDescriptionKey : @"[Gyroflow Toolbox] FATAL ERROR - Unable to get Gyroflow command queue. May need to increase cache size." }];
+        }
+        return NO;
+    }
+    
     //---------------------------------------------------------
     // Determine the Pixel Format:
     //---------------------------------------------------------
@@ -809,7 +825,7 @@
                               sourceLensCorrection,     // double
                               inputTexture,             // MTLTexture
                               processedTexture,         // MTLTexture
-                              commandQueue              // MTLCommandQueue
+                              gyroflowCommandQueue      // MTLCommandQueue
                               );
         
         NSString *resultString = [NSString stringWithUTF8String: result];
@@ -1046,6 +1062,8 @@
     // so we can re-use it again:
     //---------------------------------------------------------
     [deviceCache returnCommandQueueToCache:commandQueue];
+    
+    [deviceCache returnCommandQueueToCache:gyroflowCommandQueue];
     
     //---------------------------------------------------------
     // Release the Input & Processed Textures:
