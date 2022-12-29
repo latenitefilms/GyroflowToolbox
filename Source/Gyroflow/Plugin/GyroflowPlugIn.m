@@ -706,7 +706,7 @@
     MTLPixelFormat pixelFormat = [MetalDeviceCache MTLPixelFormatForImageTile:destinationImage];
     
     //---------------------------------------------------------
-    // Setup a new Command Queue:
+    // Setup a new Command Queue for FxPlug4:
     //---------------------------------------------------------
     id<MTLCommandQueue> commandQueue = [deviceCache commandQueueWithRegistryID:sourceImages[0].deviceRegistryID
                                                                    pixelFormat:pixelFormat];
@@ -725,6 +725,25 @@
     }
     
     //---------------------------------------------------------
+    // Create a new Command Queue for Gyroflow:
+    //---------------------------------------------------------
+    id<MTLCommandQueue> gyroflowCommandQueue = [deviceCache commandQueueWithRegistryID:sourceImages[0].deviceRegistryID
+                                                                           pixelFormat:pixelFormat];
+
+    //---------------------------------------------------------
+    // If the Gyroflow Command Queue wasn't created, abort:
+    //---------------------------------------------------------
+    if (gyroflowCommandQueue == nil)
+    {
+        if (outError != NULL) {
+            *outError = [NSError errorWithDomain:FxPlugErrorDomain
+                                            code:kFxError_InvalidParameter
+                                        userInfo:@{ NSLocalizedDescriptionKey : @"[Gyroflow Toolbox] FATAL ERROR - Unable to get Gyroflow command queue. May need to increase cache size." }];
+        }
+        return NO;
+    }
+    
+    //---------------------------------------------------------
     // Create a new Command Buffer:
     //---------------------------------------------------------
     id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
@@ -736,7 +755,7 @@
     //---------------------------------------------------------
     id<MTLDevice> inputDevice       = [deviceCache deviceWithRegistryID:sourceImages[0].deviceRegistryID];
     id<MTLTexture> inputTexture     = [sourceImages[0] metalTextureForDevice:inputDevice];
-
+    
     //---------------------------------------------------------
     // Determine the Pixel Format:
     //---------------------------------------------------------
@@ -761,30 +780,6 @@
         return NO;
     }
     
-    //---------------------------------------------------------
-    // Calculate the Buffer Size:
-    //---------------------------------------------------------
-    unsigned long bufferLength      = inputTexture.width * inputTexture.height * 4 * numberOfBytes;
-    unsigned long bytesPerRow       = inputTexture.width * 4 * numberOfBytes;
-    uint32_t sourceBufferSize       = (uint32_t)bufferLength;
-    uint32_t outputBufferSize       = (uint32_t)bufferLength;
-    
-    //---------------------------------------------------------
-    // Setup input and output buffers:
-    //---------------------------------------------------------
-    unsigned char *sourceBuffer     = (unsigned char *)malloc(bufferLength);
-    unsigned char *outputBuffer     = (unsigned char *)malloc(bufferLength);
-    
-    //---------------------------------------------------------
-    // Copy the texture data into the buffer:
-    //---------------------------------------------------------
-    [inputTexture getBytes:sourceBuffer
-               bytesPerRow:bytesPerRow
-             bytesPerImage:0
-                fromRegion:MTLRegionMake2D(0, 0, inputTexture.width, inputTexture.height)
-               mipmapLevel:0
-                     slice:0];
-
     //---------------------------------------------------------
     // Collect all the Parameters for Gyroflow:
     //---------------------------------------------------------
@@ -816,21 +811,15 @@
                               sourceFOV,                // double
                               sourceSmoothness,         // double
                               sourceLensCorrection,     // double
-                              sourceBuffer,             // unsigned char*
-                              sourceBufferSize,         // uint32_t
-                              outputBuffer,             // unsigned char*
-                              outputBufferSize          // uint32_t
+                              inputTexture,             // MTLTexture
+                              inputTexture,             // MTLTexture
+                              gyroflowCommandQueue      // MTLCommandQueue
                               );
         
         NSString *resultString = [NSString stringWithUTF8String: result];
         //NSLog(@"[Gyroflow Toolbox] resultString: %@", resultString);
-        if ([resultString isEqualToString:@"DONE"]) {
-            //---------------------------------------------------------
-            // If successful, replace the texture data:
-            //---------------------------------------------------------
-            MTLRegion region = MTLRegionMake2D(0, 0, inputTexture.width, inputTexture.height);
-            [inputTexture replaceRegion:region mipmapLevel:0 withBytes:outputBuffer bytesPerRow:bytesPerRow];
-        } else if ([resultString isEqualToString:@"FAIL"]) {
+        
+        if ([resultString isEqualToString:@"FAIL"]) {
             //---------------------------------------------------------
             // If we get a "FAIL" then abort:
             //---------------------------------------------------------
@@ -937,7 +926,7 @@
     // Calculate the vertex coordinates and the texture
     // coordinates:
     //---------------------------------------------------------
-    Vertex2D    vertices[]  = {
+    Vertex2D vertices[] = {
         { {  outputWidth / 2.0, -outputHeight / 2.0 }, { 1.0, 1.0 } },
         { { -outputWidth / 2.0, -outputHeight / 2.0 }, { 0.0, 1.0 } },
         { {  outputWidth / 2.0,  outputHeight / 2.0 }, { 1.0, 0.0 } },
@@ -1056,20 +1045,7 @@
     // so we can re-use it again:
     //---------------------------------------------------------
     [deviceCache returnCommandQueueToCache:commandQueue];
-    
-    //---------------------------------------------------------
-    // Release the Input Textures:
-    //---------------------------------------------------------
-    if (inputTexture != nil) {
-        [inputTexture setPurgeableState:MTLPurgeableStateEmpty];
-        inputTexture = nil;
-    }
-    
-    //---------------------------------------------------------
-    // Release the buffers:
-    //---------------------------------------------------------
-    free(sourceBuffer);
-    free(outputBuffer);
+    [deviceCache returnCommandQueueToCache:gyroflowCommandQueue];
     
     return YES;
 }

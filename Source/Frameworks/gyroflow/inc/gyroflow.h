@@ -23,8 +23,7 @@ const char* processFrame(
     double                      fov,
     double                      smoothness,
     double                      lens_correction,
-    unsigned char*              in_buffer,
-    uint32_t                    in_buffer_size,
-    unsigned char*              out_buffer,
-    uint32_t                    out_buffer_size
+    void                        *in_mtl_texture,
+    void                        *out_mtl_texture,
+    void                        *command_queue
 );
