@@ -191,13 +191,13 @@ fn process_frame<T: PixelType>(
            size: (output_width, output_height, input_stride),
            rect: None,
            data: BufferSource::Metal { texture: in_mtl_tex as *mut metal::MTLTexture, command_queue: command_queue as *mut metal::MTLCommandQueue },
-           texture_copy: true
+           texture_copy: false
        },
        output: BufferDescription {
            size: (output_width, output_height, output_stride),
            rect: None,
            data: BufferSource::Metal { texture: out_mtl_tex as *mut metal::MTLTexture, command_queue: command_queue as *mut metal::MTLCommandQueue },
-           texture_copy: true
+           texture_copy: false
        }
    });
    

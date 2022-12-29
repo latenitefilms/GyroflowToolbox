@@ -725,32 +725,6 @@
     }
     
     //---------------------------------------------------------
-    // Create a new Command Queue for Gyroflow:
-    //---------------------------------------------------------
-    id<MTLCommandQueue> gyroflowCommandQueue = [deviceCache commandQueueWithRegistryID:sourceImages[0].deviceRegistryID
-                                                                           pixelFormat:pixelFormat];
-
-    //---------------------------------------------------------
-    // If the Gyroflow Command Queue wasn't created, abort:
-    //---------------------------------------------------------
-    if (gyroflowCommandQueue == nil)
-    {
-        if (outError != NULL) {
-            *outError = [NSError errorWithDomain:FxPlugErrorDomain
-                                            code:kFxError_InvalidParameter
-                                        userInfo:@{ NSLocalizedDescriptionKey : @"[Gyroflow Toolbox] FATAL ERROR - Unable to get Gyroflow command queue. May need to increase cache size." }];
-        }
-        return NO;
-    }
-    
-    //---------------------------------------------------------
-    // Create a new Command Buffer:
-    //---------------------------------------------------------
-    id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
-    commandBuffer.label = @"GyroFlow Command Buffer";
-    [commandBuffer enqueue];
-    
-    //---------------------------------------------------------
     // Setup our input texture:
     //---------------------------------------------------------
     id<MTLDevice> inputDevice       = [deviceCache deviceWithRegistryID:sourceImages[0].deviceRegistryID];
@@ -813,7 +787,7 @@
                               sourceLensCorrection,     // double
                               inputTexture,             // MTLTexture
                               inputTexture,             // MTLTexture
-                              gyroflowCommandQueue      // MTLCommandQueue
+                              commandQueue              // MTLCommandQueue
                               );
         
         NSString *resultString = [NSString stringWithUTF8String: result];
@@ -914,6 +888,13 @@
     renderPassDescriptor.colorAttachments[0] = colorAttachmentDescriptor;
     
     //---------------------------------------------------------
+    // Create a new Command Buffer:
+    //---------------------------------------------------------
+    id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
+    commandBuffer.label = @"GyroFlow Command Buffer";
+    [commandBuffer enqueue];
+    
+    //---------------------------------------------------------
     // Setup our Command Encoder.
     //
     // renderCommandEncoderWithDescriptor: Creates an object
@@ -953,8 +934,8 @@
     // functions and configuration state to use in a render
     // command.
     //---------------------------------------------------------
-    id<MTLRenderPipelineState> pipelineState  = [deviceCache pipelineStateWithRegistryID:sourceImages[0].deviceRegistryID
-                                                                             pixelFormat:pixelFormat];
+    id<MTLRenderPipelineState> pipelineState = [deviceCache pipelineStateWithRegistryID:sourceImages[0].deviceRegistryID
+                                                                            pixelFormat:pixelFormat];
     
     //---------------------------------------------------------
     // Sets the current render pipeline state object:
@@ -1045,7 +1026,6 @@
     // so we can re-use it again:
     //---------------------------------------------------------
     [deviceCache returnCommandQueueToCache:commandQueue];
-    [deviceCache returnCommandQueueToCache:gyroflowCommandQueue];
     
     return YES;
 }
