@@ -9,9 +9,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#import <Foundation/Foundation.h>
-#import <Metal/Metal.h>
-
 //
 // This is the "interface" to the Rust code:
 //
@@ -26,7 +23,7 @@ const char* processFrame(
     double                      fov,
     double                      smoothness,
     double                      lens_correction,
-    id<MTLTexture>              in_mtl_texture,
-    id<MTLTexture>              out_mtl_texture,
-    id<MTLCommandQueue>         command_queue
+    void                        *in_mtl_texture,
+    void                        *out_mtl_texture,
+    void                        *command_queue
 );
