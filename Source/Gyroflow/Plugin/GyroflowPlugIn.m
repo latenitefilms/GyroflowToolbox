@@ -736,7 +736,8 @@
     //---------------------------------------------------------
     id<MTLDevice> inputDevice       = [deviceCache deviceWithRegistryID:sourceImages[0].deviceRegistryID];
     id<MTLTexture> inputTexture     = [sourceImages[0] metalTextureForDevice:inputDevice];
-
+    id<MTLTexture> processedTexture = [sourceImages[0] metalTextureForDevice:inputDevice];
+    
     //---------------------------------------------------------
     // Determine the Pixel Format:
     //---------------------------------------------------------
@@ -761,30 +762,6 @@
         return NO;
     }
     
-    //---------------------------------------------------------
-    // Calculate the Buffer Size:
-    //---------------------------------------------------------
-    unsigned long bufferLength      = inputTexture.width * inputTexture.height * 4 * numberOfBytes;
-    unsigned long bytesPerRow       = inputTexture.width * 4 * numberOfBytes;
-    uint32_t sourceBufferSize       = (uint32_t)bufferLength;
-    uint32_t outputBufferSize       = (uint32_t)bufferLength;
-    
-    //---------------------------------------------------------
-    // Setup input and output buffers:
-    //---------------------------------------------------------
-    unsigned char *sourceBuffer     = (unsigned char *)malloc(bufferLength);
-    unsigned char *outputBuffer     = (unsigned char *)malloc(bufferLength);
-    
-    //---------------------------------------------------------
-    // Copy the texture data into the buffer:
-    //---------------------------------------------------------
-    [inputTexture getBytes:sourceBuffer
-               bytesPerRow:bytesPerRow
-             bytesPerImage:0
-                fromRegion:MTLRegionMake2D(0, 0, inputTexture.width, inputTexture.height)
-               mipmapLevel:0
-                     slice:0];
-
     //---------------------------------------------------------
     // Collect all the Parameters for Gyroflow:
     //---------------------------------------------------------
@@ -816,10 +793,9 @@
                               sourceFOV,                // double
                               sourceSmoothness,         // double
                               sourceLensCorrection,     // double
-                              sourceBuffer,             // unsigned char*
-                              sourceBufferSize,         // uint32_t
-                              outputBuffer,             // unsigned char*
-                              outputBufferSize          // uint32_t
+                              inputTexture,             // MTLTexture
+                              processedTexture,         // MTLTexture
+                              commandQueue              // MTLCommandQueue
                               );
         
         NSString *resultString = [NSString stringWithUTF8String: result];
@@ -828,8 +804,8 @@
             //---------------------------------------------------------
             // If successful, replace the texture data:
             //---------------------------------------------------------
-            MTLRegion region = MTLRegionMake2D(0, 0, inputTexture.width, inputTexture.height);
-            [inputTexture replaceRegion:region mipmapLevel:0 withBytes:outputBuffer bytesPerRow:bytesPerRow];
+            //MTLRegion region = MTLRegionMake2D(0, 0, inputTexture.width, inputTexture.height);
+            //[inputTexture replaceRegion:region mipmapLevel:0 withBytes:outputBuffer bytesPerRow:bytesPerRow];
         } else if ([resultString isEqualToString:@"FAIL"]) {
             //---------------------------------------------------------
             // If we get a "FAIL" then abort:
@@ -998,7 +974,7 @@
     // Sets a texture for the fragment function at an index
     // in the texture argument table:
     //---------------------------------------------------------
-    [commandEncoder setFragmentTexture:inputTexture
+    [commandEncoder setFragmentTexture:processedTexture
                                atIndex:BTI_InputImage];
     
     //---------------------------------------------------------
@@ -1058,18 +1034,16 @@
     [deviceCache returnCommandQueueToCache:commandQueue];
     
     //---------------------------------------------------------
-    // Release the Input Textures:
+    // Release the Input & Processed Textures:
     //---------------------------------------------------------
     if (inputTexture != nil) {
         [inputTexture setPurgeableState:MTLPurgeableStateEmpty];
         inputTexture = nil;
     }
-    
-    //---------------------------------------------------------
-    // Release the buffers:
-    //---------------------------------------------------------
-    free(sourceBuffer);
-    free(outputBuffer);
+    if (processedTexture != nil) {
+        [processedTexture setPurgeableState:MTLPurgeableStateEmpty];
+        processedTexture = nil;
+    }
     
     return YES;
 }

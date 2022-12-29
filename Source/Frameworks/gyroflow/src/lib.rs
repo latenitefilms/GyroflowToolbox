@@ -9,11 +9,10 @@
 // Local name bindings:
 //---------------------------------------------------------
 use gyroflow_core::{StabilizationManager, stabilization::*};
-use gyroflow_core::gpu::{ BufferDescription, BufferSource };
+use gyroflow_core::gpu::{ BufferDescription, BufferSource, Buffers };
 
-use once_cell::sync::OnceCell;              //
+use once_cell::sync::OnceCell;              // Provides two new cell-like types, unsync::OnceCell and sync::OnceCell
 use lazy_static::*;                         // A macro for declaring lazily evaluated statics
-use libc::c_uchar;                          // Allows us to use `*const c_uchar`
 use lru::LruCache;                          // A LRU cache implementation
 use nalgebra::Vector4;                      // Allows us to use `Vector4`
 use std::ffi::CStr;                         // Allows us to use `CStr`
@@ -48,10 +47,9 @@ fn process_frame<T: PixelType>(
     fov: f64,
     smoothness: f64,
     lens_correction: f64,
-    in_buffer: *mut c_uchar,
-    in_buffer_size: u32,
-    out_buffer: *mut c_uchar,
-    out_buffer_size: u32
+    in_mtl_tex: *mut metal::MTLTexture,
+    out_mtl_tex: *mut metal::MTLTexture,
+    command_queue: *mut metal::MTLCommandQueue,
 ) -> *const c_char {
     // -------------------------------------------------------------------------------
     // You can't use &str across FFI boundary, it's a Rust type.
@@ -182,23 +180,24 @@ fn process_frame<T: PixelType>(
    //---------------------------------------------------------
    // Calculate buffer size and stride:
    //---------------------------------------------------------
-   let input_buffer_size: usize = in_buffer_size as usize;
-   let output_buffer_size: usize = out_buffer_size as usize;
-
    let input_stride: usize = output_width * 4 * number_of_bytes_value;
    let output_stride: usize = output_width * 4 * number_of_bytes_value;
 
    //---------------------------------------------------------
    // Stabilization time!
    //---------------------------------------------------------
-   let stabilization_result = manager.process_pixels(timestamp, &mut BufferDescription {
-       input_size:  (output_width, output_height, input_stride),
-       output_size: (output_width, output_height, output_stride),
-       input_rect: None,
-       output_rect: None,
-       buffers: BufferSource::Cpu {
-           input:  unsafe { std::slice::from_raw_parts_mut(in_buffer, input_buffer_size) },
-           output: unsafe { std::slice::from_raw_parts_mut(out_buffer, output_buffer_size) }
+   let stabilization_result = manager.process_pixels(timestamp, &mut Buffers {
+       input: BufferDescription {
+           size: (output_width, output_height, input_stride),
+           rect: None,
+           data: BufferSource::Metal { texture: in_mtl_tex as *mut metal::MTLTexture, command_queue: command_queue as *mut metal::MTLCommandQueue },
+           texture_copy: true
+       },
+       output: BufferDescription {
+           size: (output_width, output_height, output_stride),
+           rect: None,
+           data: BufferSource::Metal { texture: out_mtl_tex as *mut metal::MTLTexture, command_queue: command_queue as *mut metal::MTLCommandQueue },
+           texture_copy: true
        }
    });
 
@@ -230,10 +229,9 @@ pub extern "C" fn processFrame(
     fov: f64,
     smoothness: f64,
     lens_correction: f64,
-    in_buffer: *mut c_uchar,
-    in_buffer_size: u32,
-    out_buffer: *mut c_uchar,
-    out_buffer_size: u32
+    in_mtl_tex: *mut metal::MTLTexture,
+    out_mtl_tex: *mut metal::MTLTexture,
+    command_queue: *mut metal::MTLCommandQueue,
 ) -> *const c_char {
     //---------------------------------------------------------
     // Setting our NSLog Logger (only once):
@@ -258,13 +256,13 @@ pub extern "C" fn processFrame(
     //---------------------------------------------------------
     match pixel_format_string.as_ref() {
         "BGRA8Unorm" => {
-            return process_frame::<BGRA8>(&mut EIGHT_BIT_CACHE.lock().unwrap(), width, height, number_of_bytes, path, data, timestamp, fov, smoothness, lens_correction, in_buffer, in_buffer_size, out_buffer, out_buffer_size);
+            return process_frame::<BGRA8>(&mut EIGHT_BIT_CACHE.lock().unwrap(), width, height, number_of_bytes, path, data, timestamp, fov, smoothness, lens_correction, in_mtl_tex, out_mtl_tex, command_queue);
         },
         "RGBAf16" => {
-            return process_frame::<RGBAf16>(&mut SIXTEEN_BIT_CACHE.lock().unwrap(), width, height, number_of_bytes, path, data, timestamp, fov, smoothness, lens_correction, in_buffer, in_buffer_size, out_buffer, out_buffer_size);
+            return process_frame::<RGBAf16>(&mut SIXTEEN_BIT_CACHE.lock().unwrap(), width, height, number_of_bytes, path, data, timestamp, fov, smoothness, lens_correction, in_mtl_tex, out_mtl_tex, command_queue);
         },
         "RGBAf" => {
-            return process_frame::<RGBAf>(&mut THIRTY_TWO_BIT_CACHE.lock().unwrap(), width, height, number_of_bytes, path, data, timestamp, fov, smoothness, lens_correction, in_buffer, in_buffer_size, out_buffer, out_buffer_size);
+            return process_frame::<RGBAf>(&mut THIRTY_TWO_BIT_CACHE.lock().unwrap(), width, height, number_of_bytes, path, data, timestamp, fov, smoothness, lens_correction, in_mtl_tex, out_mtl_tex, command_queue);
         },
         _ => {
             log::error!("[Gyroflow Toolbox] Unsupported pixel format: {:?}", pixel_format_string);
