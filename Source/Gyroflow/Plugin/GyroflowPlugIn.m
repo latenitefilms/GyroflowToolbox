@@ -746,9 +746,9 @@
                                                                                              width:inputTexture.width
                                                                                             height:inputTexture.height
                                                                                          mipmapped:NO];
-    descriptor.resourceOptions = inputTexture.resourceOptions;
-    descriptor.storageMode = inputTexture.storageMode;
-    descriptor.usage = inputTexture.usage;
+    //descriptor.resourceOptions = inputTexture.resourceOptions;
+    //descriptor.storageMode = inputTexture.storageMode;
+    //descriptor.usage = inputTexture.usage;
     
     id<MTLTexture> processedTexture = [inputTexture.device newTextureWithDescriptor:descriptor];
 
