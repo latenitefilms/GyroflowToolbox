@@ -47,9 +47,9 @@ fn process_frame<T: PixelType>(
     fov: f64,
     smoothness: f64,
     lens_correction: f64,
-    in_mtl_tex: *mut metal::MTLTexture,
-    out_mtl_tex: *mut metal::MTLTexture,
-    command_queue: *mut metal::MTLCommandQueue,
+    in_mtl_tex: *mut std::ffi::c_void,
+    out_mtl_tex: *mut std::ffi::c_void,
+    command_queue: *mut std::ffi::c_void,
 ) -> *const c_char {
     // -------------------------------------------------------------------------------
     // You can't use &str across FFI boundary, it's a Rust type.
@@ -200,7 +200,7 @@ fn process_frame<T: PixelType>(
            texture_copy: true
        }
    });
-
+   
    //---------------------------------------------------------
    // Output the Stabilization result to the Console:
    //---------------------------------------------------------
@@ -229,9 +229,9 @@ pub extern "C" fn processFrame(
     fov: f64,
     smoothness: f64,
     lens_correction: f64,
-    in_mtl_tex: *mut metal::MTLTexture,
-    out_mtl_tex: *mut metal::MTLTexture,
-    command_queue: *mut metal::MTLCommandQueue,
+    in_mtl_tex: *mut std::ffi::c_void,
+    out_mtl_tex: *mut std::ffi::c_void,
+    command_queue: *mut std::ffi::c_void,
 ) -> *const c_char {
     //---------------------------------------------------------
     // Setting our NSLog Logger (only once):
