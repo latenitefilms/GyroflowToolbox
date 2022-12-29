@@ -19,7 +19,7 @@
 
 #import "MetalDeviceCache.h"
 
-const NSUInteger    kMaxCommandQueues   = 5;
+const NSUInteger    kMaxCommandQueues   = 10;
 static NSString*    kKey_InUse          = @"InUse";
 static NSString*    kKey_CommandQueue   = @"CommandQueue";
 

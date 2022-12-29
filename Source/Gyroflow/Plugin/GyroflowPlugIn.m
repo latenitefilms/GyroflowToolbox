@@ -706,7 +706,7 @@
     MTLPixelFormat pixelFormat = [MetalDeviceCache MTLPixelFormatForImageTile:destinationImage];
     
     //---------------------------------------------------------
-    // Setup a new Command Queue:
+    // Setup a new Command Queue for FxPlug4:
     //---------------------------------------------------------
     id<MTLCommandQueue> commandQueue = [deviceCache commandQueueWithRegistryID:sourceImages[0].deviceRegistryID
                                                                    pixelFormat:pixelFormat];
@@ -725,33 +725,8 @@
     }
     
     //---------------------------------------------------------
-    // Create a new Command Buffer:
+    // Create a new Command Queue for Gyroflow:
     //---------------------------------------------------------
-    id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
-    commandBuffer.label = @"GyroFlow Command Buffer";
-    [commandBuffer enqueue];
-    
-    //---------------------------------------------------------
-    // Setup our input texture:
-    //---------------------------------------------------------
-    id<MTLDevice> inputDevice       = [deviceCache deviceWithRegistryID:sourceImages[0].deviceRegistryID];
-    id<MTLTexture> inputTexture     = [sourceImages[0] metalTextureForDevice:inputDevice];
-    
-    
-    //---------------------------------------------------------
-    // Create a new MTLTexture using the same properties as
-    // the inputTexture:
-    //---------------------------------------------------------
-    MTLTextureDescriptor *descriptor = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:inputTexture.pixelFormat
-                                                                                             width:inputTexture.width
-                                                                                            height:inputTexture.height
-                                                                                         mipmapped:NO];
-    //descriptor.resourceOptions = inputTexture.resourceOptions;
-    //descriptor.storageMode = inputTexture.storageMode;
-    //descriptor.usage = inputTexture.usage;
-    
-    id<MTLTexture> processedTexture = [inputTexture.device newTextureWithDescriptor:descriptor];
-
     id<MTLCommandQueue> gyroflowCommandQueue = [deviceCache commandQueueWithRegistryID:sourceImages[0].deviceRegistryID
                                                                            pixelFormat:pixelFormat];
 
@@ -767,6 +742,19 @@
         }
         return NO;
     }
+    
+    //---------------------------------------------------------
+    // Create a new Command Buffer:
+    //---------------------------------------------------------
+    id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
+    commandBuffer.label = @"GyroFlow Command Buffer";
+    [commandBuffer enqueue];
+    
+    //---------------------------------------------------------
+    // Setup our input texture:
+    //---------------------------------------------------------
+    id<MTLDevice> inputDevice       = [deviceCache deviceWithRegistryID:sourceImages[0].deviceRegistryID];
+    id<MTLTexture> inputTexture     = [sourceImages[0] metalTextureForDevice:inputDevice];
     
     //---------------------------------------------------------
     // Determine the Pixel Format:
@@ -824,19 +812,14 @@
                               sourceSmoothness,         // double
                               sourceLensCorrection,     // double
                               inputTexture,             // MTLTexture
-                              processedTexture,         // MTLTexture
+                              inputTexture,             // MTLTexture
                               gyroflowCommandQueue      // MTLCommandQueue
                               );
         
         NSString *resultString = [NSString stringWithUTF8String: result];
         //NSLog(@"[Gyroflow Toolbox] resultString: %@", resultString);
-        if ([resultString isEqualToString:@"DONE"]) {
-            //---------------------------------------------------------
-            // If successful, replace the texture data:
-            //---------------------------------------------------------
-            //MTLRegion region = MTLRegionMake2D(0, 0, inputTexture.width, inputTexture.height);
-            //[inputTexture replaceRegion:region mipmapLevel:0 withBytes:outputBuffer bytesPerRow:bytesPerRow];
-        } else if ([resultString isEqualToString:@"FAIL"]) {
+        
+        if ([resultString isEqualToString:@"FAIL"]) {
             //---------------------------------------------------------
             // If we get a "FAIL" then abort:
             //---------------------------------------------------------
@@ -943,7 +926,7 @@
     // Calculate the vertex coordinates and the texture
     // coordinates:
     //---------------------------------------------------------
-    Vertex2D    vertices[]  = {
+    Vertex2D vertices[] = {
         { {  outputWidth / 2.0, -outputHeight / 2.0 }, { 1.0, 1.0 } },
         { { -outputWidth / 2.0, -outputHeight / 2.0 }, { 0.0, 1.0 } },
         { {  outputWidth / 2.0,  outputHeight / 2.0 }, { 1.0, 0.0 } },
@@ -1004,7 +987,7 @@
     // Sets a texture for the fragment function at an index
     // in the texture argument table:
     //---------------------------------------------------------
-    [commandEncoder setFragmentTexture:processedTexture
+    [commandEncoder setFragmentTexture:inputTexture
                                atIndex:BTI_InputImage];
     
     //---------------------------------------------------------
@@ -1062,20 +1045,7 @@
     // so we can re-use it again:
     //---------------------------------------------------------
     [deviceCache returnCommandQueueToCache:commandQueue];
-    
     [deviceCache returnCommandQueueToCache:gyroflowCommandQueue];
-    
-    //---------------------------------------------------------
-    // Release the Input & Processed Textures:
-    //---------------------------------------------------------
-    if (inputTexture != nil) {
-        [inputTexture setPurgeableState:MTLPurgeableStateEmpty];
-        inputTexture = nil;
-    }
-    if (processedTexture != nil) {
-        [processedTexture setPurgeableState:MTLPurgeableStateEmpty];
-        processedTexture = nil;
-    }
     
     return YES;
 }

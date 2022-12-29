@@ -191,14 +191,12 @@ fn process_frame<T: PixelType>(
            size: (output_width, output_height, input_stride),
            rect: None,
            data: BufferSource::Metal { texture: in_mtl_tex as *mut metal::MTLTexture, command_queue: command_queue as *mut metal::MTLCommandQueue },
-           //data: BufferSource::Metal { texture: in_mtl_tex as *mut metal::MTLTexture, command_queue: std::ptr::null_mut() },
            texture_copy: true
        },
        output: BufferDescription {
            size: (output_width, output_height, output_stride),
            rect: None,
            data: BufferSource::Metal { texture: out_mtl_tex as *mut metal::MTLTexture, command_queue: command_queue as *mut metal::MTLCommandQueue },
-           //data: BufferSource::Metal { texture: out_mtl_tex as *mut metal::MTLTexture, command_queue: std::ptr::null_mut() },
            texture_copy: true
        }
    });
@@ -206,7 +204,7 @@ fn process_frame<T: PixelType>(
    //---------------------------------------------------------
    // Output the Stabilization result to the Console:
    //---------------------------------------------------------
-   log::info!("[Gyroflow Toolbox] stabilization_result: {:?}", &stabilization_result);
+   //log::info!("[Gyroflow Toolbox] stabilization_result: {:?}", &stabilization_result);
 
    //---------------------------------------------------------
    // Return "DONE":
