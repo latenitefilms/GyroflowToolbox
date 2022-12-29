@@ -10,6 +10,10 @@ Gyroflow Toolbox allows you to take the stabilised data from Gyroflow and use it
 
 You will need to install the latest [Gyroflow](https://gyroflow.xyz/download) application, before using Gyroflow Toolbox.
 
+## Limitations
+
+- Due to limitations in Final Cut Pro's FxPlug4 API - we currently can't determine the source start timecode of a clip. Because of this, the Gyroflow Toolbox effect should only be applied to a clip where the start of the clip hasn't been trimmed in the timeline (i.e. the clip you have in the timeline should show the first frame of the source clip). If you need to trim the start of this clip, you can use the full clip within a Compound Clip, then trim the Compound Clip as required. We have been in contact with the Final Cut Pro team about this, and there's currently no other workaround or solution. [Issue #8]
+
 ## Test Footage
 
 The Gyroflow team have kindly shared some test footage that contains gyro data on [Google Drive](https://drive.google.com/drive/folders/1sbZiLN5-sv_sGul1E_DUOluB5OMHfySh?usp=sharing).
@@ -34,12 +38,6 @@ You can find a list of all the current supported gyro sources on the [Gyroflow R
 - WitMotion (WT901SDCL binary and *.txt)
 - Vuze (VuzeXR)
 - KanDao (Obisidian Pro)
-
-## Known Issues
-
-- Currently all our testing has been done on MacBook Pro's (16-inch 2021, M1 Max, 64GB RAM) running **Final Cut Pro 10.6.5** and **macOS Monterey 12.5.1**. We haven't yet properly tested Intel machines, older versions of macOS, older versions of Final Cut Pro or macOS Ventura. Please [submit an issue](https://github.com/latenitefilms/GyroflowToolbox/issues) if you run into problems.
-- Currently to get from FxPlug4 to Gyroflow and back again, we're going from GPU>RAM>GPU>RAM>GPU which isn't very efficient. Hopefully eventually we'll be able to just pass a Metal Texture directly to Gyroflow. ([Issue #6](https://github.com/latenitefilms/GyroflowToolbox/issues/6))
-- Due to limitations in Final Cut Pro's FxPlug4 API - we currently can't determine the source start timecode of a clip. Because of this, the Gyroflow Toolbox effect should only be applied to a clip where the start of the clip hasn't been trimmed in the timeline (i.e. the clip you have in the timeline should show the first frame of the source clip). If you need to trim the start of this clip, you can use the full clip within a Compound Clip, then trim the Compound Clip as required. We'll try and come up with a workaround. [Issue #8]
 
 ## Installation
 
