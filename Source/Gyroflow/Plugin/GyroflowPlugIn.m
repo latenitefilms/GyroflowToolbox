@@ -736,8 +736,22 @@
     //---------------------------------------------------------
     id<MTLDevice> inputDevice       = [deviceCache deviceWithRegistryID:sourceImages[0].deviceRegistryID];
     id<MTLTexture> inputTexture     = [sourceImages[0] metalTextureForDevice:inputDevice];
-    id<MTLTexture> processedTexture = [sourceImages[0] metalTextureForDevice:inputDevice];
     
+    
+    //---------------------------------------------------------
+    // Create a new MTLTexture using the same properties as
+    // the inputTexture:
+    //---------------------------------------------------------
+    MTLTextureDescriptor *descriptor = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:inputTexture.pixelFormat
+                                                                                             width:inputTexture.width
+                                                                                            height:inputTexture.height
+                                                                                         mipmapped:NO];
+    descriptor.resourceOptions = inputTexture.resourceOptions;
+    descriptor.storageMode = inputTexture.storageMode;
+    descriptor.usage = inputTexture.usage;
+    
+    id<MTLTexture> processedTexture = [inputTexture.device newTextureWithDescriptor:descriptor];
+
     //---------------------------------------------------------
     // Determine the Pixel Format:
     //---------------------------------------------------------
