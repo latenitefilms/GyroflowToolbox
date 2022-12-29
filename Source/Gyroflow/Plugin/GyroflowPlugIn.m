@@ -1026,6 +1026,11 @@
     // so we can re-use it again:
     //---------------------------------------------------------
     [deviceCache returnCommandQueueToCache:commandQueue];
+
+    //---------------------------------------------------------
+    // Release the Input Textures:
+    //---------------------------------------------------------
+    [inputTexture setPurgeableState:MTLPurgeableStateEmpty];
     
     return YES;
 }
