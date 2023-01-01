@@ -25,13 +25,13 @@
 		2239AB492943F8F600028B77 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 2239AB472943F8F600028B77 /* InfoPlist.strings */; };
 		2239AB4C2943F8F600028B77 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 2239AB4A2943F8F600028B77 /* Localizable.strings */; };
 		2239AB57294400B500028B77 /* GyroflowParameters.m in Sources */ = {isa = PBXBuildFile; fileRef = 2239AB56294400B500028B77 /* GyroflowParameters.m */; };
-		2239AB5C29453BB400028B77 /* GyroflowToolbox.icns in Resources */ = {isa = PBXBuildFile; fileRef = 2239AB5B29453BB400028B77 /* GyroflowToolbox.icns */; };
 		2239AB6D2945471500028B77 /* Motion Templates in Resources */ = {isa = PBXBuildFile; fileRef = 2239AB6C2945471500028B77 /* Motion Templates */; };
 		2239AB782945979800028B77 /* libgyroflow_toolbox.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2239AB772945979800028B77 /* libgyroflow_toolbox.dylib */; };
 		2239AB792945979800028B77 /* libgyroflow_toolbox.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 2239AB772945979800028B77 /* libgyroflow_toolbox.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		224321B629615B0C00EA591A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 224321B529615B0C00EA591A /* Assets.xcassets */; };
+		224321B829615C4400EA591A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 224321B729615C4400EA591A /* Assets.xcassets */; };
 		228E9E1829517D8200B2571E /* ImportGyroflowProjectView.m in Sources */ = {isa = PBXBuildFile; fileRef = 228E9E1729517D8200B2571E /* ImportGyroflowProjectView.m */; };
 		228E9E1C2951DB6900B2571E /* ReloadGyroflowProjectView.m in Sources */ = {isa = PBXBuildFile; fileRef = 228E9E1B2951DB6900B2571E /* ReloadGyroflowProjectView.m */; };
-		228E9E1E2951E32600B2571E /* GyroflowToolbox.icns in Resources */ = {isa = PBXBuildFile; fileRef = 228E9E1D2951E32600B2571E /* GyroflowToolbox.icns */; };
 		22DAC75F2953B1A7001F2E06 /* GyroflowDocument.icns in Resources */ = {isa = PBXBuildFile; fileRef = 22DAC75E2953B1A7001F2E06 /* GyroflowDocument.icns */; };
 		22DAC7622953CD4F001F2E06 /* LaunchGyroflowView.m in Sources */ = {isa = PBXBuildFile; fileRef = 22DAC7602953CD4F001F2E06 /* LaunchGyroflowView.m */; };
 /* End PBXBuildFile section */
@@ -107,17 +107,17 @@
 		2239AB56294400B500028B77 /* GyroflowParameters.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = GyroflowParameters.m; sourceTree = "<group>"; };
 		2239AB58294400CE00028B77 /* GyroflowParameters.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GyroflowParameters.h; sourceTree = "<group>"; };
 		2239AB5A2944150B00028B77 /* Shared.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Shared.xcconfig; sourceTree = "<group>"; };
-		2239AB5B29453BB400028B77 /* GyroflowToolbox.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = GyroflowToolbox.icns; sourceTree = "<group>"; };
 		2239AB6C2945471500028B77 /* Motion Templates */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "Motion Templates"; path = "Resources/Motion Templates"; sourceTree = "<group>"; };
 		2239AB772945979800028B77 /* libgyroflow_toolbox.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libgyroflow_toolbox.dylib; path = Frameworks/gyroflow/binary/libgyroflow_toolbox.dylib; sourceTree = "<group>"; };
 		2239AB7A2945983D00028B77 /* gyroflow.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = gyroflow.h; path = Frameworks/gyroflow/inc/gyroflow.h; sourceTree = SOURCE_ROOT; };
 		2239AB7C2945A69100028B77 /* lib.rs */ = {isa = PBXFileReference; lastKnownFileType = text; name = lib.rs; path = Frameworks/gyroflow/src/lib.rs; sourceTree = SOURCE_ROOT; };
+		224321B529615B0C00EA591A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		224321B729615C4400EA591A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		228E9E1629517D8200B2571E /* ImportGyroflowProjectView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ImportGyroflowProjectView.h; sourceTree = "<group>"; };
 		228E9E1729517D8200B2571E /* ImportGyroflowProjectView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ImportGyroflowProjectView.m; sourceTree = "<group>"; };
 		228E9E1929517DDA00B2571E /* GyroflowConstants.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GyroflowConstants.h; sourceTree = "<group>"; };
 		228E9E1A2951DB6800B2571E /* ReloadGyroflowProjectView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ReloadGyroflowProjectView.h; sourceTree = "<group>"; };
 		228E9E1B2951DB6900B2571E /* ReloadGyroflowProjectView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ReloadGyroflowProjectView.m; sourceTree = "<group>"; };
-		228E9E1D2951E32600B2571E /* GyroflowToolbox.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = GyroflowToolbox.icns; path = "Gyroflow/Wrapper Application/GyroflowToolbox.icns"; sourceTree = SOURCE_ROOT; };
 		22DAC75E2953B1A7001F2E06 /* GyroflowDocument.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = GyroflowDocument.icns; sourceTree = "<group>"; };
 		22DAC7602953CD4F001F2E06 /* LaunchGyroflowView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LaunchGyroflowView.m; sourceTree = "<group>"; };
 		22DAC7612953CD4F001F2E06 /* LaunchGyroflowView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LaunchGyroflowView.h; sourceTree = "<group>"; };
@@ -262,10 +262,10 @@
 			isa = PBXGroup;
 			children = (
 				22DAC75E2953B1A7001F2E06 /* GyroflowDocument.icns */,
-				2239AB5B29453BB400028B77 /* GyroflowToolbox.icns */,
 				2239AB332943F8F600028B77 /* Info.plist */,
 				2239AB352943F8F600028B77 /* InfoPlist.strings */,
 				2239AB422943F8F600028B77 /* SandboxEntitlements.entitlements */,
+				224321B529615B0C00EA591A /* Assets.xcassets */,
 			);
 			name = Extras;
 			sourceTree = "<group>";
@@ -304,11 +304,11 @@
 		228E9E15294E817700B2571E /* Extras */ = {
 			isa = PBXGroup;
 			children = (
-				228E9E1D2951E32600B2571E /* GyroflowToolbox.icns */,
 				2239AB442943F8F600028B77 /* main.m */,
 				2239AB462943F8F600028B77 /* Info.plist */,
 				2239AB472943F8F600028B77 /* InfoPlist.strings */,
 				2239AB4A2943F8F600028B77 /* Localizable.strings */,
+				224321B729615C4400EA591A /* Assets.xcassets */,
 			);
 			name = Extras;
 			sourceTree = "<group>";
@@ -413,7 +413,7 @@
 				22DAC75F2953B1A7001F2E06 /* GyroflowDocument.icns in Resources */,
 				2239AB6D2945471500028B77 /* Motion Templates in Resources */,
 				2239AB372943F8F600028B77 /* InfoPlist.strings in Resources */,
-				2239AB5C29453BB400028B77 /* GyroflowToolbox.icns in Resources */,
+				224321B629615B0C00EA591A /* Assets.xcassets in Resources */,
 				2239AB3C2943F8F600028B77 /* MainMenu.xib in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -422,8 +422,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				228E9E1E2951E32600B2571E /* GyroflowToolbox.icns in Resources */,
 				2239AB492943F8F600028B77 /* InfoPlist.strings in Resources */,
+				224321B829615C4400EA591A /* Assets.xcassets in Resources */,
 				2239AB4C2943F8F600028B77 /* Localizable.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
