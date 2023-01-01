@@ -51,7 +51,7 @@ You should then run the application. If it's the first time installing the softw
 
 ![Screenshot](Documentation/01-install.png)
 
-Once you click the button, you'll be prompted to grant permission to your Movies folder. This is due to macOS's sandboxing. Click **OK**.
+Once you click the button, you'll be prompted to grant permission to your Movies folder. This is due to macOS's sandboxing, and you'll only need to do this once. Click **OK**.
 
 ![Screenshot](Documentation/02-install.png)
 
