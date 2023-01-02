@@ -107,6 +107,8 @@ This repository was thrown together by [Chris Hocking](https://github.com/lateni
 
 However, none of this would be possible without the incredible [Gyroflow](https://github.com/gyroflow/gyroflow) project and the incredibly help and support from their main developer, [AdrianEddy](https://github.com/AdrianEddy).
 
+The Gyroflow Toolbox icon was designed by the amazing [Matthew Skiles](http://matthewskiles.com).
+
 ## License
 
 All the code within **this repository** is licensed under [MIT](LICENSE.md).
