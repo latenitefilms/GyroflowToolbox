@@ -10,9 +10,11 @@ Allows you to import [Gyroflow](https://github.com/gyroflow/gyroflow) Projects i
 
 Gyroflow Toolbox allows you to take the stabilised data from Gyroflow and use it within Final Cut Pro as an effect.
 
-## Prerequisites 
+## Prerequisites
 
-You will need to install the latest [Gyroflow](https://gyroflow.xyz/download) application, before using Gyroflow Toolbox.
+To create the Gyroflow Project (that you import into Gyroflow Toolbox), you'll need to install the latest [Gyroflow](https://gyroflow.xyz/download) application.
+
+You don't necessarily have to install Gyroflow on the same machine as Gyroflow Toolbox - for example, you could run Gyroflow on a fast PC, then copy the exported Gyroflow Project to your Mac to import into Gyroflow Toolbox.
 
 ## Limitations
 
@@ -81,11 +83,25 @@ From the Inspector you can then click **Launch Gyroflow**, to open the Gyroflow 
 
 ![Screenshot](Documentation/07-install.png)
 
+Because Gyroflow Toolbox has no knowledge of the clip it's been applied to, we can't automatically load the video clip into Gyroflow, so you'll need to manually import it by either dragging the file in, or clicking the Open File button.
+
+![Screenshot](Documentation/09-install.png)
+
+Gyroflow Toolbox also has some limitations with certain footage - for example, currently with the RED Komodo, you'll need to transcode the footage to ProRes, load the ProRes in Gyroflow then load your original `.R3D` in the **Motion data** section of Gyroflow.
+
+Lens profile and Motion data files are automatically detected for some cameras (such as GoPro's). Otherwise search for the correct lens profile and open the Motion data file.
+
+You should play the video to check if additional synchronisation is required. If so, right-click on the timeline and select **Auto sync here** at at least two points of the video where some motion is present. This synchronises the gyro data and the video.
+
+You can also experiment with the stabilisation options and algorithms. They all give different "looks" for the final result.
+
 You can learn more about Gyroflow [here](https://docs.gyroflow.xyz).
+
+The [Gyroflow Discord](https://discord.gg/BBJ2UVAr2D) is also very active and a great way to get fast support.
 
 Once you have finished stabilising in Gyroflow you should click the **Export** button arrow and then **Export project file (including processed gyro data)**.
 
-It's important that you include the processed gyro data, otherwise none of the stabilisation will come across to Gyroflow Toolbox.
+It's important that you include the **processed gyro data**, otherwise none of the stabilisation will come across to Gyroflow Toolbox, and you'll get an error message when attempting to import it.
 
 ![Screenshot](Documentation/08-install.png)
 
