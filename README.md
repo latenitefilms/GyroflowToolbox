@@ -10,6 +10,8 @@ Allows you to import [Gyroflow](https://github.com/gyroflow/gyroflow) Projects i
 
 Gyroflow Toolbox allows you to take the stabilised data from Gyroflow and use it within Final Cut Pro as an effect.
 
+You can watch a great Gyroflow Tutorial [here](https://www.youtube.com/watch?v=QAds3x8UU1w).
+
 ## Prerequisites
 
 To create the Gyroflow Project (that you import into Gyroflow Toolbox), you'll need to install the latest [Gyroflow](https://gyroflow.xyz/download) application.
