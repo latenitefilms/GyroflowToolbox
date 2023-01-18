@@ -27,19 +27,18 @@ use std::sync::Mutex;                       // A mutual exclusion primitive usef
 // each pixel format:
 //---------------------------------------------------------
 lazy_static! {
-    static ref EIGHT_BIT_CACHE: Mutex<LruCache<String, Arc<StabilizationManager<BGRA8>>>> = Mutex::new(LruCache::new(std::num::NonZeroUsize::new(5).unwrap()));
-    static ref SIXTEEN_BIT_CACHE: Mutex<LruCache<String, Arc<StabilizationManager<RGBAf16>>>> = Mutex::new(LruCache::new(std::num::NonZeroUsize::new(5).unwrap()));
-    static ref THIRTY_TWO_BIT_CACHE: Mutex<LruCache<String, Arc<StabilizationManager<RGBAf>>>> = Mutex::new(LruCache::new(std::num::NonZeroUsize::new(5).unwrap()));
+    static ref CACHE: Mutex<LruCache<String, Arc<StabilizationManager>>> = Mutex::new(LruCache::new(std::num::NonZeroUsize::new(5).unwrap()));
 }
 
 //---------------------------------------------------------
-// The "Process The Frame" function that gets triggered
-// in Rust land:
+// The "Process Frame" function that gets triggered from
+// Objective-C Land:
 //---------------------------------------------------------
-fn process_frame<T: PixelType>(
-    cache: &mut LruCache<String, Arc<StabilizationManager<T>>>,
+#[no_mangle]
+pub extern "C" fn processFrame(
     width: u32,
     height: u32,
+    pixel_format: *const c_char,
     number_of_bytes: i8,
     path: *const c_char,
     data: *const c_char,
@@ -51,6 +50,24 @@ fn process_frame<T: PixelType>(
     out_mtl_tex: *mut std::ffi::c_void,
     command_queue: *mut std::ffi::c_void,
 ) -> *const c_char {
+    //---------------------------------------------------------
+    // Setting our NSLog Logger (only once):
+    //---------------------------------------------------------
+    static LOGGER: OnceCell<Mutex<Option<()>>> = OnceCell::new();
+    LOGGER.get_or_init(|| {
+        let logger = oslog::OsLogger::new("com.latenitefilms.GyroflowToolbox")
+            .level_filter(log::LevelFilter::Debug)
+            .category_level_filter("Settings", log::LevelFilter::Trace)
+            .init().ok();
+        Mutex::new(logger)
+    });
+    
+    //---------------------------------------------------------
+    // Get Pixel Format:
+    //---------------------------------------------------------
+    let pixel_format_pointer = unsafe { CStr::from_ptr(pixel_format) };
+    let pixel_format_string = pixel_format_pointer.to_string_lossy();
+    
     // -------------------------------------------------------------------------------
     // You can't use &str across FFI boundary, it's a Rust type.
     // You have to use C-compatible char pointer, so path: *const c_char and then
@@ -74,8 +91,8 @@ fn process_frame<T: PixelType>(
    //---------------------------------------------------------
    // Cache the manager:
    //---------------------------------------------------------
-   let cache_key = format!("{path_string}{output_width}{output_height}");
-   let manager = if let Some(manager) = cache.get(&cache_key) {
+   let cache_key = format!("{path_string}{output_width}{output_height}{pixel_format_string}");
+   let manager = if let Some(manager) = CACHE.get(&cache_key) {
        //---------------------------------------------------------
        // Already cached:
        //---------------------------------------------------------
@@ -84,7 +101,7 @@ fn process_frame<T: PixelType>(
        //---------------------------------------------------------
        // Setup the Gyroflow Manager:
        //---------------------------------------------------------
-       let manager = StabilizationManager::<T>::default();
+       let manager = StabilizationManager::default();
               
        //---------------------------------------------------------
        // Import the Gyroflow Data:
@@ -129,8 +146,8 @@ fn process_frame<T: PixelType>(
            }
        }
 
-       cache.put(cache_key.to_owned(), Arc::new(manager));
-       cache.get(&cache_key).unwrap().clone()
+       CACHE.put(cache_key.to_owned(), Arc::new(manager));
+       CACHE.get(&cache_key).unwrap().clone()
    };
 
    //---------------------------------------------------------
@@ -186,7 +203,7 @@ fn process_frame<T: PixelType>(
    //---------------------------------------------------------
    // Stabilization time!
    //---------------------------------------------------------
-   let stabilization_result = manager.process_pixels(timestamp, &mut Buffers {
+   let mut buffers = Buffers {
        input: BufferDescription {
            size: (output_width, output_height, input_stride),
            rect: None,
@@ -199,7 +216,19 @@ fn process_frame<T: PixelType>(
            data: BufferSource::Metal { texture: out_mtl_tex as *mut metal::MTLTexture, command_queue: command_queue as *mut metal::MTLCommandQueue },
            texture_copy: true
        }
-   });
+   };
+   
+   let stabilization_result = match pixel_format_string.as_ref() {
+       "BGRA8Unorm" => {
+           manager.process_pixels::<BGRA8>(timestamp, &mut buffers)
+        },
+       "RGBAf16" => {
+           manager.process_pixels::<RGBAf16>(timestamp, &mut buffers)
+        },
+       "RGBAf" => {
+           manager.process_pixels::<RGBAf>(timestamp, &mut buffers)
+        }
+   };
    
    //---------------------------------------------------------
    // Output the Stabilization result to the Console:
@@ -211,63 +240,4 @@ fn process_frame<T: PixelType>(
    //---------------------------------------------------------
    let result = CString::new("DONE").unwrap();
    return result.into_raw()
-}
-
-//---------------------------------------------------------
-// The "Process Frame" function that gets triggered from
-// Objective-C Land:
-//---------------------------------------------------------
-#[no_mangle]
-pub extern "C" fn processFrame(
-    width: u32,
-    height: u32,
-    pixel_format: *const c_char,
-    number_of_bytes: i8,
-    path: *const c_char,
-    data: *const c_char,
-    timestamp: i64,
-    fov: f64,
-    smoothness: f64,
-    lens_correction: f64,
-    in_mtl_tex: *mut std::ffi::c_void,
-    out_mtl_tex: *mut std::ffi::c_void,
-    command_queue: *mut std::ffi::c_void,
-) -> *const c_char {
-    //---------------------------------------------------------
-    // Setting our NSLog Logger (only once):
-    //---------------------------------------------------------
-    static LOGGER: OnceCell<Mutex<Option<()>>> = OnceCell::new();
-    LOGGER.get_or_init(|| {
-        let logger = oslog::OsLogger::new("com.latenitefilms.GyroflowToolbox")
-            .level_filter(log::LevelFilter::Debug)
-            .category_level_filter("Settings", log::LevelFilter::Trace)
-            .init().ok();
-        Mutex::new(logger)
-    });
-    
-    //---------------------------------------------------------
-    // Get Pixel Format:
-    //---------------------------------------------------------
-    let pixel_format_pointer = unsafe { CStr::from_ptr(pixel_format) };
-    let pixel_format_string = pixel_format_pointer.to_string_lossy();
-    
-    //---------------------------------------------------------
-    // Actually process the frame:
-    //---------------------------------------------------------
-    match pixel_format_string.as_ref() {
-        "BGRA8Unorm" => {
-            return process_frame::<BGRA8>(&mut EIGHT_BIT_CACHE.lock().unwrap(), width, height, number_of_bytes, path, data, timestamp, fov, smoothness, lens_correction, in_mtl_tex, out_mtl_tex, command_queue);
-        },
-        "RGBAf16" => {
-            return process_frame::<RGBAf16>(&mut SIXTEEN_BIT_CACHE.lock().unwrap(), width, height, number_of_bytes, path, data, timestamp, fov, smoothness, lens_correction, in_mtl_tex, out_mtl_tex, command_queue);
-        },
-        "RGBAf" => {
-            return process_frame::<RGBAf>(&mut THIRTY_TWO_BIT_CACHE.lock().unwrap(), width, height, number_of_bytes, path, data, timestamp, fov, smoothness, lens_correction, in_mtl_tex, out_mtl_tex, command_queue);
-        },
-        _ => {
-            log::error!("[Gyroflow Toolbox] Unsupported pixel format: {:?}", pixel_format_string);
-            let result = CString::new("FAIL").unwrap();
-            return result.into_raw()
-        }
-    }
 }

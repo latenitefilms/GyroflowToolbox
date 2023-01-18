@@ -679,9 +679,11 @@
 		2239AB502943F8F600028B77 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "Gyroflow/Wrapper Application/SandboxEntitlements.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = "$(HARDCODED_BUILD)";
 				DEVELOPMENT_TEAM = A5HDJTY9X5;
+				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				INFOPLIST_FILE = Gyroflow/Plugin/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -704,9 +706,11 @@
 		2239AB512943F8F600028B77 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "Gyroflow/Wrapper Application/SandboxEntitlements.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = "$(HARDCODED_BUILD)";
 				DEVELOPMENT_TEAM = A5HDJTY9X5;
+				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				INFOPLIST_FILE = Gyroflow/Plugin/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (

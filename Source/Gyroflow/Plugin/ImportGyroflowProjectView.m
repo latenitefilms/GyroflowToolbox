@@ -25,18 +25,15 @@
     
     if (self != nil)
     {
+        //---------------------------------------------------------
+        // Cache the API Manager:
+        //---------------------------------------------------------
         _apiManager = apiManager;
-        
-        //---------------------------------------------------------
-        // The NSView should automatically re-size to the size
-        // of its parent view:
-        //---------------------------------------------------------
-        self.autoresizingMask = NSViewWidthSizable;
         
         //---------------------------------------------------------
         // Add the "Import Gyroflow Project" button:
         //---------------------------------------------------------
-        NSButton *button = [[NSButton alloc]initWithFrame:NSMakeRect(-68, 0, 130, 30)]; // x y w h
+        NSButton *button = [[NSButton alloc]initWithFrame:NSMakeRect(0, 0, 130, 30)]; // x y w h
         [button setButtonType:NSButtonTypeMomentaryPushIn];
         [button setBezelStyle: NSBezelStyleRounded];
         button.layer.backgroundColor = [NSColor colorWithCalibratedRed:66 green:66 blue:66 alpha:1].CGColor;
@@ -45,7 +42,6 @@
         [button setTitle:@"Import Project"];
         [button setTarget:self];
         [button setAction:@selector(buttonPressed)];
-        [button setAutoresizingMask: NSViewMinXMargin];
         
         _cachedButton = button;
         [self addSubview:_cachedButton];
