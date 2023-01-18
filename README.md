@@ -4,6 +4,8 @@
 
 Allows you to import [Gyroflow](https://github.com/gyroflow/gyroflow) Projects into Apple's [Final Cut Pro](https://www.apple.com/final-cut-pro/).
 
+---
+
 ## What is Gyroflow?
 
 [Gyroflow](https://github.com/gyroflow/gyroflow) is a free and open source application that can stabilize your video by using motion data from a gyroscope and optionally an accelerometer. Modern cameras record that data internally (GoPro, Sony, Insta360 etc), and Gyroflow stabilizes the captured footage precisely by using them. It can also use gyro data from an external source (eg. from Betaflight blackbox).
@@ -12,19 +14,27 @@ Gyroflow Toolbox allows you to take the stabilised data from Gyroflow and use it
 
 You can watch a great Gyroflow Tutorial [here](https://www.youtube.com/watch?v=QAds3x8UU1w).
 
+---
+
 ## Prerequisites
 
 To create the Gyroflow Project (that you import into Gyroflow Toolbox), you'll need to install the latest [Gyroflow](https://gyroflow.xyz/download) application.
 
 You don't necessarily have to install Gyroflow on the same machine as Gyroflow Toolbox - for example, you could run Gyroflow on a fast PC, then copy the exported Gyroflow Project to your Mac to import into Gyroflow Toolbox.
 
+---
+
 ## Limitations
 
 You should only ever apply the Gyroflow Toolbox effect to an **entire clip** - the clip cannot be trimmed. Due to limitations in Final Cut Pro's FxPlug4 API - we currently can't determine the source start timecode of a clip. Because of this, the Gyroflow Toolbox effect should only be applied to a clip where the start of the clip hasn't been trimmed in the timeline (i.e. the clip you have in the timeline should show the first frame of the source clip). If you need to trim the start of this clip, you can use the full clip within a Compound Clip, then trim the Compound Clip as required. We have been in contact with the Final Cut Pro team about this, and there's currently no other better workaround or solution. Discussed in [issue 8](https://github.com/latenitefilms/GyroflowToolbox/issues/8).
 
+---
+
 ## Test Footage
 
 The Gyroflow team have kindly shared some test footage that contains gyro data on [Google Drive](https://drive.google.com/drive/folders/1sbZiLN5-sv_sGul1E_DUOluB5OMHfySh?usp=sharing).
+
+---
 
 ## Supported Gyro Sources
 
@@ -46,6 +56,8 @@ You can find a list of all the current supported gyro sources on the [Gyroflow R
 - WitMotion (WT901SDCL binary and *.txt)
 - Vuze (VuzeXR)
 - KanDao (Obisidian Pro)
+
+---
 
 ## Installation
 
@@ -71,23 +83,25 @@ Once done, you'll be presented with a successful message:
 
 The button will now be disabled, and will say **Motion Template Installed**. You can now close the Gyroflow Toolbox application.
 
-![Screenshot](Documentation/05-install.png)
+![Screenshot](Documentation/install-05-install.png)
+
+---
 
 ## How To Use
 
 After you have installed Gyroflow and Gyroflow Toolbox, you'll see a Gyroflow Toolbox Effect in the Effects Browser.
 
-![Screenshot](Documentation/06-install.png)
+![Screenshot](Documentation/install-06.png)
 
 You can then apply this effect to any clips that are supported by Gyroflow.
 
 From the Inspector you can then click **Launch Gyroflow**, to open the Gyroflow application.
 
-![Screenshot](Documentation/07-install.png)
+![Screenshot](Documentation/install-07.png)
 
 Because Gyroflow Toolbox has no knowledge of the clip it's been applied to, we can't automatically load the video clip into Gyroflow, so you'll need to manually import it by either dragging the file in, or clicking the Open File button.
 
-![Screenshot](Documentation/09-install.png)
+![Screenshot](Documentation/install-09.png)
 
 Gyroflow Toolbox also has some limitations with certain footage - for example, currently with the RED Komodo, you'll need to transcode the footage to ProRes, load the ProRes in Gyroflow then load your original `.R3D` in the **Motion data** section of Gyroflow.
 
@@ -113,11 +127,15 @@ The data from the Gyroflow Project gets saved within the Final Cut Pro library. 
 
 You can adjust and keyframe the FOV, Smoothness and Lens Correction within Final Cut Pro.
 
+---
+
 ## Help & Support
 
 For general support and discussion, you can find the Gyroflow developers and other users on the [Gyroflow Discord server](https://discord.gg/BBJ2UVAr2D).
 
 For bug reports and feature requests for Gyroflow Toolbox, please [submit an issue](https://github.com/latenitefilms/GyroflowToolbox/issues).
+
+---
 
 ## Credits
 
@@ -127,10 +145,14 @@ However, none of this would be possible without the incredible [Gyroflow](https:
 
 The Gyroflow Toolbox icon was designed by the amazing [Matthew Skiles](http://matthewskiles.com).
 
+---
+
 ## License
 
 All the code within **this repository** is licensed under [MIT](LICENSE.md).
 
-**However**, as soon as you build/compile the Rust code, it uses [`gyroflow_core`](https://github.com/gyroflow/gyroflow/tree/master/src/core) as a dependancy, which uses the [GNU General Public License v3.0](https://github.com/gyroflow/gyroflow/blob/master/LICENSE).
+**However**, as soon as you build/compile the Rust code, it uses [`gyroflow_core`](https://github.com/gyroflow/gyroflow/tree/master/src/core) as a dependancy, which uses the [GNU General Public License v3.0 with App Store Exception](https://github.com/gyroflow/gyroflow/blob/master/LICENSE).
 
-This means that as soon as you build/compile Gyroflow Toolbox, the application falls under the same [GNU General Public License v3.0](https://github.com/gyroflow/gyroflow/blob/master/LICENSE). Because of this, all [Releases](https://github.com/latenitefilms/GyroflowToolbox/releases) in this repository also fall under the same [GNU General Public License v3.0](https://github.com/gyroflow/gyroflow/blob/master/LICENSE).
+This means that as soon as you build/compile Gyroflow Toolbox, the application falls under the same [GNU General Public License v3.0 with App Store Exception](https://github.com/gyroflow/gyroflow/blob/master/LICENSE) license.
+
+Because of this, all [Releases](https://github.com/latenitefilms/GyroflowToolbox/releases) in this repository also fall under the same [GNU General Public License v3.0 with App Store Exception](https://github.com/gyroflow/gyroflow/blob/master/LICENSE).

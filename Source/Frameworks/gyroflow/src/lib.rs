@@ -91,8 +91,9 @@ pub extern "C" fn processFrame(
    //---------------------------------------------------------
    // Cache the manager:
    //---------------------------------------------------------
+   let mut cache = CACHE.lock().unwrap();
    let cache_key = format!("{path_string}{output_width}{output_height}{pixel_format_string}");
-   let manager = if let Some(manager) = CACHE.get(&cache_key) {
+   let manager = if let Some(manager) = cache.get(&cache_key) {
        //---------------------------------------------------------
        // Already cached:
        //---------------------------------------------------------
@@ -146,8 +147,8 @@ pub extern "C" fn processFrame(
            }
        }
 
-       CACHE.put(cache_key.to_owned(), Arc::new(manager));
-       CACHE.get(&cache_key).unwrap().clone()
+       cache.put(cache_key.to_owned(), Arc::new(manager));
+       cache.get(&cache_key).unwrap().clone()
    };
 
    //---------------------------------------------------------
@@ -218,7 +219,7 @@ pub extern "C" fn processFrame(
        }
    };
    
-   let stabilization_result = match pixel_format_string.as_ref() {
+   let _stabilization_result = match pixel_format_string.as_ref() {
        "BGRA8Unorm" => {
            manager.process_pixels::<BGRA8>(timestamp, &mut buffers)
         },
@@ -227,13 +228,18 @@ pub extern "C" fn processFrame(
         },
        "RGBAf" => {
            manager.process_pixels::<RGBAf>(timestamp, &mut buffers)
-        }
+        },
+        _ => {
+           log::error!("[Gyroflow Toolbox] Unsupported pixel format: {:?}", pixel_format_string);
+           let result = CString::new("FAIL").unwrap();
+           return result.into_raw()
+       }
    };
    
    //---------------------------------------------------------
    // Output the Stabilization result to the Console:
    //---------------------------------------------------------
-   //log::info!("[Gyroflow Toolbox] stabilization_result: {:?}", &stabilization_result);
+   //log::info!("[Gyroflow Toolbox] stabilization_result: {:?}", &_stabilization_result);
 
    //---------------------------------------------------------
    // Return "DONE":

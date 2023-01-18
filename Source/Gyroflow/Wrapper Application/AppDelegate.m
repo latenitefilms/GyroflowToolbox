@@ -41,6 +41,26 @@
 }
 
 //---------------------------------------------------------
+// BUTTON: Launch Final Cut Pro
+//---------------------------------------------------------
+- (IBAction)pressLaunchFinalCutProButton:(NSButton *)sender {
+    NSString *bundleIdentifier = @"com.apple.FinalCut";
+    NSURL *url = [[NSWorkspace sharedWorkspace] URLForApplicationWithBundleIdentifier:bundleIdentifier];
+    if (url) {
+        NSWorkspaceOpenConfiguration *configuration = [NSWorkspaceOpenConfiguration new];
+        [[NSWorkspace sharedWorkspace] openApplicationAtURL:url configuration:configuration completionHandler:^(NSRunningApplication* runningApplication, NSError* error) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [[NSApplication sharedApplication] terminate:nil];
+            });
+        }];
+    } else {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [[NSApplication sharedApplication] terminate:nil];
+        });
+    }
+}
+
+//---------------------------------------------------------
 // Check to see if we already have write access to the
 // Movies folder:
 //---------------------------------------------------------
