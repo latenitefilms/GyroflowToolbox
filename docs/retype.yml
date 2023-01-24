@@ -1,12 +1,12 @@
 input: .
 output: .retype
 
-url: gyroflowtoolbox.io
+url: gyroflowtoolbox.io # Add your website address here
 
 branding:
   title: Gyroflow Toolbox
- #label: Docs
- logo: static/logo.png
+  #label: Docs
+  logo: static/logo.png
 
 links:
 - text: Issues
