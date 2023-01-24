@@ -1,4 +1,4 @@
-<img src="https://github.com/latenitefilms/GyroflowToolbox/raw/main/static/icon.png" align="right" width="15%" height="15%" />
+<img src="https://github.com/latenitefilms/GyroflowToolbox/raw/main/docs/static/logo.png" align="right" width="15%" height="15%" />
 
 # Gyroflow Toolbox
 
