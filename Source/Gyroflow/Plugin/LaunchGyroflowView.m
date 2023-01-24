@@ -75,14 +75,80 @@
 //---------------------------------------------------------
 // Triggered when the button is pressed:
 //---------------------------------------------------------
-- (void)buttonPressed {    
+- (void)buttonPressed {
+    
+    NSLog(@"Launch Gyroflow!");
+    
+    //---------------------------------------------------------
+    // Load the Custom Parameter Action API:
+    //---------------------------------------------------------
+    id<FxCustomParameterActionAPI_v4> actionAPI = [_apiManager apiForProtocol:@protocol(FxCustomParameterActionAPI_v4)];
+    if (actionAPI == nil) {
+        [self showAlertWithMessage:@"An error has occurred." info:@"Unable to retrieve 'FxCustomParameterActionAPI_v4'. This shouldn't happen, so it's probably a bug."];
+        return;
+    }
+        
+    //---------------------------------------------------------
+    // Use the Action API to allow us to change the parameters:
+    //---------------------------------------------------------
+    [actionAPI startAction:self];
+    
+    //---------------------------------------------------------
+    // Load the Parameter Retrieval API:
+    //---------------------------------------------------------
+    id<FxParameterRetrievalAPI_v6> paramGetAPI = [_apiManager apiForProtocol:@protocol(FxParameterRetrievalAPI_v6)];
+    if (paramGetAPI == nil) {
+        //---------------------------------------------------------
+        // Stop Action API:
+        //---------------------------------------------------------
+        [actionAPI endAction:self];
+        
+        [self showAlertWithMessage:@"An error has occurred." info:@"Unable to retrieve 'FxParameterRetrievalAPI_v6'.\n\nThis shouldn't happen, so it's probably a bug."];
+        return;
+    }
+    
+    //---------------------------------------------------------
+    // Get the existing Gyroflow project path:
+    //---------------------------------------------------------
+    NSString *existingProjectPath = nil;
+    [paramGetAPI getStringParameterValue:&existingProjectPath fromParameter:kCB_GyroflowProjectPath];
+    
+    NSLog(@"existingProjectPath: %@", existingProjectPath);
+        
+    //---------------------------------------------------------
+    // Open Gyroflow or the current Gyroflow Project:
+    //---------------------------------------------------------
     NSString *bundleIdentifier = @"xyz.gyroflow";
     NSURL *appURL = [[NSWorkspace sharedWorkspace] URLForApplicationWithBundleIdentifier:bundleIdentifier];
+    
+    NSLog(@"appURL: %@", appURL);
     if (appURL) {
-        [[NSWorkspace sharedWorkspace] openURL:appURL];
+        if (existingProjectPath == nil || [existingProjectPath isEqualToString:@""]) {
+            NSLog(@"Just launching Gyroflow by itself.");
+            [[NSWorkspace sharedWorkspace] openURL:appURL];
+        } else {
+            
+            
+            // /Applications/Gyroflow.app/Contents/MacOS/gyroflow
+            
+            
+            
+            NSLog(@"Launching Gyroflow with project: %@", existingProjectPath);
+            
+NSString *bundleIdentifier = @"xyz.gyroflow";
+NSURL *appURL = [[NSWorkspace sharedWorkspace] URLForApplicationWithBundleIdentifier:bundleIdentifier];
+NSWorkspaceOpenConfiguration *config = [[[NSWorkspaceOpenConfiguration alloc] init] autorelease];
+config.arguments = @[@"--returnLastOpenProjectPath"];
+[[NSWorkspace sharedWorkspace] openApplicationAtURL:appURL configuration:config completionHandler:nil];
+        }
     } else {
         [self showAlertWithMessage:@"Failed to launch Gyroflow." info:@"Please check that Gyroflow is installed in your Applications folder and try again."];
     }
+    
+    //---------------------------------------------------------
+    // Stop Action API:
+    //---------------------------------------------------------
+    [actionAPI endAction:self];    
 }
 
 //---------------------------------------------------------
