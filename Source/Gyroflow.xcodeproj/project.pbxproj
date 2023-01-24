@@ -349,9 +349,9 @@
 			productReference = 2239AB0D2943F8F600028B77 /* Gyroflow Toolbox.app */;
 			productType = "com.apple.product-type.application";
 		};
-		2239AB172943F8F600028B77 /* XPC Service */ = {
+		2239AB172943F8F600028B77 /* Gyroflow Toolbox Renderer */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 2239AB4F2943F8F600028B77 /* Build configuration list for PBXNativeTarget "XPC Service" */;
+			buildConfigurationList = 2239AB4F2943F8F600028B77 /* Build configuration list for PBXNativeTarget "Gyroflow Toolbox Renderer" */;
 			buildPhases = (
 				2239AB122943F8F600028B77 /* Sources */,
 				2239AB132943F8F600028B77 /* Frameworks */,
@@ -364,7 +364,7 @@
 			);
 			dependencies = (
 			);
-			name = "XPC Service";
+			name = "Gyroflow Toolbox Renderer";
 			productName = "XPC Service";
 			productReference = 2239AB182943F8F600028B77 /* Gyroflow Toolbox Renderer.pluginkit */;
 			productType = "com.apple.product-type.bundle";
@@ -400,7 +400,7 @@
 			projectRoot = "";
 			targets = (
 				2239AB0C2943F8F600028B77 /* Wrapper Application */,
-				2239AB172943F8F600028B77 /* XPC Service */,
+				2239AB172943F8F600028B77 /* Gyroflow Toolbox Renderer */,
 			);
 		};
 /* End PBXProject section */
@@ -501,12 +501,12 @@
 /* Begin PBXTargetDependency section */
 		2239AB1B2943F8F600028B77 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 2239AB172943F8F600028B77 /* XPC Service */;
+			target = 2239AB172943F8F600028B77 /* Gyroflow Toolbox Renderer */;
 			targetProxy = 2239AB1A2943F8F600028B77 /* PBXContainerItemProxy */;
 		};
 		2239AB272943F8F600028B77 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 2239AB172943F8F600028B77 /* XPC Service */;
+			target = 2239AB172943F8F600028B77 /* Gyroflow Toolbox Renderer */;
 			targetProxy = 2239AB262943F8F600028B77 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -692,7 +692,7 @@
 				);
 				MACH_O_TYPE = mh_execute;
 				MARKETING_VERSION = "$(HARDCODED_VERSION)";
-				PRODUCT_BUNDLE_IDENTIFIER = GyroflowToolboxRenderer;
+				PRODUCT_BUNDLE_IDENTIFIER = com.latenitefilms.GyroflowToolbox.Renderer;
 				PRODUCT_NAME = "Gyroflow Toolbox Renderer";
 				SWIFT_OBJC_BRIDGING_HEADER = "Gyroflow/Plugin/XPC Service-Bridging-Header.h";
 				WRAPPER_EXTENSION = pluginkit;
@@ -719,7 +719,7 @@
 				);
 				MACH_O_TYPE = mh_execute;
 				MARKETING_VERSION = "$(HARDCODED_VERSION)";
-				PRODUCT_BUNDLE_IDENTIFIER = GyroflowToolboxRenderer;
+				PRODUCT_BUNDLE_IDENTIFIER = com.latenitefilms.GyroflowToolbox.Renderer;
 				PRODUCT_NAME = "Gyroflow Toolbox Renderer";
 				SWIFT_OBJC_BRIDGING_HEADER = "Gyroflow/Plugin/XPC Service-Bridging-Header.h";
 				WRAPPER_EXTENSION = pluginkit;
@@ -738,7 +738,7 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				INFOPLIST_FILE = "Gyroflow/Wrapper Application/Info.plist";
 				MARKETING_VERSION = "$(HARDCODED_VERSION)";
-				PRODUCT_BUNDLE_IDENTIFIER = GyroflowToolbox;
+				PRODUCT_BUNDLE_IDENTIFIER = com.latenitefilms.GyroflowToolbox;
 				PRODUCT_NAME = "Gyroflow Toolbox";
 				SWIFT_OBJC_BRIDGING_HEADER = "Gyroflow/Wrapper Application/Wrapper Application-Bridging-Header.h";
 			};
@@ -756,7 +756,7 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				INFOPLIST_FILE = "Gyroflow/Wrapper Application/Info.plist";
 				MARKETING_VERSION = "$(HARDCODED_VERSION)";
-				PRODUCT_BUNDLE_IDENTIFIER = GyroflowToolbox;
+				PRODUCT_BUNDLE_IDENTIFIER = com.latenitefilms.GyroflowToolbox;
 				PRODUCT_NAME = "Gyroflow Toolbox";
 				SWIFT_OBJC_BRIDGING_HEADER = "Gyroflow/Wrapper Application/Wrapper Application-Bridging-Header.h";
 			};
@@ -774,7 +774,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		2239AB4F2943F8F600028B77 /* Build configuration list for PBXNativeTarget "XPC Service" */ = {
+		2239AB4F2943F8F600028B77 /* Build configuration list for PBXNativeTarget "Gyroflow Toolbox Renderer" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				2239AB502943F8F600028B77 /* Debug */,
