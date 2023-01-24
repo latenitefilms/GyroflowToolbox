@@ -1,0 +1,23 @@
+input: .
+output: .retype
+
+url: gyroflowtoolbox.io
+
+branding:
+  title: Gyroflow Toolbox
+ #label: Docs
+ logo: static/logo.png
+
+links:
+- text: Issues
+  link: https://github.com/latenitefilms/gyroflowtoolbox/issues
+  icon: issue-opened
+  target: blank
+
+- text: Discussions
+  link: https://github.com/latenitefilms/gyroflowtoolbox/discussions
+  icon: comment-discussion
+  target: blank
+
+footer:
+  copyright: "&copy; Copyright {{ year }} LateNite Films Pty Ltd. All rights reserved."

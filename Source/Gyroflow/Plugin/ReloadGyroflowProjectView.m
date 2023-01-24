@@ -109,6 +109,11 @@
     // Make sure there's actually encoded bookmark data:
     //---------------------------------------------------------
     if ([encodedBookmark isEqualToString:@""]) {
+        //---------------------------------------------------------
+        // Stop Action API:
+        //---------------------------------------------------------
+        [actionAPI endAction:self];
+        
         [self showAlertWithMessage:@"An error has occurred." info:@"There's no previous security-scoped bookmark data found.\n\nPlease make sure you import a Gyroflow Project before attempting to reload."];
         return;
     }
@@ -133,6 +138,11 @@
                                              error:&bookmarkError];
     
     if (bookmarkError != nil) {
+        //---------------------------------------------------------
+        // Stop Action API:
+        //---------------------------------------------------------
+        [actionAPI endAction:self];
+        
         [self showAlertWithMessage:@"An error has occurred." info:[NSString stringWithFormat:@"Failed to resolve bookmark due to:\n\n%@", [bookmarkError localizedDescription]]];
         return;
     }
@@ -143,6 +153,11 @@
     id<FxParameterSettingAPI_v5> paramSetAPI = [_apiManager apiForProtocol:@protocol(FxParameterSettingAPI_v5)];
     if (paramSetAPI == nil)
     {
+        //---------------------------------------------------------
+        // Stop Action API:
+        //---------------------------------------------------------
+        [actionAPI endAction:self];
+        
         [self showAlertWithMessage:@"An error has occurred." info:@"Unable to retrieve 'FxParameterSettingAPI_v5'.\n\nThis shouldn't happen, so it's probably a bug."];
         return;
     }
@@ -156,6 +171,11 @@
     NSString *selectedGyroflowProjectData = [NSString stringWithContentsOfURL:url encoding:NSUTF8StringEncoding error:&readError];
     [url stopAccessingSecurityScopedResource];
     if (readError != nil) {
+        //---------------------------------------------------------
+        // Stop Action API:
+        //---------------------------------------------------------
+        [actionAPI endAction:self];
+        
         [self showAlertWithMessage:@"An error has occurred." info:[NSString stringWithFormat:@"Failed to read Gyroflow Project file due to:\n\n%@", [readError localizedDescription]]];
         return;
     }
