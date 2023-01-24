@@ -9,6 +9,11 @@ branding:
   logo: static/logo.png
 
 links:
+- text: Source Code
+  link: https://github.com/latenitefilms/gyroflowtoolbox/
+  icon: file-code
+  target: blank
+
 - text: Issues
   link: https://github.com/latenitefilms/gyroflowtoolbox/issues
   icon: issue-opened
