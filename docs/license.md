@@ -6,4 +6,4 @@ All the code within **this repository** is licensed under [MIT](LICENSE.md).
 
 This means that as soon as you build/compile Gyroflow Toolbox, the application falls under the same [GNU General Public License v3.0 with App Store Exception](https://github.com/gyroflow/gyroflow/blob/master/LICENSE) license.
 
-Because of this, all [Releases](https://github.com/latenitefilms/GyroflowToolbox/releases) in this repository also fall under the same [GNU General Public License v3.0 with App Store Exception](https://github.com/gyroflow/gyroflow/blob/master/LICENSE).
+Because of this, any time you build the code in this repository, the binary will also fall under the same [GNU General Public License v3.0 with App Store Exception](https://github.com/gyroflow/gyroflow/blob/master/LICENSE).
