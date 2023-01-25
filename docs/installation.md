@@ -1,10 +1,8 @@
 # Installation
 
-You can download the latest Gyroflow Toolbox release [here](https://github.com/latenitefilms/GyroflowToolbox/releases/latest).
+You can purchase the latest Gyroflow Toolbox release on the [Mac App Store](https://apps.apple.com/au/app/gyroflow-toolbox/id1667462993?mt=12).
 
-Download the top ZIP file, then when you extract it, drag the `Gyroflow Toolbox.app` application to your Applications folder.
-
-You should then run the application. If it's the first time installing the software, or if there's been an update, you'll be prompted to **Install Motion Template**.
+If it's the first time installing the software, or if there's been an update, you'll be prompted to **Install Motion Template**.
 
 ![Screenshot](static/01-install.png)
 
