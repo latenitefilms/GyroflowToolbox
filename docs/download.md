@@ -1,5 +1,7 @@
 # Download
 
-Gyroflow Toolbox is currently available for free on GitHub - however, we're currently working on adding it to the Mac App Store for a small fee (to cover maintenance support).
+Gyroflow Toolbox is now for sale on the macOS App Store for **USD$5**.
 
-> **_[You can download the latest version here.](https://github.com/latenitefilms/GyroflowToolbox/releases)_**
+> **_[You can open on the App Store here.](https://apps.apple.com/au/app/gyroflow-toolbox/id1667462993?mt=12)_**
+
+Alternatively, as Gyroflow Toolbox is open source, you can also [build it yourself via GitHub](https://github.com/latenitefilms/GyroflowToolbox).

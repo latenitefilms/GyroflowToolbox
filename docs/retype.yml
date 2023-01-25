@@ -9,6 +9,12 @@ branding:
   logo: static/logo.png
 
 links:
+
+- text: Buy on Mac App Store
+  link: https://apps.apple.com/au/app/gyroflow-toolbox/id1667462993?mt=12
+  icon: desktop-download
+  target: blank
+
 - text: Source Code
   link: https://github.com/latenitefilms/gyroflowtoolbox/
   icon: file-code
