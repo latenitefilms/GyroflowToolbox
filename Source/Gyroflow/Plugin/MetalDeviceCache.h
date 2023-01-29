@@ -1,6 +1,6 @@
 //
 //  MetalDeviceCache.h
-//  Gyroflow Toolbox
+//  Gyroflow Toolbox Renderer
 //
 //  Created by Chris Hocking on 10/12/2022.
 //

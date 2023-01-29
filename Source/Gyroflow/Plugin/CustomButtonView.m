@@ -1,53 +1,70 @@
 //
-//  LaunchGyroflowView.m
-//  Gyroflow Toolbox
+//  CustomButtonView.m
+//  Gyroflow Toolbox Renderer
 //
-//  Created by Chris Hocking on 22/12/2022.
+//  Created by Chris Hocking on 29/01/2023.
 //
 
-#import "LaunchGyroflowView.h"
-#import "GyroflowConstants.h"
-
+#import "CustomButtonView.h"
 #import <FxPlug/FxPlugSDK.h>
-#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 
-@implementation LaunchGyroflowView {
-    NSButton* _cachedButton;
+@implementation CustomButtonView {
+    NSButton* _button;
 }
 
 //---------------------------------------------------------
 // Initialize:
 //---------------------------------------------------------
-- (instancetype)initWithFrame:(NSRect)frameRect
-                andAPIManager:(id<PROAPIAccessing>)apiManager
+- (instancetype)initWithAPIManager:(id<PROAPIAccessing>)apiManager
+                      parentPlugin:(id)parentPlugin
+                          buttonID:(UInt32)buttonID
+                       buttonTitle:(NSString*)buttonTitle
 {
+    int buttonWidth = 200;
+    int buttonHeight = 32;
+    
+    NSRect frameRect = NSMakeRect(0, 0, buttonWidth, buttonHeight); // x y w h
     self = [super initWithFrame:frameRect];
     
     if (self != nil)
     {
-        //---------------------------------------------------------
-        // Cache the API Manager:
-        //---------------------------------------------------------
         _apiManager = apiManager;
         
         //---------------------------------------------------------
-        // Add the "Import Gyroflow Project" button:
+        // Cache the parent plugin & button ID:
         //---------------------------------------------------------
-        NSButton *button = [[NSButton alloc]initWithFrame:NSMakeRect(0, 0, 130, 30)]; // x y w h
+        _parentPlugin = parentPlugin;
+        _buttonID = buttonID;
+        
+        //---------------------------------------------------------
+        // Add the button:
+        //---------------------------------------------------------
+        NSButton *button = [[NSButton alloc]initWithFrame:NSMakeRect(0, 0, buttonWidth, buttonHeight)]; // x y w h
         [button setButtonType:NSButtonTypeMomentaryPushIn];
         [button setBezelStyle: NSBezelStyleRounded];
         button.layer.backgroundColor = [NSColor colorWithCalibratedRed:66 green:66 blue:66 alpha:1].CGColor;
         button.layer.shadowColor = [NSColor blackColor].CGColor;
         [button setBordered:YES];
-        [button setTitle:@"Launch Gyroflow"];
+        [button setTitle:buttonTitle];
         [button setTarget:self];
         [button setAction:@selector(buttonPressed)];
         
-        _cachedButton = button;
-        [self addSubview:_cachedButton];
+        _button = button;
+        [self addSubview:_button];
     }
     
     return self;
+}
+
+//---------------------------------------------------------
+// Triggered when the button is pressed:
+//---------------------------------------------------------
+- (void)buttonPressed {
+    #pragma clang diagnostic push
+    #pragma clang diagnostic ignored "-Wobjc-method-access"
+    [_parentPlugin customButtonViewPressed:_buttonID];
+    #pragma clang diagnostic pop
+
 }
 
 //---------------------------------------------------------
@@ -55,8 +72,8 @@
 //---------------------------------------------------------
 - (void)dealloc
 {
-    if (_cachedButton) {
-        [_cachedButton release];
+    if (_button) {
+        [_button release];
     }
  
     [super dealloc];
@@ -70,32 +87,6 @@
     // Draw the button:
     //---------------------------------------------------------
     [super drawRect:dirtyRect];
-}
-
-//---------------------------------------------------------
-// Triggered when the button is pressed:
-//---------------------------------------------------------
-- (void)buttonPressed {    
-    NSString *bundleIdentifier = @"xyz.gyroflow";
-    NSURL *appURL = [[NSWorkspace sharedWorkspace] URLForApplicationWithBundleIdentifier:bundleIdentifier];
-    if (appURL) {
-        [[NSWorkspace sharedWorkspace] openURL:appURL];
-    } else {
-        [self showAlertWithMessage:@"Failed to launch Gyroflow." info:@"Please check that Gyroflow is installed in your Applications folder and try again."];
-    }
-}
-
-//---------------------------------------------------------
-// Show Alert:
-//---------------------------------------------------------
-- (void)showAlertWithMessage:(NSString*)message info:(NSString*)info
-{
-    NSAlert *alert          = [[[NSAlert alloc] init] autorelease];
-    alert.icon              = [NSImage imageNamed:@"GyroflowToolbox"];
-    alert.alertStyle        = NSAlertStyleInformational;
-    alert.messageText       = message;
-    alert.informativeText   = info;
-    [alert runModal];
 }
 
 //---------------------------------------------------------

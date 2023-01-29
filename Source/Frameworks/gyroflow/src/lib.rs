@@ -46,6 +46,12 @@ pub extern "C" fn processFrame(
     fov: f64,
     smoothness: f64,
     lens_correction: f64,
+    horizon_lock: f64,
+    horizon_roll: f64,
+    position_offset_x: f64,
+    position_offset_y: f64,
+    video_rotation: f64,
+    video_speed: f64,
     in_mtl_tex: *mut std::ffi::c_void,
     out_mtl_tex: *mut std::ffi::c_void,
     command_queue: *mut std::ffi::c_void,
@@ -172,12 +178,51 @@ pub extern "C" fn processFrame(
            params.lens_correction_amount = lens_correction;
            params_changed = true;
        }
+       
+       //---------------------------------------------------------
+       // Set the Horizon Lock:
+       //---------------------------------------------------------
+       // TODO: Add controls for horizon_lock
+       /*
+        pub fn set_horizon_lock(&self, lock_percent: f64, roll: f64) {
+               self.smoothing.write().horizon_lock.set_horizon(lock_percent, roll);
+               self.invalidate_smoothing();
+           }
+        */
+       
+       //---------------------------------------------------------
+       // Set the Horizon Roll:
+       //---------------------------------------------------------
+       // TODO: Add controls for horizon_roll
+       
+       //---------------------------------------------------------
+       // Set the Position Offset X:
+       //---------------------------------------------------------
+       // TODO: Add controls for position_offset_x
+       
+       //---------------------------------------------------------
+       // Set the Position Offset Y:
+       //---------------------------------------------------------
+       // TODO: Add controls for position_offset_y
+       
+       //---------------------------------------------------------
+       // Set the Video Rotation:
+       //---------------------------------------------------------
+       // TODO: Add controls for video_rotation
+       
+       //---------------------------------------------------------
+       // Set the Video Speed:
+       //---------------------------------------------------------
+       // TODO: Add controls for video_speed
     }
 
    //---------------------------------------------------------
-   // Set the Smoothness:
+   // Set the Smoothing Parameters:
    //---------------------------------------------------------
    {
+       //---------------------------------------------------------
+       // Set the Smoothness:
+       //---------------------------------------------------------
        let mut smoothing = manager.smoothing.write();
        if smoothing.current().get_parameter("smoothness") != smoothness {
            smoothing.current_mut().set_parameter("smoothness", smoothness);
@@ -192,7 +237,7 @@ pub extern "C" fn processFrame(
    if params_changed {
        manager.invalidate_smoothing();
        manager.recompute_blocking();
-       manager.params.write().calculate_ramped_timestamps(&manager.keyframes.read());
+       manager.params.write().calculate_ramped_timestamps(&manager.keyframes.read(), false, false);
    }
    
    //---------------------------------------------------------

@@ -1,6 +1,6 @@
 //
 //  TileableRemoteGyroflowShaderTypes.h
-//  Gyroflow for Final Cut Pro
+//  Gyroflow Toolbox Renderer
 //
 //  Created by Chris Hocking on 10/12/2022.
 //
