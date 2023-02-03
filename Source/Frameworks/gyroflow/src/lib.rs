@@ -143,7 +143,7 @@ pub extern "C" fn processFrame(
                // Force the background color to transparent:
                //---------------------------------------------------------
                let background_color: Vector4<f32> = Vector4::new(0.0, 0.0, 0.0, 0.0);
-               manager.stabilization.write().set_background(background_color);
+               manager.set_background_color(background_color);
            },
            Err(e) => {
                //---------------------------------------------------------
@@ -228,8 +228,16 @@ pub extern "C" fn processFrame(
            smoothing.current_mut().set_parameter("smoothness", smoothness);
            params_changed = true;
        }
-   }
        
+       //---------------------------------------------------------
+       // Set the Horizon Lock:
+       //---------------------------------------------------------
+       if smoothing.horizon_lock.lock_enabled != (horizon_lock > 0.0) || smoothing.horizon_lock.horizonlockpercent != horizon_lock || smoothing.horizon_lock.horizonroll != horizon_roll {
+          smoothing.horizon_lock.set_horizon(horizon_lock, horizon_roll);
+          params_changed = true;
+       }
+   }
+   
    //---------------------------------------------------------
    // If something has changed, Invalidate & Recompute, to
    // make sure everything is up-to-date:
