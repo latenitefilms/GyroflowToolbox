@@ -30,5 +30,10 @@ links:
   icon: comment-discussion
   target: blank
 
+- text: Discord
+  link: https://discord.gg/BBJ2UVAr2D
+  icon: people
+  target: blank
+
 footer:
   copyright: "&copy; Copyright {{ year }} LateNite Films Pty Ltd. All rights reserved."
