@@ -484,7 +484,7 @@
                              parameterMax:100.0
                                 sliderMin:-100.0
                                 sliderMax:100.0
-                                    delta:1
+                                    delta:0.1
                            parameterFlags:kFxParameterFlag_DEFAULT])
     {
         if (error != NULL) {
@@ -508,7 +508,7 @@
                              parameterMax:100.0
                                 sliderMin:-100.0
                                 sliderMax:100.0
-                                    delta:1
+                                    delta:0.1
                            parameterFlags:kFxParameterFlag_DEFAULT])
     {
         if (error != NULL) {
@@ -532,7 +532,7 @@
                              parameterMax:100.0
                                 sliderMin:-100.0
                                 sliderMax:100.0
-                                    delta:1
+                                    delta:0.1
                            parameterFlags:kFxParameterFlag_DEFAULT])
     {
         if (error != NULL) {
@@ -547,7 +547,9 @@
     //---------------------------------------------------------
     // ADD PARAMETER: 'Video Rotation' Slider
     //
-    // NOTE: -360 to 360 in Gyroflow OpenFX
+    // Resolve UI:      -360 to 360
+    // Gyroflow UI:     TBC
+    // Internally:      TBC
     //---------------------------------------------------------
     if (![paramAPI addFloatSliderWithName:@"Video Rotation"
                               parameterID:kCB_VideoRotation
@@ -556,7 +558,7 @@
                              parameterMax:360.0
                                 sliderMin:-360.0
                                 sliderMax:360.0
-                                    delta:1
+                                    delta:0.1
                            parameterFlags:kFxParameterFlag_DEFAULT])
     {
         if (error != NULL) {
@@ -571,14 +573,16 @@
     //---------------------------------------------------------
     // ADD PARAMETER: 'Video Speed' Slider
     //
-    // NOTE: 0 to 1000 in Gyroflow OpenFX
+    // Resolve UI:      0   to  1000
+    // Gyroflow UI:     10  to  1000
+    // Internally:      0.1 to  10
     //---------------------------------------------------------
     if (![paramAPI addFloatSliderWithName:@"Video Speed"
                               parameterID:kCB_VideoSpeed
-                             defaultValue:0.0
-                             parameterMin:0.0
+                             defaultValue:100.0
+                             parameterMin:10.0
                              parameterMax:1000.0
-                                sliderMin:0.0
+                                sliderMin:10.0
                                 sliderMax:1000.0
                                     delta:1
                            parameterFlags:kFxParameterFlag_DEFAULT])
@@ -591,25 +595,6 @@
         }
         return NO;
     }
-    /*
-     kCB_HorizonLock                     = 130,
-     kCB_HorizonRoll                     = 140,
-     kCB_PositionOffsetX                 = 150,
-     kCB_PositionOffsetY                 = 160,
-     kCB_VideoRotation                   = 170,
-     kCB_VideoSpeed                      = 180,
-     
-     FOV                 0.1        0.3
-
-     Horizon Lock         0         100
-     Horizon Roll         -100        100
-
-
-     Position Offset X    -100        100
-     Position Offset Y    -100        100
-     Video Rotation        -360        360
-     Video Speed        0        1000
-     */
     
     //---------------------------------------------------------
     // END GROUP: 'Gyroflow Parameters'

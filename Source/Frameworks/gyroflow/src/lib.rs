@@ -180,40 +180,36 @@ pub extern "C" fn processFrame(
        }
 
        //---------------------------------------------------------
-       // Set the Horizon Lock:
-       //---------------------------------------------------------
-       // TODO: Add controls for horizon_lock
-       /*
-        pub fn set_horizon_lock(&self, lock_percent: f64, roll: f64) {
-               self.smoothing.write().horizon_lock.set_horizon(lock_percent, roll);
-               self.invalidate_smoothing();
-           }
-        */
-
-       //---------------------------------------------------------
-       // Set the Horizon Roll:
-       //---------------------------------------------------------
-       // TODO: Add controls for horizon_roll
-       
-       //---------------------------------------------------------
        // Set the Position Offset X:
-       //---------------------------------------------------------
-       // TODO: Add controls for position_offset_x
-       
+       //---------------------------------------------------------  
+       if params.adaptive_zoom_center_offset.0 != position_offset_x / 100.0 {
+            params.adaptive_zoom_center_offset.0 = position_offset_x / 100.0;
+            params_changed = true;
+       }
+
        //---------------------------------------------------------
        // Set the Position Offset Y:
        //---------------------------------------------------------
-       // TODO: Add controls for position_offset_y
-       
+       if params.adaptive_zoom_center_offset.1 != position_offset_y / 100.0 {
+            params.adaptive_zoom_center_offset.1 = position_offset_y / 100.0;
+            params_changed = true;
+        }
+
        //---------------------------------------------------------
        // Set the Video Rotation:
        //---------------------------------------------------------
-       // TODO: Add controls for video_rotation
-       
+       if params.video_rotation != video_rotation {
+            params.video_rotation = video_rotation;
+            params_changed = true;
+       }
+
        //---------------------------------------------------------
        // Set the Video Speed:
-       //---------------------------------------------------------
-       // TODO: Add controls for video_speed
+       //---------------------------------------------------------       
+       if params.video_speed != video_speed / 100.0 {
+            params.video_speed = video_speed / 100.0;
+            params_changed = true;
+       }
     }
 
    //---------------------------------------------------------
