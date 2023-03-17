@@ -16,7 +16,7 @@ gyroflow-core = { git = "https://github.com/gyroflow/gyroflow.git" }
 log = "0.4.17"
 oslog = "0.2.0"
 lazy_static = "1.4"
-lru = "0.8"
+lru = "0.9"
 nalgebra = { version = "0.32", features = ["serde-serialize"] }
 once_cell = "1.16.0"
 metal = "0.24.0"

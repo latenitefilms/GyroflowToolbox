@@ -20,7 +20,6 @@
 		2239AB372943F8F600028B77 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 2239AB352943F8F600028B77 /* InfoPlist.strings */; };
 		2239AB392943F8F600028B77 /* MetalDeviceCache.m in Sources */ = {isa = PBXBuildFile; fileRef = 2239AB382943F8F600028B77 /* MetalDeviceCache.m */; };
 		2239AB3C2943F8F600028B77 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 2239AB3A2943F8F600028B77 /* MainMenu.xib */; };
-		2239AB412943F8F600028B77 /* TileableRemoteGyroflow.metal in Sources */ = {isa = PBXBuildFile; fileRef = 2239AB402943F8F600028B77 /* TileableRemoteGyroflow.metal */; };
 		2239AB452943F8F600028B77 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 2239AB442943F8F600028B77 /* main.m */; };
 		2239AB492943F8F600028B77 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 2239AB472943F8F600028B77 /* InfoPlist.strings */; };
 		2239AB4C2943F8F600028B77 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 2239AB4A2943F8F600028B77 /* Localizable.strings */; };
@@ -95,9 +94,7 @@
 		2239AB362943F8F600028B77 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		2239AB382943F8F600028B77 /* MetalDeviceCache.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MetalDeviceCache.m; sourceTree = "<group>"; };
 		2239AB3B2943F8F600028B77 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MainMenu.xib; sourceTree = "<group>"; };
-		2239AB402943F8F600028B77 /* TileableRemoteGyroflow.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = TileableRemoteGyroflow.metal; sourceTree = "<group>"; };
 		2239AB422943F8F600028B77 /* SandboxEntitlements.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SandboxEntitlements.entitlements; sourceTree = "<group>"; };
-		2239AB432943F8F600028B77 /* TileableRemoteGyroflowShaderTypes.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TileableRemoteGyroflowShaderTypes.h; sourceTree = "<group>"; };
 		2239AB442943F8F600028B77 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		2239AB462943F8F600028B77 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		2239AB482943F8F600028B77 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
@@ -202,7 +199,6 @@
 			children = (
 				228E9E13294E815E00B2571E /* Code */,
 				228E9E12294E815200B2571E /* Metal Device Cache */,
-				228E9E14294E816D00B2571E /* Shader */,
 				228E9E15294E817700B2571E /* Extras */,
 			);
 			path = Plugin;
@@ -285,15 +281,6 @@
 				2239AB56294400B500028B77 /* GyroflowParameters.m */,
 			);
 			name = Code;
-			sourceTree = "<group>";
-		};
-		228E9E14294E816D00B2571E /* Shader */ = {
-			isa = PBXGroup;
-			children = (
-				2239AB402943F8F600028B77 /* TileableRemoteGyroflow.metal */,
-				2239AB432943F8F600028B77 /* TileableRemoteGyroflowShaderTypes.h */,
-			);
-			name = Shader;
 			sourceTree = "<group>";
 		};
 		228E9E15294E817700B2571E /* Extras */ = {
@@ -469,7 +456,6 @@
 			files = (
 				2239AB392943F8F600028B77 /* MetalDeviceCache.m in Sources */,
 				2264334F29864BDF002C0F9E /* CustomButtonView.m in Sources */,
-				2239AB412943F8F600028B77 /* TileableRemoteGyroflow.metal in Sources */,
 				2239AB452943F8F600028B77 /* main.m in Sources */,
 				2239AB57294400B500028B77 /* GyroflowParameters.m in Sources */,
 				2239AB322943F8F600028B77 /* GyroflowPlugIn.m in Sources */,

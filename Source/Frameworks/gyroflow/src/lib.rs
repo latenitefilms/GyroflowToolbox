@@ -178,7 +178,7 @@ pub extern "C" fn processFrame(
            params.lens_correction_amount = lens_correction;
            params_changed = true;
        }
-       
+
        //---------------------------------------------------------
        // Set the Horizon Lock:
        //---------------------------------------------------------
@@ -189,7 +189,7 @@ pub extern "C" fn processFrame(
                self.invalidate_smoothing();
            }
         */
-       
+
        //---------------------------------------------------------
        // Set the Horizon Roll:
        //---------------------------------------------------------
@@ -262,13 +262,13 @@ pub extern "C" fn processFrame(
            size: (output_width, output_height, input_stride),
            rect: None,
            data: BufferSource::Metal { texture: in_mtl_tex as *mut metal::MTLTexture, command_queue: command_queue as *mut metal::MTLCommandQueue },
-           texture_copy: true
+           texture_copy: false
        },
        output: BufferDescription {
            size: (output_width, output_height, output_stride),
            rect: None,
            data: BufferSource::Metal { texture: out_mtl_tex as *mut metal::MTLTexture, command_queue: command_queue as *mut metal::MTLCommandQueue },
-           texture_copy: true
+           texture_copy: false
        }
    };
    

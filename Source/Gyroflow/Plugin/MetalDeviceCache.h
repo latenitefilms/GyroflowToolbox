@@ -19,8 +19,6 @@
 + (MTLPixelFormat)MTLPixelFormatForImageTile:(FxImageTile*)imageTile;
 
 - (id<MTLDevice>)deviceWithRegistryID:(uint64_t)registryID;
-- (id<MTLRenderPipelineState>)pipelineStateWithRegistryID:(uint64_t)registryID
-                                              pixelFormat:(MTLPixelFormat)pixFormat;
 - (id<MTLCommandQueue>)commandQueueWithRegistryID:(uint64_t)registryID
                                       pixelFormat:(MTLPixelFormat)pixFormat;
 - (void)returnCommandQueueToCache:(id<MTLCommandQueue>)commandQueue;
