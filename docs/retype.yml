@@ -35,6 +35,21 @@ links:
   icon: people
   target: blank
 
+- text: FCP Cafe
+  link: https://fcp.cafe
+  icon: git-branch
+  target: blank
+
+- text: Chris on Twitter
+  link: https://twitter.com/chrisatlatenite
+  icon: people
+  target: blank
+
+- text: LateNite
+  link: https://latenitefilms.com
+  icon: light-bulb
+  target: blank
+
 footer:
   copyright: "&copy; Copyright {{ year }} LateNite Films Pty Ltd. All rights reserved."
 
