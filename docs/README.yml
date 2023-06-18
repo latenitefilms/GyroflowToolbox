@@ -1,3 +1,4 @@
-label: Welcome
+label: Introduction
 icon: home
-order: 10000
+order: 9999999
+image: /static/thumbnail.jpg

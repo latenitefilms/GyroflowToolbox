@@ -1,4 +1,4 @@
-name: Publish Retype powered website to GitHub Pages
+name: Update Gyroflow Toolbox Website & Publish to GitHub Pages
 on:
   workflow_dispatch:
   push:
@@ -11,8 +11,11 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: write
+
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - uses: retypeapp/action-build@latest
         with:
@@ -21,3 +24,10 @@ jobs:
       - uses: retypeapp/action-github-pages@latest
         with:
           update-branch: true
+
+      - name: Purge CloudFlare cache
+        run: |
+          curl -X POST "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/purge_cache" \
+          -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+          -H "Content-Type: application/json" \
+          --data '{"purge_everything":true}'
