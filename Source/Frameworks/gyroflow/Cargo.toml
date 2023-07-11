@@ -20,4 +20,4 @@ lazy_static = "1.4"
 lru = "0.10"
 nalgebra = { version = "0.32", features = ["serde-serialize"] }
 once_cell = "1.16.0"
-metal = "0.24.0"
+metal = { version = "0.25.0", git = "https://github.com/gfx-rs/metal-rs.git", rev = "a6a0446" }

@@ -205,17 +205,19 @@ pub extern "C" fn processFrame(
    // Stabilization time!
    //---------------------------------------------------------
    let mut buffers = Buffers {
-       input: BufferDescription {
-           size: (output_width, output_height, input_stride),
-           rect: None,
-           data: BufferSource::Metal { texture: in_mtl_tex as *mut metal::MTLTexture, command_queue: command_queue as *mut metal::MTLCommandQueue },
-           texture_copy: true
-       },
        output: BufferDescription {
            size: (output_width, output_height, output_stride),
            rect: None,
            data: BufferSource::Metal { texture: out_mtl_tex as *mut metal::MTLTexture, command_queue: command_queue as *mut metal::MTLCommandQueue },
-           texture_copy: true
+           rotation: None,
+           texture_copy: true,
+       },
+       input: BufferDescription {
+           size: (output_width, output_height, input_stride),
+           rect: None,
+           data: BufferSource::Metal { texture: in_mtl_tex as *mut metal::MTLTexture, command_queue: command_queue as *mut metal::MTLCommandQueue },
+           rotation: None,
+           texture_copy: true,           
        }
    };
    
