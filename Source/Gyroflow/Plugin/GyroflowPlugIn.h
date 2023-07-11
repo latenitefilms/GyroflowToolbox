@@ -16,6 +16,7 @@
     NSView* importGyroflowProjectView;
     NSView* reloadGyroflowProjectView;
     NSView* loadLastGyroflowProjectView;
+    NSView* dropZoneView;
 }
 @property (assign) id<PROAPIAccessing> apiManager;
 @end

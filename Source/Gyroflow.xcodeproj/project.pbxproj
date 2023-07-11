@@ -29,6 +29,7 @@
 		2239AB792945979800028B77 /* libgyroflow_toolbox.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 2239AB772945979800028B77 /* libgyroflow_toolbox.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		224321B629615B0C00EA591A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 224321B529615B0C00EA591A /* Assets.xcassets */; };
 		224321B829615C4400EA591A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 224321B729615C4400EA591A /* Assets.xcassets */; };
+		22442A1B29C5A097006A56D6 /* CustomDropZoneView.m in Sources */ = {isa = PBXBuildFile; fileRef = 22442A1929C5A097006A56D6 /* CustomDropZoneView.m */; };
 		2264334F29864BDF002C0F9E /* CustomButtonView.m in Sources */ = {isa = PBXBuildFile; fileRef = 2264334D29864BDF002C0F9E /* CustomButtonView.m */; };
 		22DAC75F2953B1A7001F2E06 /* GyroflowDocument.icns in Resources */ = {isa = PBXBuildFile; fileRef = 22DAC75E2953B1A7001F2E06 /* GyroflowDocument.icns */; };
 /* End PBXBuildFile section */
@@ -108,6 +109,8 @@
 		2239AB7C2945A69100028B77 /* lib.rs */ = {isa = PBXFileReference; lastKnownFileType = text; name = lib.rs; path = Frameworks/gyroflow/src/lib.rs; sourceTree = SOURCE_ROOT; };
 		224321B529615B0C00EA591A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		224321B729615C4400EA591A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		22442A1929C5A097006A56D6 /* CustomDropZoneView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CustomDropZoneView.m; sourceTree = "<group>"; };
+		22442A1A29C5A097006A56D6 /* CustomDropZoneView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CustomDropZoneView.h; sourceTree = "<group>"; };
 		2264334D29864BDF002C0F9E /* CustomButtonView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CustomButtonView.m; sourceTree = "<group>"; };
 		2264334E29864BDF002C0F9E /* CustomButtonView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CustomButtonView.h; sourceTree = "<group>"; };
 		228E9E1929517DDA00B2571E /* GyroflowConstants.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GyroflowConstants.h; sourceTree = "<group>"; };
@@ -272,6 +275,8 @@
 		228E9E13294E815E00B2571E /* Code */ = {
 			isa = PBXGroup;
 			children = (
+				22442A1A29C5A097006A56D6 /* CustomDropZoneView.h */,
+				22442A1929C5A097006A56D6 /* CustomDropZoneView.m */,
 				2264334E29864BDF002C0F9E /* CustomButtonView.h */,
 				2264334D29864BDF002C0F9E /* CustomButtonView.m */,
 				228E9E1929517DDA00B2571E /* GyroflowConstants.h */,
@@ -456,6 +461,7 @@
 			files = (
 				2239AB392943F8F600028B77 /* MetalDeviceCache.m in Sources */,
 				2264334F29864BDF002C0F9E /* CustomButtonView.m in Sources */,
+				22442A1B29C5A097006A56D6 /* CustomDropZoneView.m in Sources */,
 				2239AB452943F8F600028B77 /* main.m in Sources */,
 				2239AB57294400B500028B77 /* GyroflowParameters.m in Sources */,
 				2239AB322943F8F600028B77 /* GyroflowPlugIn.m in Sources */,

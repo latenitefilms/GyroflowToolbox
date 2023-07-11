@@ -15,6 +15,7 @@
 #import "GyroflowConstants.h"
 
 #import "CustomButtonView.h"
+#import "CustomDropZoneView.h"
 
 #import "MetalDeviceCache.h"
 
@@ -179,6 +180,13 @@
                                                         buttonTitle:@"Import Last Saved Project"];
         loadLastGyroflowProjectView = view;
         return view;
+    } else if (parameterID == kCB_DropZone) {
+        NSView* view = [[CustomDropZoneView alloc] initWithAPIManager:_apiManager
+                                                         parentPlugin:self
+                                                           buttonID:kCB_DropZone
+                                                        buttonTitle:@"Drop Zone"];
+        dropZoneView = view;
+        return view;
     } else {
         NSLog(@"[Gyroflow Toolbox Renderer] BUG - createViewForParameterID requested a parameterID that we haven't allowed for: %u", (unsigned int)parameterID);
         return nil;
@@ -219,6 +227,40 @@
             *error = [NSError errorWithDomain:FxPlugErrorDomain
                                          code:kFxError_APIUnavailable
                                      userInfo:@{ NSLocalizedDescriptionKey : description }];
+        }
+        return NO;
+    }
+        
+    //---------------------------------------------------------
+    // ADD PARAMETER: Drop Zone
+    //---------------------------------------------------------
+    if (![paramAPI addCustomParameterWithName:@"Drop Zone"
+                             parameterID:kCB_DropZone
+                            defaultValue:@0
+                          parameterFlags:kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE])
+    {
+        if (error != NULL) {
+            NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_DropZone"};
+            *error = [NSError errorWithDomain:FxPlugErrorDomain
+                                         code:kFxError_InvalidParameter
+                                     userInfo:userInfo];
+        }
+        return NO;
+    }
+    
+    //---------------------------------------------------------
+    // ADD PARAMETER: 'Loaded Gyroflow Project' Text Box
+    //---------------------------------------------------------
+    if (![paramAPI addStringParameterWithName:@"Loaded Gyroflow Project"
+                                  parameterID:kCB_LoadedGyroflowProject
+                                 defaultValue:@"NOTHING LOADED"
+                               parameterFlags:kFxParameterFlag_DISABLED | kFxParameterFlag_NOT_ANIMATABLE])
+    {
+        if (error != NULL) {
+            NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_LoadedGyroflowProject"};
+            *error = [NSError errorWithDomain:FxPlugErrorDomain
+                                         code:kFxError_InvalidParameter
+                                     userInfo:userInfo];
         }
         return NO;
     }
@@ -681,18 +723,18 @@
 
     CMTime timelineTime = kCMTimeZero;
     [timingAPI timelineTime:&timelineTime fromInputTime:renderTime];
-    
+
     CMTime startTimeOfInputToFilter = kCMTimeZero;
     [timingAPI startTimeForEffect:&startTimeOfInputToFilter];
-    
+
     CMTime startTimeOfInputToFilterInTimelineTime = kCMTimeZero;
     [timingAPI timelineTime:&startTimeOfInputToFilterInTimelineTime fromInputTime:startTimeOfInputToFilter];
-    
+
     Float64 timelineTimeMinusStartTimeOfInputToFilterNumerator = (Float64)timelineTime.value * (Float64)startTimeOfInputToFilterInTimelineTime.timescale - (Float64)startTimeOfInputToFilterInTimelineTime.value * (Float64)timelineTime.timescale;
     Float64 timelineTimeMinusStartTimeOfInputToFilterDenominator = (Float64)timelineTime.timescale * (Float64)startTimeOfInputToFilterInTimelineTime.timescale;
         
     Float64 frame = ( ((Float64)timelineTimeMinusStartTimeOfInputToFilterNumerator / (Float64)timelineTimeMinusStartTimeOfInputToFilterDenominator) / ((Float64)timelineFrameDuration.value / (Float64)timelineFrameDuration.timescale) );
-    
+
     //---------------------------------------------------------
     // Calculate the Timestamp:
     //---------------------------------------------------------
@@ -701,6 +743,21 @@
     Float64 frameRate               = timelineFpsNumerator / timelineFpsDenominator;
     Float64 timestamp               = (frame / frameRate) * 1000000.0;
     params.timestamp                = [[[NSNumber alloc] initWithFloat:timestamp] autorelease];
+    
+    
+    NSLog(@"---------------------------------");
+    NSLog(@"timelineFrameDuration: %.2f seconds", CMTimeGetSeconds(timelineFrameDuration));
+    NSLog(@"timelineTime: %.2f seconds", CMTimeGetSeconds(timelineTime));
+    NSLog(@"startTimeOfInputToFilter: %.2f seconds", CMTimeGetSeconds(startTimeOfInputToFilter));
+    NSLog(@"startTimeOfInputToFilterInTimelineTime: %.2f seconds", CMTimeGetSeconds(startTimeOfInputToFilterInTimelineTime));
+    NSLog(@"timelineTimeMinusStartTimeOfInputToFilterNumerator: %f", timelineTimeMinusStartTimeOfInputToFilterNumerator);
+    NSLog(@"timelineTimeMinusStartTimeOfInputToFilterDenominator: %f", timelineTimeMinusStartTimeOfInputToFilterDenominator);
+    NSLog(@"frame: %f", frame);
+    NSLog(@"timelineFpsNumerator: %f", timelineFpsNumerator);
+    NSLog(@"timelineFpsDenominator: %f", timelineFpsDenominator);
+    NSLog(@"frameRate: %f", frameRate);
+    NSLog(@"timestamp: %f", timestamp);
+    NSLog(@"---------------------------------");
     
     //---------------------------------------------------------
     // Gyroflow Path:

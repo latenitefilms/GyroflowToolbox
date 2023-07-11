@@ -161,6 +161,7 @@
 	</sceneSettings>
 	<publishSettings>
 		<version>2</version>
+		<target object="10036" channel="./10" name="Drop Zone"/>
 		<target object="10036" channel="./40" name="Loaded Gyroflow Project"/>
 		<target object="10036" channel="./30" name="Import Gyroflow Project"/>
 		<target object="10036" channel="./25" name="Import Last Saved Project"/>

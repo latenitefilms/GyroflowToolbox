@@ -11,7 +11,10 @@
 //---------------------------------------------------------
 // Plugin Parameter Constants:
 //---------------------------------------------------------
-enum {    
+enum {
+    
+    kCB_DropZone                        = 10,
+    
     kCB_LaunchGyroflow                  = 20,
     kCB_LoadLastGyroflowProject         = 25,    
     kCB_ImportGyroflowProject           = 30,
