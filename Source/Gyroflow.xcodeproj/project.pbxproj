@@ -108,9 +108,9 @@
 		2239AB58294400CE00028B77 /* GyroflowParameters.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GyroflowParameters.h; sourceTree = "<group>"; };
 		2239AB5A2944150B00028B77 /* Shared.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Shared.xcconfig; sourceTree = "<group>"; };
 		2239AB6C2945471500028B77 /* Motion Templates */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "Motion Templates"; path = "Resources/Motion Templates"; sourceTree = "<group>"; };
-		2239AB772945979800028B77 /* libgyroflow_toolbox.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libgyroflow_toolbox.dylib; path = Frameworks/gyroflow/binary/libgyroflow_toolbox.dylib; sourceTree = "<group>"; };
-		2239AB7A2945983D00028B77 /* gyroflow.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = gyroflow.h; path = Frameworks/gyroflow/inc/gyroflow.h; sourceTree = SOURCE_ROOT; };
-		2239AB7C2945A69100028B77 /* lib.rs */ = {isa = PBXFileReference; lastKnownFileType = text; name = lib.rs; path = Frameworks/gyroflow/src/lib.rs; sourceTree = SOURCE_ROOT; };
+		2239AB772945979800028B77 /* libgyroflow_toolbox.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libgyroflow_toolbox.dylib; path = Gyroflow/Plugin/Frameworks/gyroflow/binary/libgyroflow_toolbox.dylib; sourceTree = "<group>"; };
+		2239AB7A2945983D00028B77 /* gyroflow.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = gyroflow.h; path = Gyroflow/Plugin/Frameworks/gyroflow/inc/gyroflow.h; sourceTree = SOURCE_ROOT; };
+		2239AB7C2945A69100028B77 /* lib.rs */ = {isa = PBXFileReference; lastKnownFileType = text; name = lib.rs; path = Gyroflow/Plugin/Frameworks/gyroflow/src/lib.rs; sourceTree = SOURCE_ROOT; };
 		224321B529615B0C00EA591A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		224321B729615C4400EA591A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		228E9E1629517D8200B2571E /* ImportGyroflowProjectView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ImportGyroflowProjectView.h; sourceTree = "<group>"; };
@@ -121,7 +121,7 @@
 		22DAC75E2953B1A7001F2E06 /* GyroflowDocument.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = GyroflowDocument.icns; sourceTree = "<group>"; };
 		22DAC7602953CD4F001F2E06 /* LaunchGyroflowView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LaunchGyroflowView.m; sourceTree = "<group>"; };
 		22DAC7612953CD4F001F2E06 /* LaunchGyroflowView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LaunchGyroflowView.h; sourceTree = "<group>"; };
-		22E4989F29492E8100580F67 /* Cargo.toml */ = {isa = PBXFileReference; lastKnownFileType = text; name = Cargo.toml; path = Frameworks/gyroflow/Cargo.toml; sourceTree = SOURCE_ROOT; };
+		22E4989F29492E8100580F67 /* Cargo.toml */ = {isa = PBXFileReference; lastKnownFileType = text; name = Cargo.toml; path = Gyroflow/Plugin/Frameworks/gyroflow/Cargo.toml; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -689,7 +689,7 @@
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"$(PROJECT_DIR)/Frameworks/gyroflow/binary",
+					"$(PROJECT_DIR)/Gyroflow/Plugin/Frameworks/gyroflow/binary",
 				);
 				MACH_O_TYPE = mh_execute;
 				MARKETING_VERSION = "$(HARDCODED_VERSION)";
@@ -716,7 +716,7 @@
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"$(PROJECT_DIR)/Frameworks/gyroflow/binary",
+					"$(PROJECT_DIR)/Gyroflow/Plugin/Frameworks/gyroflow/binary",
 				);
 				MACH_O_TYPE = mh_execute;
 				MARKETING_VERSION = "$(HARDCODED_VERSION)";
