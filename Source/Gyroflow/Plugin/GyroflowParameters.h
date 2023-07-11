@@ -1,6 +1,6 @@
 //
 //  GyroflowParameters.h
-//  Gyroflow Toolbox Renderer
+//  Gyroflow Toolbox
 //
 //  Created by Chris Hocking on 10/12/2022.
 //
@@ -15,13 +15,6 @@
     NSNumber *fov;
     NSNumber *smoothness;
     NSNumber *lensCorrection;
-    
-    NSNumber *horizonLock;
-    NSNumber *horizonRoll;
-    NSNumber *positionOffsetX;
-    NSNumber *positionOffsetY;
-    NSNumber *videoRotation;
-    NSNumber *videoSpeed;
 }
 
 @property (nonatomic, copy) NSString *gyroflowPath;
@@ -30,12 +23,5 @@
 @property (nonatomic, copy) NSNumber *fov;
 @property (nonatomic, copy) NSNumber *smoothness;
 @property (nonatomic, copy) NSNumber *lensCorrection;
-
-@property (nonatomic, copy) NSNumber *horizonLock;
-@property (nonatomic, copy) NSNumber *horizonRoll;
-@property (nonatomic, copy) NSNumber *positionOffsetX;
-@property (nonatomic, copy) NSNumber *positionOffsetY;
-@property (nonatomic, copy) NSNumber *videoRotation;
-@property (nonatomic, copy) NSNumber *videoSpeed;
 
 @end

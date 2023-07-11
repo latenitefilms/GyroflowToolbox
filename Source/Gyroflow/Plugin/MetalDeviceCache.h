@@ -1,6 +1,6 @@
 //
 //  MetalDeviceCache.h
-//  Gyroflow Toolbox Renderer
+//  Gyroflow Toolbox
 //
 //  Created by Chris Hocking on 10/12/2022.
 //
@@ -19,6 +19,8 @@
 + (MTLPixelFormat)MTLPixelFormatForImageTile:(FxImageTile*)imageTile;
 
 - (id<MTLDevice>)deviceWithRegistryID:(uint64_t)registryID;
+- (id<MTLRenderPipelineState>)pipelineStateWithRegistryID:(uint64_t)registryID
+                                              pixelFormat:(MTLPixelFormat)pixFormat;
 - (id<MTLCommandQueue>)commandQueueWithRegistryID:(uint64_t)registryID
                                       pixelFormat:(MTLPixelFormat)pixFormat;
 - (void)returnCommandQueueToCache:(id<MTLCommandQueue>)commandQueue;

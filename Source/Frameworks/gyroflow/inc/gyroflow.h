@@ -23,12 +23,6 @@ const char* processFrame(
     double                      fov,
     double                      smoothness,
     double                      lens_correction,
-    double                      horizon_lock,
-    double                      horizon_roll,
-    double                      position_offset_x,
-    double                      position_offset_y,
-    double                      video_rotation,
-    double                      video_speed,        
     void                        *in_mtl_texture,
     void                        *out_mtl_texture,
     void                        *command_queue

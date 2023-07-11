@@ -1,6 +1,6 @@
 //
 //  GyroflowParameters.m
-//  Gyroflow Toolbox Renderer
+//  Gyroflow Toolbox
 //
 //  Created by Chris Hocking on 10/12/2022.
 //
@@ -23,13 +23,6 @@
 @synthesize smoothness;
 @synthesize lensCorrection;
 
-@synthesize horizonLock;
-@synthesize horizonRoll;
-@synthesize positionOffsetX;
-@synthesize positionOffsetY;
-@synthesize videoRotation;
-@synthesize videoSpeed;
-
 + (BOOL)supportsSecureCoding
 {
     return YES;
@@ -43,13 +36,6 @@
     [smoothness release];
     [lensCorrection release];
     
-    [horizonLock release];
-    [horizonRoll release];
-    [positionOffsetX release];
-    [positionOffsetY release];
-    [videoRotation release];
-    [videoSpeed release];
-    
     [super dealloc];
 }
 
@@ -61,13 +47,6 @@
         self.fov                    = [decoder decodeObjectOfClass:[NSNumber class] forKey:@"fov"];
         self.smoothness             = [decoder decodeObjectOfClass:[NSNumber class] forKey:@"smoothness"];
         self.lensCorrection         = [decoder decodeObjectOfClass:[NSNumber class] forKey:@"lensCorrection"];
-                
-        self.horizonLock            = [decoder decodeObjectOfClass:[NSNumber class] forKey:@"horizonLock"];
-        self.horizonRoll            = [decoder decodeObjectOfClass:[NSNumber class] forKey:@"horizonRoll"];
-        self.positionOffsetX        = [decoder decodeObjectOfClass:[NSNumber class] forKey:@"positionOffsetX"];
-        self.positionOffsetY        = [decoder decodeObjectOfClass:[NSNumber class] forKey:@"positionOffsetY"];
-        self.videoRotation          = [decoder decodeObjectOfClass:[NSNumber class] forKey:@"videoRotation"];
-        self.videoSpeed             = [decoder decodeObjectOfClass:[NSNumber class] forKey:@"videoSpeed"];
     }
     return self;
 }
@@ -79,13 +58,6 @@
     [encoder encodeObject:fov               forKey:@"fov"];
     [encoder encodeObject:smoothness        forKey:@"smoothness"];
     [encoder encodeObject:lensCorrection    forKey:@"lensCorrection"];
-    
-    [encoder encodeObject:horizonLock       forKey:@"horizonLock"];
-    [encoder encodeObject:horizonRoll       forKey:@"horizonRoll"];
-    [encoder encodeObject:positionOffsetX   forKey:@"positionOffsetX"];
-    [encoder encodeObject:positionOffsetY   forKey:@"positionOffsetY"];
-    [encoder encodeObject:videoRotation     forKey:@"videoRotation"];
-    [encoder encodeObject:videoSpeed        forKey:@"videoSpeed"];
 }
 
 @end

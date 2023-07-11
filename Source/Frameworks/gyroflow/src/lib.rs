@@ -46,12 +46,6 @@ pub extern "C" fn processFrame(
     fov: f64,
     smoothness: f64,
     lens_correction: f64,
-    horizon_lock: f64,
-    horizon_roll: f64,
-    position_offset_x: f64,
-    position_offset_y: f64,
-    video_rotation: f64,
-    video_speed: f64,
     in_mtl_tex: *mut std::ffi::c_void,
     out_mtl_tex: *mut std::ffi::c_void,
     command_queue: *mut std::ffi::c_void,
@@ -143,7 +137,7 @@ pub extern "C" fn processFrame(
                // Force the background color to transparent:
                //---------------------------------------------------------
                let background_color: Vector4<f32> = Vector4::new(0.0, 0.0, 0.0, 0.0);
-               manager.set_background_color(background_color);
+               manager.stabilization.write().set_background(background_color);
            },
            Err(e) => {
                //---------------------------------------------------------
@@ -178,62 +172,19 @@ pub extern "C" fn processFrame(
            params.lens_correction_amount = lens_correction;
            params_changed = true;
        }
-
-       //---------------------------------------------------------
-       // Set the Position Offset X:
-       //---------------------------------------------------------  
-       if params.adaptive_zoom_center_offset.0 != position_offset_x / 100.0 {
-            params.adaptive_zoom_center_offset.0 = position_offset_x / 100.0;
-            params_changed = true;
-       }
-
-       //---------------------------------------------------------
-       // Set the Position Offset Y:
-       //---------------------------------------------------------
-       if params.adaptive_zoom_center_offset.1 != position_offset_y / 100.0 {
-            params.adaptive_zoom_center_offset.1 = position_offset_y / 100.0;
-            params_changed = true;
-        }
-
-       //---------------------------------------------------------
-       // Set the Video Rotation:
-       //---------------------------------------------------------
-       if params.video_rotation != video_rotation {
-            params.video_rotation = video_rotation;
-            params_changed = true;
-       }
-
-       //---------------------------------------------------------
-       // Set the Video Speed:
-       //---------------------------------------------------------       
-       if params.video_speed != video_speed / 100.0 {
-            params.video_speed = video_speed / 100.0;
-            params_changed = true;
-       }
     }
 
    //---------------------------------------------------------
-   // Set the Smoothing Parameters:
+   // Set the Smoothness:
    //---------------------------------------------------------
    {
-       //---------------------------------------------------------
-       // Set the Smoothness:
-       //---------------------------------------------------------
        let mut smoothing = manager.smoothing.write();
        if smoothing.current().get_parameter("smoothness") != smoothness {
            smoothing.current_mut().set_parameter("smoothness", smoothness);
            params_changed = true;
        }
-       
-       //---------------------------------------------------------
-       // Set the Horizon Lock:
-       //---------------------------------------------------------
-       if smoothing.horizon_lock.lock_enabled != (horizon_lock > 0.0) || smoothing.horizon_lock.horizonlockpercent != horizon_lock || smoothing.horizon_lock.horizonroll != horizon_roll {
-          smoothing.horizon_lock.set_horizon(horizon_lock, horizon_roll);
-          params_changed = true;
-       }
    }
-   
+       
    //---------------------------------------------------------
    // If something has changed, Invalidate & Recompute, to
    // make sure everything is up-to-date:
@@ -241,7 +192,7 @@ pub extern "C" fn processFrame(
    if params_changed {
        manager.invalidate_smoothing();
        manager.recompute_blocking();
-       manager.params.write().calculate_ramped_timestamps(&manager.keyframes.read(), false, false);
+       manager.params.write().calculate_ramped_timestamps(&manager.keyframes.read());
    }
    
    //---------------------------------------------------------
@@ -258,13 +209,13 @@ pub extern "C" fn processFrame(
            size: (output_width, output_height, input_stride),
            rect: None,
            data: BufferSource::Metal { texture: in_mtl_tex as *mut metal::MTLTexture, command_queue: command_queue as *mut metal::MTLCommandQueue },
-           texture_copy: false
+           texture_copy: true
        },
        output: BufferDescription {
            size: (output_width, output_height, output_stride),
            rect: None,
            data: BufferSource::Metal { texture: out_mtl_tex as *mut metal::MTLTexture, command_queue: command_queue as *mut metal::MTLCommandQueue },
-           texture_copy: false
+           texture_copy: true
        }
    };
    
