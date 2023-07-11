@@ -156,10 +156,12 @@
     // Make sure there's Processed Gyro Data in the Gyroflow
     // Project Data:
     //---------------------------------------------------------
+    /*
     if (![selectedGyroflowProjectData containsString:@"integrated_quaternions"]) {
         [self showAlertWithMessage:@"Processed Gyro Data Not Found." info:@"The Gyroflow file you imported doesn't seem to contain any processed gyro data.\n\nPlease try exporting from Gyroflow again using the 'Export project file (including processed gyro data)' option."];
         return;
     }
+    */
     
     //---------------------------------------------------------
     // Use the Action API to allow us to change the parameters:

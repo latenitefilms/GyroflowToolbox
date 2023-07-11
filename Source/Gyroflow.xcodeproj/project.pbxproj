@@ -185,7 +185,6 @@
 			isa = PBXGroup;
 			children = (
 				2239AB592944150B00028B77 /* Configuration */,
-				2239AB7B2945A67600028B77 /* Rust */,
 				2239AB292943F8F600028B77 /* Wrapper Application */,
 				2239AB2D2943F8F600028B77 /* Plugin */,
 			);
@@ -206,6 +205,7 @@
 		2239AB2D2943F8F600028B77 /* Plugin */ = {
 			isa = PBXGroup;
 			children = (
+				2239AB7B2945A67600028B77 /* Rust */,
 				228E9E13294E815E00B2571E /* Code */,
 				228E9E12294E815200B2571E /* Metal Device Cache */,
 				228E9E14294E816D00B2571E /* Shader */,
@@ -230,6 +230,7 @@
 				22E4989F29492E8100580F67 /* Cargo.toml */,
 			);
 			name = Rust;
+			path = ..;
 			sourceTree = "<group>";
 		};
 		228E9E0E294E80C300B2571E /* Code */ = {

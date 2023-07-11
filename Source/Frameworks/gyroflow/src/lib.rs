@@ -137,7 +137,7 @@ pub extern "C" fn processFrame(
                // Force the background color to transparent:
                //---------------------------------------------------------
                let background_color: Vector4<f32> = Vector4::new(0.0, 0.0, 0.0, 0.0);
-               manager.stabilization.write().set_background(background_color);
+               manager.set_background_color(background_color);
            },
            Err(e) => {
                //---------------------------------------------------------
@@ -192,7 +192,7 @@ pub extern "C" fn processFrame(
    if params_changed {
        manager.invalidate_smoothing();
        manager.recompute_blocking();
-       manager.params.write().calculate_ramped_timestamps(&manager.keyframes.read());
+       manager.params.write().calculate_ramped_timestamps(&manager.keyframes.read(), false, false);
    }
    
    //---------------------------------------------------------
