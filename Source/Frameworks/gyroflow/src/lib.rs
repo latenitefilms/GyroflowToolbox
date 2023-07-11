@@ -46,6 +46,12 @@ pub extern "C" fn processFrame(
     fov: f64,
     smoothness: f64,
     lens_correction: f64,
+    horizon_lock: f64,
+    horizon_roll: f64,
+    position_offset_x: f64,
+    position_offset_y: f64,
+    input_rotation: f64,
+    video_rotation: f64,
     in_mtl_tex: *mut std::ffi::c_void,
     out_mtl_tex: *mut std::ffi::c_void,
     command_queue: *mut std::ffi::c_void,
@@ -61,13 +67,13 @@ pub extern "C" fn processFrame(
             .init().ok();
         Mutex::new(logger)
     });
-    
+
     //---------------------------------------------------------
     // Get Pixel Format:
     //---------------------------------------------------------
     let pixel_format_pointer = unsafe { CStr::from_ptr(pixel_format) };
     let pixel_format_string = pixel_format_pointer.to_string_lossy();
-    
+
     // -------------------------------------------------------------------------------
     // You can't use &str across FFI boundary, it's a Rust type.
     // You have to use C-compatible char pointer, so path: *const c_char and then
@@ -76,13 +82,13 @@ pub extern "C" fn processFrame(
     // -------------------------------------------------------------------------------
     let path_pointer = unsafe { CStr::from_ptr(path) };
     let path_string = path_pointer.to_string_lossy();
-    
+
     //---------------------------------------------------------
     // Convert the output width and height to `usize`:
     //---------------------------------------------------------
     let output_width: usize = width as usize;
     let output_height: usize = height as usize;
-    
+
     //---------------------------------------------------------
     // Convert the number of bytes to `usize`:
     //---------------------------------------------------------
@@ -103,7 +109,7 @@ pub extern "C" fn processFrame(
        // Setup the Gyroflow Manager:
        //---------------------------------------------------------
        let manager = StabilizationManager::default();
-              
+
        //---------------------------------------------------------
        // Import the Gyroflow Data:
        //---------------------------------------------------------
@@ -164,7 +170,7 @@ pub extern "C" fn processFrame(
            params.fov = fov;
            params_changed = true;
        }
-       
+
        //---------------------------------------------------------
        // Set the Lens Correction:
        //---------------------------------------------------------
@@ -172,19 +178,51 @@ pub extern "C" fn processFrame(
            params.lens_correction_amount = lens_correction;
            params_changed = true;
        }
+
+       //---------------------------------------------------------
+       // Set the Position Offset X:
+       //---------------------------------------------------------
+       if params.adaptive_zoom_center_offset.0 != position_offset_x / 100.0 {
+            params.adaptive_zoom_center_offset.0 = position_offset_x / 100.0;
+            params_changed = true;
+       }
+
+       //---------------------------------------------------------
+       // Set the Position Offset Y:
+       //---------------------------------------------------------
+       if params.adaptive_zoom_center_offset.1 != position_offset_y / 100.0 {
+            params.adaptive_zoom_center_offset.1 = position_offset_y / 100.0;
+            params_changed = true;
+        }
+
+       //---------------------------------------------------------
+       // Set the Video Rotation:
+       //---------------------------------------------------------
+       if params.video_rotation != video_rotation {
+            params.video_rotation = video_rotation;
+            params_changed = true;
+       }
     }
 
-   //---------------------------------------------------------
-   // Set the Smoothness:
-   //---------------------------------------------------------
    {
+       //---------------------------------------------------------
+       // Set the Smoothness:
+       //---------------------------------------------------------
        let mut smoothing = manager.smoothing.write();
        if smoothing.current().get_parameter("smoothness") != smoothness {
            smoothing.current_mut().set_parameter("smoothness", smoothness);
            params_changed = true;
        }
+
+       //---------------------------------------------------------
+       // Set the Horizon Lock:
+       //---------------------------------------------------------
+       if smoothing.horizon_lock.lock_enabled != (horizon_lock > 0.0) || smoothing.horizon_lock.horizonlockpercent != horizon_lock || smoothing.horizon_lock.horizonroll != horizon_roll {
+          smoothing.horizon_lock.set_horizon(horizon_lock, horizon_roll);
+          params_changed = true;
+       }
    }
-       
+
    //---------------------------------------------------------
    // If something has changed, Invalidate & Recompute, to
    // make sure everything is up-to-date:
@@ -194,7 +232,7 @@ pub extern "C" fn processFrame(
        manager.recompute_blocking();
        manager.params.write().calculate_ramped_timestamps(&manager.keyframes.read(), false, false);
    }
-   
+
    //---------------------------------------------------------
    // Calculate buffer size and stride:
    //---------------------------------------------------------
@@ -210,17 +248,17 @@ pub extern "C" fn processFrame(
            rect: None,
            data: BufferSource::Metal { texture: out_mtl_tex as *mut metal::MTLTexture, command_queue: command_queue as *mut metal::MTLCommandQueue },
            rotation: None,
-           texture_copy: true,
+           texture_copy: false,
        },
        input: BufferDescription {
            size: (output_width, output_height, input_stride),
            rect: None,
            data: BufferSource::Metal { texture: in_mtl_tex as *mut metal::MTLTexture, command_queue: command_queue as *mut metal::MTLCommandQueue },
-           rotation: None,
-           texture_copy: true,           
+           rotation: Some(input_rotation as f32),
+           texture_copy: false,
        }
    };
-   
+
    let _stabilization_result = match pixel_format_string.as_ref() {
        "BGRA8Unorm" => {
            manager.process_pixels::<BGRA8>(timestamp, &mut buffers)
@@ -237,7 +275,7 @@ pub extern "C" fn processFrame(
            return result.into_raw()
        }
    };
-   
+
    //---------------------------------------------------------
    // Output the Stabilization result to the Console:
    //---------------------------------------------------------

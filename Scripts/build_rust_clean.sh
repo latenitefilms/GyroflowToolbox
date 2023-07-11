@@ -7,7 +7,7 @@ export SCRIPT_HOME ; SCRIPT_HOME="$(dirname "$(greadlink -f "$0")")"
 export REPO_HOME ; REPO_HOME="$(greadlink -f "${SCRIPT_HOME}/../")"
 
 cd "${REPO_HOME}/Source/Frameworks/gyroflow"
-#~/.cargo/bin/cargo clean
+~/.cargo/bin/cargo clean
 ~/.cargo/bin/cargo update
 ~/.cargo/bin/cargo build --release --target x86_64-apple-darwin
 ~/.cargo/bin/cargo build --release --target aarch64-apple-darwin

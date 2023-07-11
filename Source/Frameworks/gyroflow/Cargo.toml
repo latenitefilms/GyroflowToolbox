@@ -3,7 +3,7 @@ name = "gyroflow-toolbox"
 version = "1.1.0"
 authors = ["Chris Hocking <chris@latenitefilms.com>", "Adrian <adrian.eddy@gmail.com>"]
 edition = "2021"
-description = "Gyroflow Toolbox"
+description = "Connects the Gyroflow Toolbox FxPlug4 API to the gyroflow_core Engine"
 
 [lib]
 crate-type =["cdylib"]

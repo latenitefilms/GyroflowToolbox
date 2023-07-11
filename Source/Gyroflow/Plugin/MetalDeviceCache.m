@@ -1,6 +1,6 @@
 //
 //  MetalDeviceCache.m
-//  Gyroflow Toolbox
+//  Gyroflow Toolbox Renderer
 //
 //  Created by Chris Hocking on 10/12/2022.
 //
@@ -19,7 +19,7 @@
 
 #import "MetalDeviceCache.h"
 
-const NSUInteger    kMaxCommandQueues   = 10;
+const NSUInteger    kMaxCommandQueues   = 5;
 static NSString*    kKey_InUse          = @"InUse";
 static NSString*    kKey_CommandQueue   = @"CommandQueue";
 
@@ -28,7 +28,6 @@ static MetalDeviceCache*   gDeviceCache    = nil;
 @interface MetalDeviceCacheItem : NSObject
 
 @property (readonly)    id<MTLDevice>                           gpuDevice;
-@property (readonly)    id<MTLRenderPipelineState>              pipelineState;
 @property (retain)      NSMutableArray<NSMutableDictionary*>*   commandQueueCache;
 @property (readonly)    NSLock*                                 commandQueueCacheLock;
 @property (readonly)    MTLPixelFormat                          pixelFormat;
@@ -70,50 +69,15 @@ static MetalDeviceCache*   gDeviceCache    = nil;
             
             [_commandQueueCache addObject:commandDict];
         }
-        
-        //---------------------------------------------------------
-        // Load all the shader files with a .metal file extension
-        // in the project:
-        //---------------------------------------------------------
-        id<MTLLibrary> defaultLibrary = [[_gpuDevice newDefaultLibrary] autorelease];
-        
-        //---------------------------------------------------------
-        // Load the vertex function from the library:
-        //---------------------------------------------------------
-        id<MTLFunction> vertexFunction = [[defaultLibrary newFunctionWithName:@"vertexShader"] autorelease];
-        
-        //---------------------------------------------------------
-        // Load the fragment function from the library:
-        //---------------------------------------------------------
-        id<MTLFunction> fragmentFunction = [[defaultLibrary newFunctionWithName:@"fragmentShader"] autorelease];
-        
-        //---------------------------------------------------------
-        // Configure a pipeline descriptor that is used to create
-        // a pipeline state:
-        //---------------------------------------------------------
-        MTLRenderPipelineDescriptor *pipelineStateDescriptor = [[[MTLRenderPipelineDescriptor alloc] init] autorelease];
-        pipelineStateDescriptor.label = @"Gyroflow Toolbox Pipeline";
-        pipelineStateDescriptor.vertexFunction = vertexFunction;
-        pipelineStateDescriptor.fragmentFunction = fragmentFunction;
-        pipelineStateDescriptor.colorAttachments[0].pixelFormat = pixFormat;
+                
         _pixelFormat = pixFormat;
-        
-        NSError*    error = nil;
-        _pipelineState = [_gpuDevice newRenderPipelineStateWithDescriptor:pipelineStateDescriptor
-                                                                              error:&error];
-        if (error != nil)
-        {
-            NSLog (@"Error generating Gyroflow Toolbox pipeline state: %@", error);
-        }
         
         if (_commandQueueCache != nil)
         {
             _commandQueueCacheLock = [[NSLock alloc] init];
         }
         
-        if ((_gpuDevice == nil) || (_commandQueueCache == nil) || (_commandQueueCacheLock == nil) ||
-            (_pipelineState == nil))
-        {
+        if ((_gpuDevice == nil) || (_commandQueueCache == nil) || (_commandQueueCacheLock == nil)) {
             [self release];
             self = nil;
         }
@@ -127,7 +91,6 @@ static MetalDeviceCache*   gDeviceCache    = nil;
     [_gpuDevice release];
     [_commandQueueCache release];
     [_commandQueueCacheLock release];
-    [_pipelineState release];
     
     [super dealloc];
 }
@@ -272,47 +235,6 @@ static MetalDeviceCache*   gDeviceCache    = nil;
     }
     
     return nil;
-}
-
-- (id<MTLRenderPipelineState>)pipelineStateWithRegistryID:(uint64_t)registryID
-                                              pixelFormat:(MTLPixelFormat)pixFormat
-{
-    for (MetalDeviceCacheItem* nextCacheItem in deviceCaches)
-    {
-        if ((nextCacheItem.gpuDevice.registryID == registryID)  &&
-            (nextCacheItem.pixelFormat == pixFormat))
-        {
-            return nextCacheItem.pipelineState;
-        }
-    }
-    
-    //---------------------------------------------------------
-    // Didn't find one, so create one with the right settings:
-    //---------------------------------------------------------
-    NSArray<id<MTLDevice>>* devices = MTLCopyAllDevices();
-    id<MTLDevice>   device  = nil;
-    for (id<MTLDevice> nextDevice in devices)
-    {
-        if (nextDevice.registryID == registryID)
-        {
-            device = nextDevice;
-        }
-    }
-    
-    id<MTLRenderPipelineState>  result  = nil;
-    if (device != nil)
-    {
-        MetalDeviceCacheItem*   newCacheItem    = [[[MetalDeviceCacheItem alloc] initWithDevice:device
-                                                                                    pixelFormat:pixFormat]
-                                                    autorelease];
-        if (newCacheItem != nil)
-        {
-            [deviceCaches addObject:newCacheItem];
-            result = newCacheItem.pipelineState;
-        }
-    }
-    [devices release];
-    return result;
 }
 
 - (id<MTLCommandQueue>)commandQueueWithRegistryID:(uint64_t)registryID

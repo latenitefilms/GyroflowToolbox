@@ -2,7 +2,7 @@
 <!DOCTYPE ozxmlscene>
 <ozml version="5.13">
 
-<displayversion>5.6.3</displayversion>
+<displayversion>5.6.4</displayversion>
 
 <factory id="1" uuid="46c844a813d311d8a438000a95af9f7e">
 	<description>Channel</description>
@@ -73,7 +73,7 @@
 	<cameraType>0</cameraType>
 	<cameraName>Active Camera</cameraName>
 	<mirrorHMD>0</mirrorHMD>
-	<panZoom camera="0" zoom="1.1489583253860474" panX="5" panY="32" mode="2" centered="1"/>
+	<panZoom camera="0" zoom="1.203703761100769" panX="85" panY="5" mode="2" centered="1"/>
 </viewer>
 
 <projectPanel>
@@ -110,7 +110,7 @@
 	<displayEffects>1</displayEffects>
 	<videoVerticalZoom>1.5555555555555556</videoVerticalZoom>
 	<audioVerticalZoom>1.5555555555555556</audioVerticalZoom>
-	<displayRange in="-215 496 3 0" out="5175 496 3 0"/>
+	<displayRange in="-215 583 3 0" out="6045 583 3 0"/>
 </timeline>
 
 <curveeditor>
@@ -118,8 +118,8 @@
 	<snapping>0</snapping>
 	<displayAudioWaveform>0</displayAudioWaveform>
 	<lockKeyframesInTime>0</lockKeyframesInTime>
-	<displayRange in="-215 496 3 0" out="5175 496 3 0"/>
-	<currentviewvolume originx="-0.43346774193548387" originy="-62.5" width="10.866935483870968" height="125"/>
+	<displayRange in="-215 583 3 0" out="6045 583 3 0"/>
+	<currentviewvolume originx="-0.36878216123499141" originy="-62.5" width="10.737564322469982" height="125"/>
 	<snapshotChannels>0</snapshotChannels>
 </curveeditor>
 
@@ -158,17 +158,20 @@
 		<parameterColorSpaceID>3</parameterColorSpaceID>
 		<savePreviewMovie>0</savePreviewMovie>
 		<Object3DEnvironments>100</Object3DEnvironments>
+		<DRTSupport>0</DRTSupport>
+		<onHDRDisplay>1</onHDRDisplay>
 	</sceneSettings>
 	<publishSettings>
 		<version>2</version>
-		<target object="10036" channel="./20" name="Launch Gyroflow"/>
+		<target object="10036" channel="./10" name="Drop Zone"/>
 		<target object="10036" channel="./30" name="Import Gyroflow Project"/>
 		<target object="10036" channel="./40" name="Loaded Gyroflow Project"/>
+		<target object="10036" channel="./25" name="Import Last Saved Project"/>
+		<target object="10036" channel="./20" name="Open in Gyroflow"/>
 		<target object="10036" channel="./50" name="Reload Gyroflow Project"/>
 		<target object="10036" channel="./90" name="Gyroflow Parameters"/>
 	</publishSettings>
 	<currentFrame>36864 153600 1 0</currentFrame>
-	<currentObject>10016</currentObject>
 	<activeLayer>10013</activeLayer>
 	<timeRange offset="0 1 1 0" duration="1536000 153600 1 0"/>
 	<playRange offset="0 1 1 0" duration="1536000 153600 1 0"/>
@@ -204,7 +207,7 @@
 			<aspectRatio>1</aspectRatio>
 			<flags>0</flags>
 			<timing in="0 1 1 0" out="1529856 153600 1 0" offset="0 1 1 0"/>
-			<foldFlags>24576</foldFlags>
+			<foldFlags>16384</foldFlags>
 			<baseFlags>524304</baseFlags>
 			<parameter name="Properties" id="1" flags="8589938704">
 				<parameter name="Cinematic" id="344" flags="8589938706">
@@ -222,6 +225,11 @@
 				</parameter>
 				<parameter name="Reflection" id="223" flags="8589971474">
 					<foldFlags>131087</foldFlags>
+				</parameter>
+				<parameter name="Color" id="243" flags="8589938690">
+					<parameter name="Hidden Channel" id="245" flags="8589934610" default="1" value="3"/>
+					<parameter name="Conversion Type" id="247" flags="8590032912" default="3" value="3"/>
+					<parameter name="PQ Peak (nits)" id="248" flags="8589967376" default="1000" value="1000"/>
 				</parameter>
 				<parameter name="Media" id="324" flags="8589938704">
 					<foldFlags>4</foldFlags>
@@ -251,18 +259,30 @@
 			</parameter>
 			<filter name="Gyroflow Toolbox" id="10036" factoryID="6" pluginUUID="92ADB2F9-C649-48C2-B2D4-441CFC0633CB" pluginVersion="1" pluginName="Gyroflow Toolbox" pluginDynamicParams="0">
 				<timing in="0 1 1 0" out="1529856 153600 1 0" offset="0 1 1 0"/>
-				<baseFlags>8589934609</baseFlags>
-				<parameter name="Launch Gyroflow" id="20" flags="12884901904">
+				<baseFlags>8589934608</baseFlags>
+				<parameter name="Drop Zone" id="10" flags="12884901904">
 					<numberOfKeypoints>0</numberOfKeypoints>
 					<defaultVal>*********J2eMb-gOLBoA11I*E61-*I4-klM75NZQbBdPqtN743mMqVdRaJmJ0FoPr-M74xWOaJXR5AG**44c3wE1otHGqJtNKF-QaBcOLNZQh660Ec9L2FVR437QolZNq3XSJwE1o7gOKtYF43oMIxWOaJXR6*0U*4X1EsDJGFiRKlgHl0GMb-gOLBoA11I*E61-*I4-kdM75NZQbBdPqtN743mMqVdRaJmJ0FoPr-M74xWOaJXR5AG**44c3wE1otHGqJtNKF-QaBcOLNZQh260Jh1RLBoPqoUF43oMM*-cUgAJGFiRKlg2**62FcY8H6rGIlMKZpX*********E2*********1E*******************4I6**U*2E*O*0E*8E*m*1Q*GE-C*3g*PE-j*52*RE-v*F*********0*E*********E*******************-2E**</defaultVal>
 					<dataValue>*********J2eMb-gOLBoA11I*E61-*I4-klM75NZQbBdPqtN743mMqVdRaJmJ0FoPr-M74xWOaJXR5AG**44c3wE1otHGqJtNKF-QaBcOLNZQh660Ec9L2FVR437QolZNq3XSJwE1o7gOKtYF43oMIxWOaJXR6*0U*4X1EsDJGFiRKlgHl0GMb-gOLBoA11I*E61-*I4-kdM75NZQbBdPqtN743mMqVdRaJmJ0FoPr-M74xWOaJXR5AG**44c3wE1otHGqJtNKF-QaBcOLNZQh260Jh1RLBoPqoUF43oMM*-cUgAJGFiRKlg2**62FcY8H6rGIlMKZpX*********E2*********1E*******************4I6**U*2E*O*0E*8E*m*1Q*GE-C*3g*PE-j*52*RE-v*F*********0*E*********E*******************-2E**</dataValue>
+				</parameter>
+				<parameter name="Loaded Gyroflow Project" id="40" flags="12884967428">
+					<text>NOTHING LOADED</text>
 				</parameter>
 				<parameter name="Import Gyroflow Project" id="30" flags="12884901904">
 					<numberOfKeypoints>0</numberOfKeypoints>
 					<defaultVal>*********J2eMb-gOLBoA11I*E61-*I4-klM75NZQbBdPqtN743mMqVdRaJmJ0FoPr-M74xWOaJXR5AG**44c3wE1otHGqJtNKF-QaBcOLNZQh660Ec9L2FVR437QolZNq3XSJwE1o7gOKtYF43oMIxWOaJXR6*0U*4X1EsDJGFiRKlgHl0GMb-gOLBoA11I*E61-*I4-kdM75NZQbBdPqtN743mMqVdRaJmJ0FoPr-M74xWOaJXR5AG**44c3wE1otHGqJtNKF-QaBcOLNZQh260Jh1RLBoPqoUF43oMM*-cUgAJGFiRKlg2**62FcY8H6rGIlMKZpX*********E2*********1E*******************4I6**U*2E*O*0E*8E*m*1Q*GE-C*3g*PE-j*52*RE-v*F*********0*E*********E*******************-2E**</defaultVal>
 					<dataValue>*********J2eMb-gOLBoA11I*E61-*I4-klM75NZQbBdPqtN743mMqVdRaJmJ0FoPr-M74xWOaJXR5AG**44c3wE1otHGqJtNKF-QaBcOLNZQh660Ec9L2FVR437QolZNq3XSJwE1o7gOKtYF43oMIxWOaJXR6*0U*4X1EsDJGFiRKlgHl0GMb-gOLBoA11I*E61-*I4-kdM75NZQbBdPqtN743mMqVdRaJmJ0FoPr-M74xWOaJXR5AG**44c3wE1otHGqJtNKF-QaBcOLNZQh260Jh1RLBoPqoUF43oMM*-cUgAJGFiRKlg2**62FcY8H6rGIlMKZpX*********E2*********1E*******************4I6**U*2E*O*0E*8E*m*1Q*GE-C*3g*PE-j*52*RE-v*F*********0*E*********E*******************-2E**</dataValue>
 				</parameter>
-				<parameter name="Loaded Gyroflow Project" id="40" flags="12884967428"/>
+				<parameter name="Import Last Saved Project" id="25" flags="12884901904">
+					<numberOfKeypoints>0</numberOfKeypoints>
+					<defaultVal>*********J2eMb-gOLBoA11I*E61-*I4-klM75NZQbBdPqtN743mMqVdRaJmJ0FoPr-M74xWOaJXR5AG**44c3wE1otHGqJtNKF-QaBcOLNZQh660Ec9L2FVR437QolZNq3XSJwE1o7gOKtYF43oMIxWOaJXR6*0U*4X1EsDJGFiRKlgHl0GMb-gOLBoA11I*E61-*I4-kdM75NZQbBdPqtN743mMqVdRaJmJ0FoPr-M74xWOaJXR5AG**44c3wE1otHGqJtNKF-QaBcOLNZQh260Jh1RLBoPqoUF43oMM*-cUgAJGFiRKlg2**62FcY8H6rGIlMKZpX*********E2*********1E*******************4I6**U*2E*O*0E*8E*m*1Q*GE-C*3g*PE-j*52*RE-v*F*********0*E*********E*******************-2E**</defaultVal>
+					<dataValue>*********J2eMb-gOLBoA11I*E61-*I4-klM75NZQbBdPqtN743mMqVdRaJmJ0FoPr-M74xWOaJXR5AG**44c3wE1otHGqJtNKF-QaBcOLNZQh660Ec9L2FVR437QolZNq3XSJwE1o7gOKtYF43oMIxWOaJXR6*0U*4X1EsDJGFiRKlgHl0GMb-gOLBoA11I*E61-*I4-kdM75NZQbBdPqtN743mMqVdRaJmJ0FoPr-M74xWOaJXR5AG**44c3wE1otHGqJtNKF-QaBcOLNZQh260Jh1RLBoPqoUF43oMM*-cUgAJGFiRKlg2**62FcY8H6rGIlMKZpX*********E2*********1E*******************4I6**U*2E*O*0E*8E*m*1Q*GE-C*3g*PE-j*52*RE-v*F*********0*E*********E*******************-2E**</dataValue>
+				</parameter>
+				<parameter name="Open in Gyroflow" id="20" flags="12884901904">
+					<numberOfKeypoints>0</numberOfKeypoints>
+					<defaultVal>*********J2eMb-gOLBoA11I*E61-*I4-klM75NZQbBdPqtN743mMqVdRaJmJ0FoPr-M74xWOaJXR5AG**44c3wE1otHGqJtNKF-QaBcOLNZQh660Ec9L2FVR437QolZNq3XSJwE1o7gOKtYF43oMIxWOaJXR6*0U*4X1EsDJGFiRKlgHl0GMb-gOLBoA11I*E61-*I4-kdM75NZQbBdPqtN743mMqVdRaJmJ0FoPr-M74xWOaJXR5AG**44c3wE1otHGqJtNKF-QaBcOLNZQh260Jh1RLBoPqoUF43oMM*-cUgAJGFiRKlg2**62FcY8H6rGIlMKZpX*********E2*********1E*******************4I6**U*2E*O*0E*8E*m*1Q*GE-C*3g*PE-j*52*RE-v*F*********0*E*********E*******************-2E**</defaultVal>
+					<dataValue>*********J2eMb-gOLBoA11I*E61-*I4-klM75NZQbBdPqtN743mMqVdRaJmJ0FoPr-M74xWOaJXR5AG**44c3wE1otHGqJtNKF-QaBcOLNZQh660Ec9L2FVR437QolZNq3XSJwE1o7gOKtYF43oMIxWOaJXR6*0U*4X1EsDJGFiRKlgHl0GMb-gOLBoA11I*E61-*I4-kdM75NZQbBdPqtN743mMqVdRaJmJ0FoPr-M74xWOaJXR5AG**44c3wE1otHGqJtNKF-QaBcOLNZQh260Jh1RLBoPqoUF43oMM*-cUgAJGFiRKlg2**62FcY8H6rGIlMKZpX*********E2*********1E*******************4I6**U*2E*O*0E*8E*m*1Q*GE-C*3g*PE-j*52*RE-v*F*********0*E*********E*******************-2E**</dataValue>
+				</parameter>
 				<parameter name="Reload Gyroflow Project" id="50" flags="12884901904">
 					<numberOfKeypoints>0</numberOfKeypoints>
 					<defaultVal>*********J2eMb-gOLBoA11I*E61-*I4-klM75NZQbBdPqtN743mMqVdRaJmJ0FoPr-M74xWOaJXR5AG**44c3wE1otHGqJtNKF-QaBcOLNZQh660Ec9L2FVR437QolZNq3XSJwE1o7gOKtYF43oMIxWOaJXR6*0U*4X1EsDJGFiRKlgHl0GMb-gOLBoA11I*E61-*I4-kdM75NZQbBdPqtN743mMqVdRaJmJ0FoPr-M74xWOaJXR5AG**44c3wE1otHGqJtNKF-QaBcOLNZQh260Jh1RLBoPqoUF43oMM*-cUgAJGFiRKlg2**62FcY8H6rGIlMKZpX*********E2*********1E*******************4I6**U*2E*O*0E*8E*m*1Q*GE-C*3g*PE-j*52*RE-v*F*********0*E*********E*******************-2E**</defaultVal>
@@ -274,7 +294,13 @@
 				<parameter name="Gyroflow Parameters" id="90" flags="8589938704">
 					<parameter name="FOV" id="100" flags="12884901904" default="1" value="1"/>
 					<parameter name="Smoothness" id="110" flags="12884901904" default="0.5" value="0.5"/>
-					<parameter name="Lens Correction" id="120" flags="12884901904" default="100" value="100"/>
+					<parameter name="Lens Correction" id="120" flags="12884901904" default="0" value="0"/>
+					<parameter name="Horizon Lock" id="130" flags="12884901904" default="0" value="0"/>
+					<parameter name="Horizon Roll" id="140" flags="12884901904" default="0" value="0"/>
+					<parameter name="Position Offset X" id="150" flags="12884901904" default="0" value="0"/>
+					<parameter name="Position Offset Y" id="160" flags="12884901904" default="0" value="0"/>
+					<parameter name="Input Rotation" id="170" flags="12884901904" default="0" value="0"/>
+					<parameter name="Video Rotation" id="180" flags="12884901904" default="0" value="0"/>
 				</parameter>
 				<parameter name="Mix" id="10001" flags="12884901888" default="1" value="1"/>
 				<parameter name="Flip" id="10002" flags="12889161760" default="0" value="0"/>
@@ -313,6 +339,7 @@
 			<missingWidth>1200</missingWidth>
 			<missingHeight>1200</missingHeight>
 			<missingDuration>0.033333333333333333</missingDuration>
+			<missingDynamicRangeType>0</missingDynamicRangeType>
 			<creationDuration>1</creationDuration>
 			<mediaID></mediaID>
 			<flags>0</flags>

@@ -1,6 +1,6 @@
 //
 //  GyroflowConstants.h
-//  Gyroflow Toolbox
+//  Gyroflow Toolbox Renderer
 //
 //  Created by Chris Hocking on 20/12/2022.
 //
@@ -11,20 +11,33 @@
 //---------------------------------------------------------
 // Plugin Parameter Constants:
 //---------------------------------------------------------
-enum {    
-    kCB_LaunchGyroflow                  = 20,
-    kCB_ImportGyroflowProject           = 30,
-    kCB_LoadedGyroflowProject           = 40,
-    kCB_ReloadGyroflowProject           = 50,
+enum {
     
-    kCB_GyroflowProjectPath             = 60,
-    kCB_GyroflowProjectBookmarkData     = 70,
-    kCB_GyroflowProjectData             = 80,
-      
-    kCB_GyroflowParameters              = 90,
-    kCB_FOV                             = 100,
-    kCB_Smoothness                      = 110,
-    kCB_LensCorrection                  = 120,
+    kCB_DropZone                            = 10,
+        
+    kCB_LaunchGyroflow                      = 20,
+    kCB_LoadLastGyroflowProject             = 25,
+    kCB_ImportGyroflowProject               = 30,
+    kCB_LoadedGyroflowProject               = 40,
+    kCB_ReloadGyroflowProject               = 50,
+        
+    kCB_GyroflowProjectPath                 = 60,
+    kCB_GyroflowProjectBookmarkData         = 70,
+    kCB_GyroflowProjectData                 = 80,
+    
+    kCB_GyroflowParameters                  = 90,
+    kCB_FOV                                 = 100,
+    kCB_Smoothness                          = 110,
+    kCB_LensCorrection                      = 120,
+        
+    kCB_HorizonLock                         = 130,
+    kCB_HorizonRoll                         = 140,
+        
+    kCB_PositionOffsetX                     = 150,
+    kCB_PositionOffsetY                     = 160,
+    kCB_InputRotation                       = 170,
+    kCB_VideoRotation                       = 180,
+    kCB_VideoSpeed                          = 190,
 };
 
 //---------------------------------------------------------
