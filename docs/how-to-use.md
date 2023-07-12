@@ -1,5 +1,13 @@
 # How To Use
 
+!!!danger
+**Gyroflow Toolbox** is not currently compatible with **Gyroflow v1.5.1** or later.<br />
+<br />
+We are actively working on a new version of Gyroflow Toolbox to add support for the latest Gyroflow improvements.<br />
+<br />
+In the meantime you can download and use Gyroflow v1.5.0 [here](https://github.com/gyroflow/gyroflow/releases/tag/v1.5.0){target="_blank"}.
+!!!
+
 ### What is Gyroflow?
 
 [Gyroflow](https://github.com/gyroflow/gyroflow){target="_blank"} is a free and open source application that can stabilize your video by using motion data from a gyroscope and optionally an accelerometer. Modern cameras record that data internally (GoPro, Sony, Insta360 etc), and Gyroflow stabilizes the captured footage precisely by using them. It can also use gyro data from an external source (eg. from Betaflight blackbox).
