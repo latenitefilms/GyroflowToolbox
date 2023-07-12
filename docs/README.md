@@ -7,7 +7,7 @@
 <br />
 We are actively working on a new version of Gyroflow Toolbox to add support for the latest Gyroflow improvements.<br />
 <br />
-In the meantime you can download and use Gyroflow v1.5.0 [here](https://github.com/gyroflow/gyroflow/releases/tag/v1.5.0){target="_blank"}.
+In the meantime you can download and use **Gyroflow v1.5.0** [here](https://github.com/gyroflow/gyroflow/releases/tag/v1.5.0){target="_blank"}.
 !!!
 
 Allows you to import [Gyroflow](https://github.com/gyroflow/gyroflow){target="_blank"} Projects into Apple's [Final Cut Pro](https://www.apple.com/final-cut-pro/){target="_blank"}.
