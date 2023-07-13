@@ -8,7 +8,7 @@
 //---------------------------------------------------------
 // Local name bindings:
 //---------------------------------------------------------
-use gyroflow_core::{StabilizationManager, stabilization::*};
+use gyroflow_core::{StabilizationManager, stabilization::*, telemetry_parser::util::VideoMetadata};
 use gyroflow_core::gpu::{ BufferDescription, BufferSource, Buffers };
 
 use once_cell::sync::OnceCell;              // Provides two new cell-like types, unsync::OnceCell and sync::OnceCell
@@ -46,6 +46,66 @@ pub extern "C" fn trashCache() -> u32 {
     // Return the Cache Size:
     //---------------------------------------------------------
     cache.len() as u32
+}
+
+//---------------------------------------------------------
+// The "Import Media File" function that gets triggered 
+// from Objective-C Land:
+//---------------------------------------------------------
+#[no_mangle]
+pub extern "C" fn importMediaFile(
+    media_file_path: *const c_char,
+) -> *const c_char {
+    //---------------------------------------------------------
+    // Convert the file path to a `&str`:
+    //---------------------------------------------------------
+    let media_file_path_pointer = unsafe { CStr::from_ptr(media_file_path) };
+    let media_file_path_string = media_file_path_pointer.to_string_lossy();
+
+    log::info!("[Gyroflow Toolbox Rust] media_file_path_string: {:?}", media_file_path_string);
+
+    let mut stab = StabilizationManager::default();
+    {
+        //---------------------------------------------------------
+        // Find first lens profile database with loaded profiles:
+        //---------------------------------------------------------
+        let lock = MANAGER_CACHE.lock().unwrap();
+        for (_, v) in lock.iter() {
+            if v.lens_profile_db.read().loaded {
+                stab.lens_profile_db = v.lens_profile_db.clone();
+                break;
+            }
+        }
+    }
+
+    // Load video file. For simplicity, I'm passing None as metadata. You can change it as per your need.
+    match stab.load_video_file(&media_file_path_string, None) {
+        Ok(_) => {
+            log::info!("[Gyroflow Toolbox Rust] Video file loaded successfully");
+        },
+        Err(e) => {
+            log::error!("[Gyroflow Toolbox Rust] An error occured: {:?}", e);
+        }
+    }
+
+    // Export Gyroflow data
+    let gyroflow_data: String;
+    match stab.export_gyroflow_data(false, false, "{}") {
+        Ok(data) => {
+            gyroflow_data = data;
+            log::info!("[Gyroflow Toolbox Rust] Gyroflow data exported successfully");
+        },
+        Err(e) => {
+            log::error!("[Gyroflow Toolbox Rust] An error occured: {:?}", e);
+            gyroflow_data = "FAIL".to_string();
+        }
+    }
+
+    //---------------------------------------------------------
+    // Return Gyroflow Project data as string:
+    //---------------------------------------------------------
+    let result = CString::new(gyroflow_data).unwrap();
+    return result.into_raw()
 }
 
 //---------------------------------------------------------
@@ -297,7 +357,7 @@ pub extern "C" fn processFrame(
            manager.process_pixels::<RGBAf>(timestamp, &mut buffers)
         },
         _ => {
-           log::error!("[Gyroflow Toolbox] Unsupported pixel format: {:?}", pixel_format_string);
+           log::error!("[Gyroflow Toolbox Rust] Unsupported pixel format: {:?}", pixel_format_string);
            let result = CString::new("FAIL").unwrap();
            return result.into_raw()
        }

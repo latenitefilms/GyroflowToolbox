@@ -19,6 +19,7 @@ enum {
     kCB_LaunchGyroflow                      = 20,
     kCB_LoadLastGyroflowProject             = 25,
     kCB_ImportGyroflowProject               = 30,
+    kCB_ImportMediaFile                     = 35,
     kCB_LoadedGyroflowProject               = 40,
     kCB_ReloadGyroflowProject               = 50,
         

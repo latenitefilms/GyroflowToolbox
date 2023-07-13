@@ -35,4 +35,10 @@ const char* processFrame(
     void                        *command_queue
 );
 
-uint32_t trashCache();
+uint32_t trashCache(
+    void
+);
+
+const char* importMediaFile(
+    const char*                 media_file_path
+);

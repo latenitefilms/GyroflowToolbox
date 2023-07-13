@@ -159,6 +159,13 @@
                                                         buttonTitle:@"Import Gyroflow Project"];
         importGyroflowProjectView = view;
         return view;
+    } else if (parameterID == kCB_ImportMediaFile) {
+        NSView* view = [[CustomButtonView alloc] initWithAPIManager:_apiManager
+                                                       parentPlugin:self
+                                                           buttonID:kCB_ImportMediaFile
+                                                        buttonTitle:@"Import Media File"];
+        importMediaFileView = view;
+        return view;
     } else if (parameterID == kCB_ReloadGyroflowProject) {
         NSView* view = [[CustomButtonView alloc] initWithAPIManager:_apiManager
                                                        parentPlugin:self
@@ -177,14 +184,14 @@
         NSView* view = [[CustomButtonView alloc] initWithAPIManager:_apiManager
                                                        parentPlugin:self
                                                            buttonID:kCB_LoadLastGyroflowProject
-                                                        buttonTitle:@"Import Last Saved Project"];
+                                                        buttonTitle:@"Import Last Gyroflow Project"];
         loadLastGyroflowProjectView = view;
         return view;
     } else if (parameterID == kCB_DropZone) {
         NSView* view = [[CustomDropZoneView alloc] initWithAPIManager:_apiManager
                                                          parentPlugin:self
                                                            buttonID:kCB_DropZone
-                                                        buttonTitle:@"Drop Zone"];
+                                                        buttonTitle:@"Import Dropped Clip"];
         dropZoneView = view;
         return view;
     } else {
@@ -230,23 +237,6 @@
         }
         return NO;
     }
-        
-    //---------------------------------------------------------
-    // ADD PARAMETER: Drop Zone
-    //---------------------------------------------------------
-    if (![paramAPI addCustomParameterWithName:@"Drop Zone"
-                             parameterID:kCB_DropZone
-                            defaultValue:@0
-                          parameterFlags:kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE])
-    {
-        if (error != NULL) {
-            NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_DropZone"};
-            *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                         code:kFxError_InvalidParameter
-                                     userInfo:userInfo];
-        }
-        return NO;
-    }
     
     //---------------------------------------------------------
     // ADD PARAMETER: 'Loaded Gyroflow Project' Text Box
@@ -283,15 +273,49 @@
     }
     
     //---------------------------------------------------------
-    // ADD PARAMETER: 'Import Last Saved Project' Button
+    // ADD PARAMETER: 'Import Last Gyroflow Project' Button
     //---------------------------------------------------------
-    if (![paramAPI addCustomParameterWithName:@"Import Last Saved Project"
+    if (![paramAPI addCustomParameterWithName:@"Import Last Gyroflow Project"
                              parameterID:kCB_LoadLastGyroflowProject
                             defaultValue:@0
                           parameterFlags:kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE])
     {
         if (error != NULL) {
             NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_LoadLastGyroflowProject"};
+            *error = [NSError errorWithDomain:FxPlugErrorDomain
+                                         code:kFxError_InvalidParameter
+                                     userInfo:userInfo];
+        }
+        return NO;
+    }
+    
+    //---------------------------------------------------------
+    // ADD PARAMETER: 'Import Media File' Button
+    //---------------------------------------------------------
+    if (![paramAPI addCustomParameterWithName:@"Import Media File"
+                             parameterID:kCB_ImportMediaFile
+                            defaultValue:@0
+                          parameterFlags:kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE])
+    {
+        if (error != NULL) {
+            NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_ImportMediaFile"};
+            *error = [NSError errorWithDomain:FxPlugErrorDomain
+                                         code:kFxError_InvalidParameter
+                                     userInfo:userInfo];
+        }
+        return NO;
+    }
+    
+    //---------------------------------------------------------
+    // ADD PARAMETER: Import Dropped Clip
+    //---------------------------------------------------------
+    if (![paramAPI addCustomParameterWithName:@"Import Dropped Clip"
+                             parameterID:kCB_DropZone
+                            defaultValue:@0
+                          parameterFlags:kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE])
+    {
+        if (error != NULL) {
+            NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_DropZone"};
             *error = [NSError errorWithDomain:FxPlugErrorDomain
                                          code:kFxError_InvalidParameter
                                      userInfo:userInfo];
@@ -643,7 +667,7 @@
     if (![paramAPI addStringParameterWithName:@"Unique Identifier"
                                   parameterID:kCB_UniqueIdentifier
                                  defaultValue:@""
-                               parameterFlags:kFxParameterFlag_DISABLED])
+                               parameterFlags:kFxParameterFlag_HIDDEN | kFxParameterFlag_NOT_ANIMATABLE])
     {
         if (error != NULL) {
             NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_UniqueIdentifier"};
@@ -1211,7 +1235,90 @@
         [self buttonImportGyroflowProject];
     } else if (buttonID == kCB_ReloadGyroflowProject) {
         [self buttonReloadGyroflowProject];
+    } else if (buttonID == kCB_ImportMediaFile) {
+        [self buttonImportMediaFile];
     }
+}
+
+//---------------------------------------------------------
+// BUTTON: 'Launch Gyroflow'
+//---------------------------------------------------------
+- (void)buttonImportMediaFile {
+    NSLog(@"[Gyroflow Toolbox Renderer] Import Media File!");
+    
+    //---------------------------------------------------------
+    // Setup an NSOpenPanel:
+    //---------------------------------------------------------
+    NSOpenPanel* panel = [NSOpenPanel openPanel];
+    [panel setCanChooseDirectories:NO];
+    [panel setCanCreateDirectories:YES];
+    [panel setCanChooseFiles:YES];
+    [panel setAllowsMultipleSelection:NO];
+    //[panel setDirectoryURL:optionalURL];
+        
+    //---------------------------------------------------------
+    // Limit the file type to .gyroflow files:
+    //---------------------------------------------------------
+    UTType *mxf                     = [UTType typeWithFilenameExtension:@"mxf"];
+    UTType *braw                    = [UTType typeWithFilenameExtension:@"braw"];
+    UTType *mpFour                  = [UTType typeWithFilenameExtension:@"mp4"];
+    
+    NSArray *allowedContentTypes    = [NSArray arrayWithObjects:mxf, braw, mpFour, nil];
+    [panel setAllowedContentTypes:allowedContentTypes];
+
+    //---------------------------------------------------------
+    // Open the panel:
+    //---------------------------------------------------------
+    NSModalResponse result = [panel runModal];
+    if (result != NSModalResponseOK) {
+        return;
+    }
+
+    //---------------------------------------------------------
+    // Start accessing security scoped resource:
+    //---------------------------------------------------------
+    NSURL *url = [panel URL];
+    BOOL startedOK = [url startAccessingSecurityScopedResource];
+    if (startedOK == NO) {
+        [self showAlertWithMessage:@"An error has occurred." info:@"Failed to startAccessingSecurityScopedResource. This shouldn't happen."];
+        return;
+    }
+
+    NSString *path = [url path];
+    
+    NSLog(@"[Gyroflow Toolbox Renderer] Import Media File Path: %@", path);
+    
+    const char* importResult = importMediaFile([path UTF8String]);
+    NSString *resultString = [NSString stringWithUTF8String: importResult];
+    NSLog(@"[Gyroflow Toolbox Renderer] resultString: %@", resultString);
+    
+    
+    if (resultString == nil || [resultString isEqualToString:@"FAIL"]) {
+        [self showAlertWithMessage:@"An error has occurred" info:@"Failed to generate a Gyroflow Project from the Media File."];
+        return;
+    }
+    
+    //---------------------------------------------------------
+    // Create a temporary file in the temporary directory to
+    // save our Gyroflow Project:
+    //---------------------------------------------------------
+    NSString *randomFilename = [[NSUUID UUID] UUIDString];
+    NSURL *tempDirURL = [NSURL fileURLWithPath:NSTemporaryDirectory() isDirectory:YES];
+    NSURL *tempFileURL = [NSURL fileURLWithPath:[tempDirURL.path stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.png", randomFilename]]];
+    NSString *tempFilePath = [tempFileURL path];
+    
+    NSError *error = nil;
+    [resultString writeToFile:tempFilePath
+                   atomically:YES
+                     encoding:NSUTF8StringEncoding
+                        error:&error];
+    
+    if (error) {
+        NSString *errorMessage = [NSString stringWithFormat:@"Failed to write the temporary Gyroflow project to disk due to:\n\n%@", error.localizedDescription];
+        [self showAlertWithMessage:@"An error has occurred" info:errorMessage];
+    }
+    
+    [self importGyroflowProjectWithOptionalURL:[NSURL fileURLWithPath:tempFilePath]];
 }
 
 //---------------------------------------------------------
@@ -1381,7 +1488,7 @@
     
     //---------------------------------------------------------
     // Trash all the caches in Rust land:
-    //---------------------------------------------------------    
+    //---------------------------------------------------------
     uint32_t cacheSize = trashCache();
     NSLog(@"[Gyroflow Toolbox Renderer]: Rust MANAGER_CACHE size after trashing (should be zero): %u", cacheSize);
     

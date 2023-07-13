@@ -14,6 +14,7 @@
     //---------------------------------------------------------
     NSView* launchGyroflowView;
     NSView* importGyroflowProjectView;
+    NSView* importMediaFileView;
     NSView* reloadGyroflowProjectView;
     NSView* loadLastGyroflowProjectView;
     NSView* dropZoneView;
