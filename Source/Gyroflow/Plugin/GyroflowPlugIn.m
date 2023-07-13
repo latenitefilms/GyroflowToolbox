@@ -1378,6 +1378,13 @@
 // BUTTON: 'Reload Gyroflow Project'
 //---------------------------------------------------------
 - (void)buttonReloadGyroflowProject {
+    
+    //---------------------------------------------------------
+    // Trash all the caches in Rust land:
+    //---------------------------------------------------------    
+    uint32_t cacheSize = trashCache();
+    NSLog(@"[Gyroflow Toolbox Renderer]: Rust MANAGER_CACHE size after trashing (should be zero): %u", cacheSize);
+    
     //---------------------------------------------------------
     // Load the Custom Parameter Action API:
     //---------------------------------------------------------

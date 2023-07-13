@@ -34,3 +34,5 @@ const char* processFrame(
     void                        *out_mtl_texture,
     void                        *command_queue
 );
+
+uint32_t trashCache();

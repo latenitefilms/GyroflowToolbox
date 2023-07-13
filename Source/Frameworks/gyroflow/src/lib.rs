@@ -27,7 +27,25 @@ use std::sync::Mutex;                       // A mutual exclusion primitive usef
 // each pixel format:
 //---------------------------------------------------------
 lazy_static! {
-    static ref MANAGER_CACHE: Mutex<LruCache<String, Arc<StabilizationManager>>> = Mutex::new(LruCache::new(std::num::NonZeroUsize::new(5).unwrap()));
+    static ref MANAGER_CACHE: Mutex<LruCache<String, Arc<StabilizationManager>>> = Mutex::new(LruCache::new(std::num::NonZeroUsize::new(8).unwrap()));
+}
+
+//---------------------------------------------------------
+// The "Trash Cache" function that gets triggered from
+// Objective-C Land:
+//---------------------------------------------------------
+#[no_mangle]
+pub extern "C" fn trashCache() -> u32 {
+    //---------------------------------------------------------
+    // Trash the Cache:
+    //---------------------------------------------------------
+    let mut cache = MANAGER_CACHE.lock().unwrap();
+    cache.clear();
+
+    //---------------------------------------------------------
+    // Return the Cache Size:
+    //---------------------------------------------------------
+    cache.len() as u32
 }
 
 //---------------------------------------------------------
