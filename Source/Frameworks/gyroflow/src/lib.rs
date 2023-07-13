@@ -27,7 +27,7 @@ use std::sync::Mutex;                       // A mutual exclusion primitive usef
 // each pixel format:
 //---------------------------------------------------------
 lazy_static! {
-    static ref CACHE: Mutex<LruCache<String, Arc<StabilizationManager>>> = Mutex::new(LruCache::new(std::num::NonZeroUsize::new(5).unwrap()));
+    static ref MANAGER_CACHE: Mutex<LruCache<String, Arc<StabilizationManager>>> = Mutex::new(LruCache::new(std::num::NonZeroUsize::new(5).unwrap()));
 }
 
 //---------------------------------------------------------
@@ -75,7 +75,7 @@ pub extern "C" fn processFrame(
     let unique_identifier_pointer = unsafe { CStr::from_ptr(unique_identifier) };
     let unique_identifier_string = unique_identifier_pointer.to_string_lossy();
 
-    log::info!("[Gyroflow Toolbox] stabilization_result: {:?}", unique_identifier_string);
+    //log::info!("[Gyroflow Toolbox] unique_identifier_string: {:?}", unique_identifier_string);
 
     //---------------------------------------------------------
     // Get Pixel Format:
@@ -106,8 +106,8 @@ pub extern "C" fn processFrame(
    //---------------------------------------------------------
    // Cache the manager:
    //---------------------------------------------------------
-   let mut cache = CACHE.lock().unwrap();
-   let cache_key = format!("{path_string}{output_width}{output_height}{pixel_format_string}");
+   let mut cache = MANAGER_CACHE.lock().unwrap();
+   let cache_key = format!("{path_string}{output_width}{output_height}{pixel_format_string}{unique_identifier_string}");
    let manager = if let Some(manager) = cache.get(&cache_key) {
        //---------------------------------------------------------
        // Already cached:
