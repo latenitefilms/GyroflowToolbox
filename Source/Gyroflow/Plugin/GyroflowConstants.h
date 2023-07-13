@@ -22,6 +22,8 @@ enum {
     kCB_ImportMediaFile                     = 35,
     kCB_LoadedGyroflowProject               = 40,
     kCB_ReloadGyroflowProject               = 50,
+    
+    kCB_RevealInFinder                      = 55,
         
     kCB_GyroflowProjectPath                 = 60,
     kCB_GyroflowProjectBookmarkData         = 70,

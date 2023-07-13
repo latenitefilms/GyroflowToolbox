@@ -31,6 +31,68 @@ lazy_static! {
 }
 
 //---------------------------------------------------------
+// Does the Gyroflow Project contain Stabilisation Data?
+// Returns "PASS" or "FAIL".
+//---------------------------------------------------------
+#[no_mangle]
+pub extern "C" fn doesGyroflowProjectContainStabilisationData(
+    gyroflow_project_data: *const c_char,
+) -> *const c_char {
+    //---------------------------------------------------------
+    // Convert the Gyroflow Project data to a `&str`:
+    //---------------------------------------------------------
+    let gyroflow_project_data_pointer = unsafe { CStr::from_ptr(gyroflow_project_data) };
+    let gyroflow_project_data_string = gyroflow_project_data_pointer.to_string_lossy();
+
+    let stab = StabilizationManager::default();
+
+    //---------------------------------------------------------
+    // Import the `gyroflow_project_data_string`:
+    //---------------------------------------------------------
+    let blocking = true;
+    let path = Some(std::path::PathBuf::from(&*gyroflow_project_data_string));
+    let cancel_flag = Arc::new(AtomicBool::new(false));
+    let mut is_preset = false;
+    match stab.import_gyroflow_data(
+        gyroflow_project_data_string.as_bytes(), 
+        blocking, 
+        path, 
+        |_|(),
+        cancel_flag,
+        &mut is_preset
+    ) {
+        Ok(_) => {
+            //---------------------------------------------------------
+            // Check if gyroflow project contains stabilization data:
+            //---------------------------------------------------------
+            let has_motion = { 
+                let gyro = stab.gyro.read(); 
+                !gyro.file_metadata.raw_imu.is_empty() || !gyro.file_metadata.quaternions.is_empty()
+            };
+
+            //---------------------------------------------------------
+            // Return the result as a string:
+            //---------------------------------------------------------
+            let result_string = if has_motion {
+                "PASS"
+            } else {
+                "FAIL"
+            };
+
+            let result = CString::new(result_string).unwrap();
+            return result.into_raw()
+        },
+        Err(e) => {
+            // Handle the error case            
+            log::error!("[Gyroflow Toolbox Rust] Error importing gyroflow data: {:?}", e);
+            
+            let result = CString::new("FAIL").unwrap();
+            return result.into_raw()
+        },
+    }
+}
+
+//---------------------------------------------------------
 // The "Trash Cache" function that gets triggered from
 // Objective-C Land:
 //---------------------------------------------------------
@@ -78,8 +140,31 @@ pub extern "C" fn importMediaFile(
         }
     }
 
-    // Load video file. For simplicity, I'm passing None as metadata. You can change it as per your need.
-    match stab.load_video_file(&media_file_path_string, None) {
+    //---------------------------------------------------------
+    // Prepare metadata if file has .mxf or .braw extension:
+    //---------------------------------------------------------    
+    let metadata;
+    if media_file_path_string.to_ascii_lowercase().ends_with(".mxf") || media_file_path_string.to_ascii_lowercase().ends_with(".braw") {
+        /*
+        let mut fileMetadata = gyroflow_core::util::get_video_metadata(&media_file_path_string);
+                
+        metadata = Some(VideoMetadata {
+            duration_s: fileMetadata.duration_s,
+            fps: fileMetadata.fps,
+            width: fileMetadata.width,
+            height: fileMetadata.height,
+            rotation: 0
+        });
+        */
+        metadata = None;        
+    } else {
+        metadata = None;
+    };
+
+    //---------------------------------------------------------
+    // Load video file:
+    //---------------------------------------------------------
+    match stab.load_video_file(&media_file_path_string, metadata) {
         Ok(_) => {
             log::info!("[Gyroflow Toolbox Rust] Video file loaded successfully");
         },
@@ -87,8 +172,10 @@ pub extern "C" fn importMediaFile(
             log::error!("[Gyroflow Toolbox Rust] An error occured: {:?}", e);
         }
     }
-
-    // Export Gyroflow data
+    
+    //---------------------------------------------------------
+    // Export Gyroflow data:
+    //---------------------------------------------------------
     let gyroflow_data: String;
     match stab.export_gyroflow_data(false, false, "{}") {
         Ok(data) => {

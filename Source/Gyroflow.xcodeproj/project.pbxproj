@@ -110,12 +110,13 @@
 		224321B529615B0C00EA591A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		224321B729615C4400EA591A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		228E9E1929517DDA00B2571E /* GyroflowConstants.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GyroflowConstants.h; sourceTree = "<group>"; };
-		22BED1BF2A5D6805000562A3 /* CustomButtonView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = CustomButtonView.m; path = "../../../../../../Desktop/WIP Gyroflow on GitHub/GyroflowToolbox-df8de2438817be9f802629da3510916f78447d9c/Source/Gyroflow/Plugin/CustomButtonView.m"; sourceTree = "<group>"; };
-		22BED1C02A5D6805000562A3 /* CustomButtonView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CustomButtonView.h; path = "../../../../../../Desktop/WIP Gyroflow on GitHub/GyroflowToolbox-df8de2438817be9f802629da3510916f78447d9c/Source/Gyroflow/Plugin/CustomButtonView.h"; sourceTree = "<group>"; };
-		22BED1C12A5D6805000562A3 /* CustomDropZoneView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CustomDropZoneView.h; path = "../../../../../../Desktop/WIP Gyroflow on GitHub/GyroflowToolbox-df8de2438817be9f802629da3510916f78447d9c/Source/Gyroflow/Plugin/CustomDropZoneView.h"; sourceTree = "<group>"; };
-		22BED1C22A5D6805000562A3 /* CustomDropZoneView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = CustomDropZoneView.m; path = "../../../../../../Desktop/WIP Gyroflow on GitHub/GyroflowToolbox-df8de2438817be9f802629da3510916f78447d9c/Source/Gyroflow/Plugin/CustomDropZoneView.m"; sourceTree = "<group>"; };
+		22BED1BF2A5D6805000562A3 /* CustomButtonView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CustomButtonView.m; sourceTree = "<group>"; };
+		22BED1C02A5D6805000562A3 /* CustomButtonView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CustomButtonView.h; sourceTree = "<group>"; };
+		22BED1C12A5D6805000562A3 /* CustomDropZoneView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CustomDropZoneView.h; sourceTree = "<group>"; };
+		22BED1C22A5D6805000562A3 /* CustomDropZoneView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CustomDropZoneView.m; sourceTree = "<group>"; };
 		22DAC75E2953B1A7001F2E06 /* GyroflowDocument.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = GyroflowDocument.icns; sourceTree = "<group>"; };
 		22E4989F29492E8100580F67 /* Cargo.toml */ = {isa = PBXFileReference; lastKnownFileType = text; name = Cargo.toml; path = Frameworks/gyroflow/Cargo.toml; sourceTree = SOURCE_ROOT; };
+		22F73D6F2A5FF9A000A6F326 /* SandboxEntitlements.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SandboxEntitlements.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -289,6 +290,7 @@
 		228E9E15294E817700B2571E /* Extras */ = {
 			isa = PBXGroup;
 			children = (
+				22F73D6F2A5FF9A000A6F326 /* SandboxEntitlements.entitlements */,
 				2239AB442943F8F600028B77 /* main.m */,
 				2239AB462943F8F600028B77 /* Info.plist */,
 				2239AB472943F8F600028B77 /* InfoPlist.strings */,
@@ -656,7 +658,7 @@
 		2239AB502943F8F600028B77 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = "Gyroflow/Wrapper Application/SandboxEntitlements.entitlements";
+				CODE_SIGN_ENTITLEMENTS = Gyroflow/Plugin/SandboxEntitlements.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = "$(HARDCODED_BUILD)";
 				DEVELOPMENT_TEAM = A5HDJTY9X5;
@@ -683,7 +685,7 @@
 		2239AB512943F8F600028B77 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = "Gyroflow/Wrapper Application/SandboxEntitlements.entitlements";
+				CODE_SIGN_ENTITLEMENTS = Gyroflow/Plugin/SandboxEntitlements.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = "$(HARDCODED_BUILD)";
 				DEVELOPMENT_TEAM = A5HDJTY9X5;

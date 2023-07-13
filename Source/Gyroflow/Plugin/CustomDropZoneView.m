@@ -38,55 +38,31 @@ static NSString *const kFinalCutProUTI = @"com.apple.flexo.proFFPasteboardUTI";
     {
         _apiManager = apiManager;
         
-        [self registerForDraggedTypes:@[kFinalCutProUTI]];
+        //[self registerForDraggedTypes:@[kFinalCutProUTI]];
+        NSArray *sortedPasteboardTypes = @[@"com.apple.finalcutpro.xml.v1-11", @"com.apple.finalcutpro.xml.v1-10", @"com.apple.finalcutpro.xml.v1-9", @"com.apple.finalcutpro.xml", kFinalCutProUTI, NSPasteboardTypeFileURL];
+        [self registerForDraggedTypes:sortedPasteboardTypes];
         
-        self.wantsLayer = YES;
-        self.layer.backgroundColor = [[NSColor colorWithRed:0.9 green:0.9 blue:0.9 alpha:1.0] CGColor];
-        self.layer.borderColor = [[NSColor grayColor] CGColor];
-        self.layer.borderWidth = 2.0;
+        self.wantsLayer                 = YES;
+        self.layer.backgroundColor      = [[NSColor colorWithRed:0.11 green:0.11 blue:0.11 alpha:1.0] CGColor];
+        self.layer.borderColor          = [[NSColor blackColor] CGColor];
+        self.layer.borderWidth          = 1.0;
         
         //---------------------------------------------------------
         // Cache the parent plugin & button ID:
         //---------------------------------------------------------
         _parentPlugin = parentPlugin;
         _buttonID = buttonID;
-        
-        //---------------------------------------------------------
-        // Add the button:
-        //---------------------------------------------------------
-        /*
-        NSButton *button = [[NSButton alloc]initWithFrame:NSMakeRect(0, 0, buttonWidth, buttonHeight)]; // x y w h
-        [button setButtonType:NSButtonTypeMomentaryPushIn];
-        [button setBezelStyle: NSBezelStyleRounded];
-        button.layer.backgroundColor = [NSColor colorWithCalibratedRed:66 green:66 blue:66 alpha:1].CGColor;
-        button.layer.shadowColor = [NSColor blackColor].CGColor;
-        [button setBordered:YES];
-        [button setTitle:buttonTitle];
-        [button setTarget:self];
-        [button setAction:@selector(buttonPressed)];
-        
-        _button = button;
-        [self addSubview:_button];
-         */
     }
     
     return self;
 }
 
 //---------------------------------------------------------
-// Awake From NIB:
-//---------------------------------------------------------
-- (void) awakeFromNib {
-    NSArray *sortedPasteboardTypes = @[@"com.apple.finalcutpro.xml.v1-10", @"com.apple.finalcutpro.xml.v1-9", @"com.apple.finalcutpro.xml"];
-    [self registerForDraggedTypes:sortedPasteboardTypes];
-   
-}
-
-//---------------------------------------------------------
 // Dragging Entered:
 //---------------------------------------------------------
 - (NSDragOperation)draggingEntered:(id <NSDraggingInfo>)sender {
-    NSArray *sortedPasteboardTypes = @[@"com.apple.finalcutpro.xml.v1-10", @"com.apple.finalcutpro.xml.v1-9", @"com.apple.finalcutpro.xml"];
+    
+    NSArray *sortedPasteboardTypes = @[@"com.apple.finalcutpro.xml.v1-11", @"com.apple.finalcutpro.xml.v1-10", @"com.apple.finalcutpro.xml.v1-9", @"com.apple.finalcutpro.xml", NSPasteboardTypeFileURL];
     for (NSPasteboardType pasteboardType in sortedPasteboardTypes) {
         if ( [[[sender draggingPasteboard] types] containsObject:pasteboardType] ) {
             _dragIsOver = true;
@@ -94,22 +70,70 @@ static NSString *const kFinalCutProUTI = @"com.apple.flexo.proFFPasteboardUTI";
             return NSDragOperationCopy;
         }
     }
+    
     return NSDragOperationNone;
 }
 
+//---------------------------------------------------------
+// Prepare for Drag Operation:
+//---------------------------------------------------------
 - (BOOL)prepareForDragOperation:(id<NSDraggingInfo>)sender {
     return YES;
 }
 
+//---------------------------------------------------------
+// Perform Drag Operation:
+//---------------------------------------------------------
 - (BOOL)performDragOperation:(id<NSDraggingInfo>)sender {
     NSPasteboard *pasteboard = [sender draggingPasteboard];
-    NSString *finalCutProData = [pasteboard stringForType:kFinalCutProUTI];
-    
-    // Handle the dropped Final Cut Pro data
-    if (finalCutProData) {
-        NSLog(@"Dropped Final Cut Pro data: %@", finalCutProData);
+
+    if ([[pasteboard types] containsObject:NSPasteboardTypeFileURL]) {
+        NSArray *classArray = [NSArray arrayWithObject:[NSURL class]];
+        NSDictionary *options = [NSDictionary dictionaryWithObject:[NSNumber numberWithBool:YES] forKey:NSPasteboardURLReadingFileURLsOnlyKey];
+        NSArray *fileURLs = [pasteboard readObjectsForClasses:classArray options:options];
+        for (NSURL *fileURL in fileURLs) {
+            // Do something with fileURL
+            NSLog(@"[Gyroflow Toolbox Renderer] Dropped file: %@", [fileURL path]);
+            
+            if ([fileURL startAccessingSecurityScopedResource]) {
+                NSLog(@"[Gyroflow Toolbox Renderer] SUCCESSFUL startAccessingSecurityScopedResource");
+            } else {
+                NSLog(@"[Gyroflow Toolbox Renderer] FAILED to startAccessingSecurityScopedResource");
+            }
+            
+            #pragma clang diagnostic push
+            #pragma clang diagnostic ignored "-Wobjc-method-access"
+            [_parentPlugin importDroppedMedia:fileURL];
+            #pragma clang diagnostic pop
+            
+            return YES;
+        }
+        
+    } else {
+        NSArray *sortedPasteboardTypes = @[@"com.apple.finalcutpro.xml.v1-11", @"com.apple.finalcutpro.xml.v1-10", @"com.apple.finalcutpro.xml.v1-9", @"com.apple.finalcutpro.xml"];
+        for (NSPasteboardType pasteboardType in sortedPasteboardTypes) {
+            if ( [[pasteboard types] containsObject:pasteboardType] ) {
+                //---------------------------------------------------------
+                // Trigger Dropped FCPXML Method:
+                //---------------------------------------------------------
+                NSData *data = [pasteboard dataForType:pasteboardType];
+                NSString *finalCutProData = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+
+                //NSLog(@"[Gyroflow Toolbox Renderer] Dropped Final Cut Pro data: %@", finalCutProData);
+
+                #pragma clang diagnostic push
+                #pragma clang diagnostic ignored "-Wobjc-method-access"
+                [_parentPlugin importDroppedClip:finalCutProData];
+                #pragma clang diagnostic pop
+
+                _dragIsOver = false;
+                [self needsDisplay];
+                
+                return YES;
+            }
+        }
     }
-    
+
     return YES;
 }
 
@@ -147,8 +171,6 @@ static NSString *const kFinalCutProUTI = @"com.apple.flexo.proFFPasteboardUTI";
     [NSGraphicsContext restoreGraphicsState];
 }
 
-
-
 //---------------------------------------------------------
 // Because custom views are hosted in an overlay window,
 // the first click on them will normally just make the
@@ -163,4 +185,3 @@ static NSString *const kFinalCutProUTI = @"com.apple.flexo.proFFPasteboardUTI";
 }
 
 @end
-

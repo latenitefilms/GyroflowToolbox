@@ -170,6 +170,7 @@
 		<target object="10036" channel="./10" name="Import Dropped Clip"/>
 		<target object="10036" channel="./20" name="Open in Gyroflow"/>
 		<target object="10036" channel="./50" name="Reload Gyroflow Project"/>
+		<target object="10036" channel="./55" name="Reveal in Finder"/>
 		<target object="10036" channel="./90" name="Gyroflow Parameters"/>
 	</publishSettings>
 	<currentFrame>36864 153600 1 0</currentFrame>
@@ -262,57 +263,57 @@
 			<filter name="Gyroflow Toolbox" id="10036" factoryID="6" pluginUUID="92ADB2F9-C649-48C2-B2D4-441CFC0633CB" pluginVersion="1" pluginName="Gyroflow Toolbox" pluginDynamicParams="0">
 				<timing in="0 1 1 0" out="1529856 153600 1 0" offset="0 1 1 0"/>
 				<baseFlags>8589934609</baseFlags>
-				<parameter name="Drop Zone" id="10" flags="12901679120">
-					<numberOfKeypoints>0</numberOfKeypoints>
-					<defaultVal>*********J2eMb-gOLBoA11I*E61-*I4-klM75NZQbBdPqtN743mMqVdRaJmJ0FoPr-M74xWOaJXR5AG**44c3wE1otHGqJtNKF-QaBcOLNZQh660Ec9L2FVR437QolZNq3XSJwE1o7gOKtYF43oMIxWOaJXR6*0U*4X1EsDJGFiRKlgHl0GMb-gOLBoA11I*E61-*I4-kdM75NZQbBdPqtN743mMqVdRaJmJ0FoPr-M74xWOaJXR5AG**44c3wE1otHGqJtNKF-QaBcOLNZQh260Jh1RLBoPqoUF43oMM*-cUgAJGFiRKlg2**62FcY8H6rGIlMKZpX*********E2*********1E*******************4I6**U*2E*O*0E*8E*m*1Q*GE-C*3g*PE-j*52*RE-v*F*********0*E*********E*******************-2E**</defaultVal>
-					<dataValue>*********J2eMb-gOLBoA11I*E61-*I4-klM75NZQbBdPqtN743mMqVdRaJmJ0FoPr-M74xWOaJXR5AG**44c3wE1otHGqJtNKF-QaBcOLNZQh660Ec9L2FVR437QolZNq3XSJwE1o7gOKtYF43oMIxWOaJXR6*0U*4X1EsDJGFiRKlgHl0GMb-gOLBoA11I*E61-*I4-kdM75NZQbBdPqtN743mMqVdRaJmJ0FoPr-M74xWOaJXR5AG**44c3wE1otHGqJtNKF-QaBcOLNZQh260Jh1RLBoPqoUF43oMM*-cUgAJGFiRKlg2**62FcY8H6rGIlMKZpX*********E2*********1E*******************4I6**U*2E*O*0E*8E*m*1Q*GE-C*3g*PE-j*52*RE-v*F*********0*E*********E*******************-2E**</dataValue>
-				</parameter>
-				<parameter name="Loaded Gyroflow Project" id="40" flags="12901744644">
+				<parameter name="Loaded Gyroflow Project" id="40" flags="12884967428">
 					<text>NOTHING LOADED</text>
 				</parameter>
-				<parameter name="Import Gyroflow Project" id="30" flags="12901679120">
+				<parameter name="Import Gyroflow Project" id="30" flags="12884901904">
 					<numberOfKeypoints>0</numberOfKeypoints>
 					<defaultVal>*********J2eMb-gOLBoA11I*E61-*I4-klM75NZQbBdPqtN743mMqVdRaJmJ0FoPr-M74xWOaJXR5AG**44c3wE1otHGqJtNKF-QaBcOLNZQh660Ec9L2FVR437QolZNq3XSJwE1o7gOKtYF43oMIxWOaJXR6*0U*4X1EsDJGFiRKlgHl0GMb-gOLBoA11I*E61-*I4-kdM75NZQbBdPqtN743mMqVdRaJmJ0FoPr-M74xWOaJXR5AG**44c3wE1otHGqJtNKF-QaBcOLNZQh260Jh1RLBoPqoUF43oMM*-cUgAJGFiRKlg2**62FcY8H6rGIlMKZpX*********E2*********1E*******************4I6**U*2E*O*0E*8E*m*1Q*GE-C*3g*PE-j*52*RE-v*F*********0*E*********E*******************-2E**</defaultVal>
 					<dataValue>*********J2eMb-gOLBoA11I*E61-*I4-klM75NZQbBdPqtN743mMqVdRaJmJ0FoPr-M74xWOaJXR5AG**44c3wE1otHGqJtNKF-QaBcOLNZQh660Ec9L2FVR437QolZNq3XSJwE1o7gOKtYF43oMIxWOaJXR6*0U*4X1EsDJGFiRKlgHl0GMb-gOLBoA11I*E61-*I4-kdM75NZQbBdPqtN743mMqVdRaJmJ0FoPr-M74xWOaJXR5AG**44c3wE1otHGqJtNKF-QaBcOLNZQh260Jh1RLBoPqoUF43oMM*-cUgAJGFiRKlg2**62FcY8H6rGIlMKZpX*********E2*********1E*******************4I6**U*2E*O*0E*8E*m*1Q*GE-C*3g*PE-j*52*RE-v*F*********0*E*********E*******************-2E**</dataValue>
 				</parameter>
-				<parameter name="Import Media File" id="35" flags="12901679120">
+				<parameter name="Import Last Gyroflow Project" id="25" flags="12884901904">
 					<numberOfKeypoints>0</numberOfKeypoints>
 					<defaultVal>*********J2eMb-gOLBoA11I*E61-*I4-klM75NZQbBdPqtN743mMqVdRaJmJ0FoPr-M74xWOaJXR5AG**44c3wE1otHGqJtNKF-QaBcOLNZQh660Ec9L2FVR437QolZNq3XSJwE1o7gOKtYF43oMIxWOaJXR6*0U*4X1EsDJGFiRKlgHl0GMb-gOLBoA11I*E61-*I4-kdM75NZQbBdPqtN743mMqVdRaJmJ0FoPr-M74xWOaJXR5AG**44c3wE1otHGqJtNKF-QaBcOLNZQh260Jh1RLBoPqoUF43oMM*-cUgAJGFiRKlg2**62FcY8H6rGIlMKZpX*********E2*********1E*******************4I6**U*2E*O*0E*8E*m*1Q*GE-C*3g*PE-j*52*RE-v*F*********0*E*********E*******************-2E**</defaultVal>
 					<dataValue>*********J2eMb-gOLBoA11I*E61-*I4-klM75NZQbBdPqtN743mMqVdRaJmJ0FoPr-M74xWOaJXR5AG**44c3wE1otHGqJtNKF-QaBcOLNZQh660Ec9L2FVR437QolZNq3XSJwE1o7gOKtYF43oMIxWOaJXR6*0U*4X1EsDJGFiRKlgHl0GMb-gOLBoA11I*E61-*I4-kdM75NZQbBdPqtN743mMqVdRaJmJ0FoPr-M74xWOaJXR5AG**44c3wE1otHGqJtNKF-QaBcOLNZQh260Jh1RLBoPqoUF43oMM*-cUgAJGFiRKlg2**62FcY8H6rGIlMKZpX*********E2*********1E*******************4I6**U*2E*O*0E*8E*m*1Q*GE-C*3g*PE-j*52*RE-v*F*********0*E*********E*******************-2E**</dataValue>
 				</parameter>
-				<parameter name="Import Last Saved Project" id="25" flags="12901679120">
+				<parameter name="Import Media File" id="35" flags="12884901904">
 					<numberOfKeypoints>0</numberOfKeypoints>
 					<defaultVal>*********J2eMb-gOLBoA11I*E61-*I4-klM75NZQbBdPqtN743mMqVdRaJmJ0FoPr-M74xWOaJXR5AG**44c3wE1otHGqJtNKF-QaBcOLNZQh660Ec9L2FVR437QolZNq3XSJwE1o7gOKtYF43oMIxWOaJXR6*0U*4X1EsDJGFiRKlgHl0GMb-gOLBoA11I*E61-*I4-kdM75NZQbBdPqtN743mMqVdRaJmJ0FoPr-M74xWOaJXR5AG**44c3wE1otHGqJtNKF-QaBcOLNZQh260Jh1RLBoPqoUF43oMM*-cUgAJGFiRKlg2**62FcY8H6rGIlMKZpX*********E2*********1E*******************4I6**U*2E*O*0E*8E*m*1Q*GE-C*3g*PE-j*52*RE-v*F*********0*E*********E*******************-2E**</defaultVal>
 					<dataValue>*********J2eMb-gOLBoA11I*E61-*I4-klM75NZQbBdPqtN743mMqVdRaJmJ0FoPr-M74xWOaJXR5AG**44c3wE1otHGqJtNKF-QaBcOLNZQh660Ec9L2FVR437QolZNq3XSJwE1o7gOKtYF43oMIxWOaJXR6*0U*4X1EsDJGFiRKlgHl0GMb-gOLBoA11I*E61-*I4-kdM75NZQbBdPqtN743mMqVdRaJmJ0FoPr-M74xWOaJXR5AG**44c3wE1otHGqJtNKF-QaBcOLNZQh260Jh1RLBoPqoUF43oMM*-cUgAJGFiRKlg2**62FcY8H6rGIlMKZpX*********E2*********1E*******************4I6**U*2E*O*0E*8E*m*1Q*GE-C*3g*PE-j*52*RE-v*F*********0*E*********E*******************-2E**</dataValue>
 				</parameter>
-				<parameter name="Open in Gyroflow" id="20" flags="12901679120">
+				<parameter name="Import Dropped Clip" id="10" flags="12884901904">
 					<numberOfKeypoints>0</numberOfKeypoints>
 					<defaultVal>*********J2eMb-gOLBoA11I*E61-*I4-klM75NZQbBdPqtN743mMqVdRaJmJ0FoPr-M74xWOaJXR5AG**44c3wE1otHGqJtNKF-QaBcOLNZQh660Ec9L2FVR437QolZNq3XSJwE1o7gOKtYF43oMIxWOaJXR6*0U*4X1EsDJGFiRKlgHl0GMb-gOLBoA11I*E61-*I4-kdM75NZQbBdPqtN743mMqVdRaJmJ0FoPr-M74xWOaJXR5AG**44c3wE1otHGqJtNKF-QaBcOLNZQh260Jh1RLBoPqoUF43oMM*-cUgAJGFiRKlg2**62FcY8H6rGIlMKZpX*********E2*********1E*******************4I6**U*2E*O*0E*8E*m*1Q*GE-C*3g*PE-j*52*RE-v*F*********0*E*********E*******************-2E**</defaultVal>
 					<dataValue>*********J2eMb-gOLBoA11I*E61-*I4-klM75NZQbBdPqtN743mMqVdRaJmJ0FoPr-M74xWOaJXR5AG**44c3wE1otHGqJtNKF-QaBcOLNZQh660Ec9L2FVR437QolZNq3XSJwE1o7gOKtYF43oMIxWOaJXR6*0U*4X1EsDJGFiRKlgHl0GMb-gOLBoA11I*E61-*I4-kdM75NZQbBdPqtN743mMqVdRaJmJ0FoPr-M74xWOaJXR5AG**44c3wE1otHGqJtNKF-QaBcOLNZQh260Jh1RLBoPqoUF43oMM*-cUgAJGFiRKlg2**62FcY8H6rGIlMKZpX*********E2*********1E*******************4I6**U*2E*O*0E*8E*m*1Q*GE-C*3g*PE-j*52*RE-v*F*********0*E*********E*******************-2E**</dataValue>
 				</parameter>
-				<parameter name="Reload Gyroflow Project" id="50" flags="12901679120">
+				<parameter name="Open in Gyroflow" id="20" flags="12884901904">
 					<numberOfKeypoints>0</numberOfKeypoints>
 					<defaultVal>*********J2eMb-gOLBoA11I*E61-*I4-klM75NZQbBdPqtN743mMqVdRaJmJ0FoPr-M74xWOaJXR5AG**44c3wE1otHGqJtNKF-QaBcOLNZQh660Ec9L2FVR437QolZNq3XSJwE1o7gOKtYF43oMIxWOaJXR6*0U*4X1EsDJGFiRKlgHl0GMb-gOLBoA11I*E61-*I4-kdM75NZQbBdPqtN743mMqVdRaJmJ0FoPr-M74xWOaJXR5AG**44c3wE1otHGqJtNKF-QaBcOLNZQh260Jh1RLBoPqoUF43oMM*-cUgAJGFiRKlg2**62FcY8H6rGIlMKZpX*********E2*********1E*******************4I6**U*2E*O*0E*8E*m*1Q*GE-C*3g*PE-j*52*RE-v*F*********0*E*********E*******************-2E**</defaultVal>
 					<dataValue>*********J2eMb-gOLBoA11I*E61-*I4-klM75NZQbBdPqtN743mMqVdRaJmJ0FoPr-M74xWOaJXR5AG**44c3wE1otHGqJtNKF-QaBcOLNZQh660Ec9L2FVR437QolZNq3XSJwE1o7gOKtYF43oMIxWOaJXR6*0U*4X1EsDJGFiRKlgHl0GMb-gOLBoA11I*E61-*I4-kdM75NZQbBdPqtN743mMqVdRaJmJ0FoPr-M74xWOaJXR5AG**44c3wE1otHGqJtNKF-QaBcOLNZQh260Jh1RLBoPqoUF43oMM*-cUgAJGFiRKlg2**62FcY8H6rGIlMKZpX*********E2*********1E*******************4I6**U*2E*O*0E*8E*m*1Q*GE-C*3g*PE-j*52*RE-v*F*********0*E*********E*******************-2E**</dataValue>
 				</parameter>
-				<parameter name="Gyroflow Project Path" id="60" flags="12905938976"/>
-				<parameter name="Gyroflow Project Bookmark Data" id="70" flags="12905938976"/>
-				<parameter name="Gyroflow Project Data" id="80" flags="12905938976"/>
+				<parameter name="Reload Gyroflow Project" id="50" flags="12884901904">
+					<numberOfKeypoints>0</numberOfKeypoints>
+					<defaultVal>*********J2eMb-gOLBoA11I*E61-*I4-klM75NZQbBdPqtN743mMqVdRaJmJ0FoPr-M74xWOaJXR5AG**44c3wE1otHGqJtNKF-QaBcOLNZQh660Ec9L2FVR437QolZNq3XSJwE1o7gOKtYF43oMIxWOaJXR6*0U*4X1EsDJGFiRKlgHl0GMb-gOLBoA11I*E61-*I4-kdM75NZQbBdPqtN743mMqVdRaJmJ0FoPr-M74xWOaJXR5AG**44c3wE1otHGqJtNKF-QaBcOLNZQh260Jh1RLBoPqoUF43oMM*-cUgAJGFiRKlg2**62FcY8H6rGIlMKZpX*********E2*********1E*******************4I6**U*2E*O*0E*8E*m*1Q*GE-C*3g*PE-j*52*RE-v*F*********0*E*********E*******************-2E**</defaultVal>
+					<dataValue>*********J2eMb-gOLBoA11I*E61-*I4-klM75NZQbBdPqtN743mMqVdRaJmJ0FoPr-M74xWOaJXR5AG**44c3wE1otHGqJtNKF-QaBcOLNZQh660Ec9L2FVR437QolZNq3XSJwE1o7gOKtYF43oMIxWOaJXR6*0U*4X1EsDJGFiRKlgHl0GMb-gOLBoA11I*E61-*I4-kdM75NZQbBdPqtN743mMqVdRaJmJ0FoPr-M74xWOaJXR5AG**44c3wE1otHGqJtNKF-QaBcOLNZQh260Jh1RLBoPqoUF43oMM*-cUgAJGFiRKlg2**62FcY8H6rGIlMKZpX*********E2*********1E*******************4I6**U*2E*O*0E*8E*m*1Q*GE-C*3g*PE-j*52*RE-v*F*********0*E*********E*******************-2E**</dataValue>
+				</parameter>
+				<parameter name="Gyroflow Project Path" id="60" flags="12889161760"/>
+				<parameter name="Gyroflow Project Bookmark Data" id="70" flags="12889161760"/>
+				<parameter name="Gyroflow Project Data" id="80" flags="12889161760"/>
 				<parameter name="Gyroflow Parameters" id="90" flags="8589938704">
-					<parameter name="FOV" id="100" flags="12901679120" default="1" value="1"/>
-					<parameter name="Smoothness" id="110" flags="12901679120" default="0.5" value="0.5"/>
-					<parameter name="Lens Correction" id="120" flags="12901679120" default="0" value="0"/>
-					<parameter name="Horizon Lock" id="130" flags="12901679120" default="0" value="0"/>
-					<parameter name="Horizon Roll" id="140" flags="12901679120" default="0" value="0"/>
-					<parameter name="Position Offset X" id="150" flags="12901679120" default="0" value="0"/>
-					<parameter name="Position Offset Y" id="160" flags="12901679120" default="0" value="0"/>
-					<parameter name="Input Rotation" id="170" flags="12901679120" default="0" value="0"/>
-					<parameter name="Video Rotation" id="180" flags="12901679120" default="0" value="0"/>
+					<parameter name="FOV" id="100" flags="12884901904" default="1" value="1"/>
+					<parameter name="Smoothness" id="110" flags="12884901904" default="0.5" value="0.5"/>
+					<parameter name="Lens Correction" id="120" flags="12884901904" default="0" value="0"/>
+					<parameter name="Horizon Lock" id="130" flags="12884901904" default="0" value="0"/>
+					<parameter name="Horizon Roll" id="140" flags="12884901904" default="0" value="0"/>
+					<parameter name="Position Offset X" id="150" flags="12884901904" default="0" value="0"/>
+					<parameter name="Position Offset Y" id="160" flags="12884901904" default="0" value="0"/>
+					<parameter name="Input Rotation" id="170" flags="12884901904" default="0" value="0"/>
+					<parameter name="Video Rotation" id="180" flags="12884901904" default="0" value="0"/>
 				</parameter>
-				<parameter name="Unique Identifier" id="500" flags="12901744644"/>
-				<parameter name="Mix" id="10001" flags="12901679104" default="1" value="1"/>
-				<parameter name="Flip" id="10002" flags="12905938976" default="0" value="0"/>
-				<parameter name="Input Points" id="10003" flags="12905938976" default="1" value="1"/>
+				<parameter name="Unique Identifier" id="500" flags="12889161760"/>
+				<parameter name="Mix" id="10001" flags="12884901888" default="1" value="1"/>
+				<parameter name="Flip" id="10002" flags="12889161760" default="0" value="0"/>
+				<parameter name="Input Points" id="10003" flags="12889161760" default="1" value="1"/>
 			</filter>
 		</scenenode>
 		<aspectRatio>1</aspectRatio>

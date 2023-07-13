@@ -42,3 +42,7 @@ uint32_t trashCache(
 const char* importMediaFile(
     const char*                 media_file_path
 );
+
+const char* doesGyroflowProjectContainStabilisationData(
+    const char*                 gyroflow_project_data
+);
