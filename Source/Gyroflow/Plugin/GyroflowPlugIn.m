@@ -19,9 +19,6 @@
 
 #import "HeaderView.h"
 
-#import "BRAWMetadataReader.h"
-#import "BRAWParameters.h"
-
 #import "TileableRemoteBRAWShaderTypes.h"
 #import "MetalDeviceCache.h"
 
@@ -2761,50 +2758,9 @@
     NSString *path = [url path];
     
     NSLog(@"[Gyroflow Toolbox Renderer] Import Media File Path: %@", path);
-    
-    //---------------------------------------------------------
-    // If the media is a BRAW file then we need to pass
-    // in some metadata to Rust-land:
-    //---------------------------------------------------------
-    uint32_t width      = 0;
-    uint32_t height     = 0;
-    double duration_s   = 0;
-    double fps          = 0;
-    int32_t rotation    = 0;
-    
-    NSString *extension = [[url pathExtension] lowercaseString];
-    
-    if ([extension isEqualToString:@"braw"]) {
-        //---------------------------------------------------------
-        // It's a BRAW file:
-        //---------------------------------------------------------
-        NSLog(@"[Gyroflow Toolbox Renderer] It's a BRAW file!");
-              
-        BRAWMetadataReader *metadataReader = [[BRAWMetadataReader alloc] init];
-        BRAWParameters *params = [metadataReader readMetadataFromPath:[url path]];
-        if (params == nil) {
-            NSLog(@"[Gyroflow Toolbox Renderer] Failed to read BRAW metadata!");
-        } else {
-            width       = [params.width doubleValue];
-            height      = [params.height doubleValue];
-            duration_s  = [params.frameCount doubleValue] / [params.frameRate doubleValue];
-            fps         = [params.frameRate doubleValue];
-        }
-    }
-    
-    NSLog(@"[Gyroflow Toolbox Renderer] width: %u", width);
-    NSLog(@"[Gyroflow Toolbox Renderer] height: %u", height);
-    NSLog(@"[Gyroflow Toolbox Renderer] duration_s: %f", duration_s);
-    NSLog(@"[Gyroflow Toolbox Renderer] fps: %f", fps);
-    NSLog(@"[Gyroflow Toolbox Renderer] rotation: %d", rotation);
-   
+       
     const char* importResult = importMediaFile(
-                                               [path UTF8String],       // const char*
-                                               width,                   // uint32_t
-                                               height,                  // uint32_t
-                                               duration_s,              // double
-                                               fps,                     // double
-                                               rotation                 // int32_t
+                                               [path UTF8String]        // const char*
                                                );
     
     NSString *resultString = [NSString stringWithUTF8String: importResult];

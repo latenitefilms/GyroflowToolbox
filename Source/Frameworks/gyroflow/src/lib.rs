@@ -8,7 +8,7 @@
 //---------------------------------------------------------
 // Local name bindings:
 //---------------------------------------------------------
-use gyroflow_core::{StabilizationManager, stabilization::*, telemetry_parser::util::VideoMetadata};
+use gyroflow_core::{StabilizationManager, stabilization::*};
 use gyroflow_core::gpu::{ BufferDescription, BufferSource, Buffers };
 
 use once_cell::sync::OnceCell;              // Provides two new cell-like types, unsync::OnceCell and sync::OnceCell
@@ -196,12 +196,7 @@ pub extern "C" fn trashCache() -> u32 {
 //---------------------------------------------------------
 #[no_mangle]
 pub extern "C" fn importMediaFile(
-    media_file_path: *const c_char,
-    width: u32,
-    height: u32,
-    duration_s: f64,
-    fps: f64,
-    rotation: i32
+    media_file_path: *const c_char,    
 ) -> *const c_char {
     //---------------------------------------------------------
     // Convert the file path to a `&str`:
@@ -209,7 +204,7 @@ pub extern "C" fn importMediaFile(
     let media_file_path_pointer = unsafe { CStr::from_ptr(media_file_path) };
     let media_file_path_string = media_file_path_pointer.to_string_lossy();
 
-    log::info!("[Gyroflow Toolbox Rust] media_file_path_string: {:?}", media_file_path_string);
+    //log::info!("[Gyroflow Toolbox Rust] media_file_path_string: {:?}", media_file_path_string);
 
     let mut stab = StabilizationManager::default();
     {
@@ -226,27 +221,9 @@ pub extern "C" fn importMediaFile(
     }
 
     //---------------------------------------------------------
-    // If it's a BRAW file, then we'll get metadata from
-    // Objective-C land:
-    //---------------------------------------------------------    
-    let metadata;
-    if width > 0 && height > 0 {        
-        //log::info!("[Gyroflow Toolbox Rust] It's a MXF or BRAW file!");
-        metadata = Some(VideoMetadata {
-            duration_s: duration_s,
-            fps: fps,
-            width: width as usize,
-            height: height as usize,
-            rotation: rotation
-        });        
-    } else {
-        metadata = None;
-    };
-
-    //---------------------------------------------------------
     // Load video file:
     //---------------------------------------------------------
-    match stab.load_video_file(&media_file_path_string, metadata) {
+    match stab.load_video_file(&media_file_path_string, None) {
         Ok(_) => {
             log::info!("[Gyroflow Toolbox Rust] Video file loaded successfully");
         },
