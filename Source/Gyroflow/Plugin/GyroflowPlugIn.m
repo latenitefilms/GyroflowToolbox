@@ -17,6 +17,12 @@
 #import "CustomButtonView.h"
 #import "CustomDropZoneView.h"
 
+#import "HeaderView.h"
+
+#import "BRAWMetadataReader.h"
+#import "BRAWParameters.h"
+
+#import "TileableRemoteBRAWShaderTypes.h"
 #import "MetalDeviceCache.h"
 
 #import <IOSurface/IOSurfaceObjC.h>
@@ -30,6 +36,17 @@
 #include <sys/types.h>
 #include <pwd.h>
 #include <assert.h>
+
+#include <ImageIO/ImageIO.h>
+#import <Metal/Metal.h>
+#import <AVFoundation/AVFoundation.h>
+
+//---------------------------------------------------------
+// Metal Performance Shaders for scaling:
+//---------------------------------------------------------
+#import <simd/simd.h>
+#import <MetalKit/MetalKit.h>
+#import <MetalPerformanceShaders/MetalPerformanceShaders.h>
 
 //---------------------------------------------------------
 // Gyroflow FxPlug4 Implementation:
@@ -112,7 +129,7 @@
                     //             this property is only checked once when the filter is applied, so it
                     //             should go in static properties rather than dynamic properties.
                     //---------------------------------------------------------
-                    kFxPropertyKey_VariesWhenParamsAreStatic : [NSNumber numberWithBool:NO],
+                    kFxPropertyKey_VariesWhenParamsAreStatic : [NSNumber numberWithBool:YES],
         
                     //---------------------------------------------------------
                     // @const      kFxPropertyKey_ChangesOutputSize
@@ -123,7 +140,7 @@
                     //             and your filter's @c -destinationImageRect:sourceImages:pluginState:atTime:error:
                     //             method will not be called.
                     //---------------------------------------------------------
-                    kFxPropertyKey_ChangesOutputSize : [NSNumber numberWithBool:NO],
+                    kFxPropertyKey_ChangesOutputSize : [NSNumber numberWithBool:YES],
         
                     //---------------------------------------------------------
                     // @const      kFxPropertyKey_DesiredProcessingColorInfo
@@ -201,7 +218,20 @@
                                                         buttonTitle:@"Reveal in Finder"];
         revealInFinderView = view;
         return view;
+    } else if (parameterID == kCB_LoadPresetLensProfile) {
+        NSView* view = [[CustomButtonView alloc] initWithAPIManager:_apiManager
+                                                       parentPlugin:self
+                                                           buttonID:kCB_LoadPresetLensProfile
+                                                        buttonTitle:@"Load Preset/Lens Profile"];
+        loadPresetLensProfileView = view;
+        return view;
+    } else if (parameterID == kCB_Header) {
         
+        NSRect frameRect = NSMakeRect(0, 0, 200, 184); // x y w h
+        NSView* view = [[HeaderView alloc] initWithFrame:frameRect];
+        
+        headerView = view;
+        return view;
     } else {
         NSLog(@"[Gyroflow Toolbox Renderer] BUG - createViewForParameterID requested a parameterID that we haven't allowed for: %u", (unsigned int)parameterID);
         return nil;
@@ -246,6 +276,160 @@
         return NO;
     }
     
+    //
+    //---------------------------------------------------------
+    // ADD PARAMETER: Header
+    //---------------------------------------------------------
+    if (![paramAPI addCustomParameterWithName:@""
+                                  parameterID:kCB_Header
+                                 defaultValue:@0
+                               parameterFlags:kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE])
+    {
+        if (error != NULL) {
+            NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_Header"};
+            *error = [NSError errorWithDomain:FxPlugErrorDomain
+                                         code:kFxError_InvalidParameter
+                                     userInfo:userInfo];
+        }
+        return NO;
+    }
+    
+    //---------------------------------------------------------
+    // ADD PARAMETER: Drop Clip Here
+    //---------------------------------------------------------
+    if (![paramAPI addCustomParameterWithName:@"Drop Clip Here ➡"
+                             parameterID:kCB_DropZone
+                            defaultValue:@0
+                          parameterFlags:kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE])
+    {
+        if (error != NULL) {
+            NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_DropZone"};
+            *error = [NSError errorWithDomain:FxPlugErrorDomain
+                                         code:kFxError_InvalidParameter
+                                     userInfo:userInfo];
+        }
+        return NO;
+    }
+    
+    //---------------------------------------------------------
+    // ADD PARAMETER: 'Import Gyroflow Project' Button
+    //---------------------------------------------------------
+    if (![paramAPI addCustomParameterWithName:@""
+                             parameterID:kCB_ImportGyroflowProject
+                            defaultValue:@0
+                          parameterFlags:kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE])
+    {
+        if (error != NULL) {
+            NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_ImportGyroflowProject"};
+            *error = [NSError errorWithDomain:FxPlugErrorDomain
+                                         code:kFxError_InvalidParameter
+                                     userInfo:userInfo];
+        }
+        return NO;
+    }
+    
+    //---------------------------------------------------------
+    // ADD PARAMETER: 'Import Last Gyroflow Project' Button
+    //---------------------------------------------------------
+    if (![paramAPI addCustomParameterWithName:@""
+                             parameterID:kCB_LoadLastGyroflowProject
+                            defaultValue:@0
+                          parameterFlags:kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE])
+    {
+        if (error != NULL) {
+            NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_LoadLastGyroflowProject"};
+            *error = [NSError errorWithDomain:FxPlugErrorDomain
+                                         code:kFxError_InvalidParameter
+                                     userInfo:userInfo];
+        }
+        return NO;
+    }
+    
+    //---------------------------------------------------------
+    // ADD PARAMETER: 'Import Media File' Button
+    //---------------------------------------------------------
+    if (![paramAPI addCustomParameterWithName:@""
+                             parameterID:kCB_ImportMediaFile
+                            defaultValue:@0
+                          parameterFlags:kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE])
+    {
+        if (error != NULL) {
+            NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_ImportMediaFile"};
+            *error = [NSError errorWithDomain:FxPlugErrorDomain
+                                         code:kFxError_InvalidParameter
+                                     userInfo:userInfo];
+        }
+        return NO;
+    }
+    
+    //---------------------------------------------------------
+    // ADD PARAMETER: 'Load Preset/Lens Profile' Button
+    //---------------------------------------------------------
+    if (![paramAPI addCustomParameterWithName:@""
+                             parameterID:kCB_LoadPresetLensProfile
+                            defaultValue:@0
+                          parameterFlags:kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE])
+    {
+        if (error != NULL) {
+            NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_LoadPresetLensProfile"};
+            *error = [NSError errorWithDomain:FxPlugErrorDomain
+                                         code:kFxError_InvalidParameter
+                                     userInfo:userInfo];
+        }
+        return NO;
+    }
+    
+    //---------------------------------------------------------
+    // ADD PARAMETER: 'Open in Gyroflow' Button
+    //---------------------------------------------------------
+    if (![paramAPI addCustomParameterWithName:@""
+                             parameterID:kCB_LaunchGyroflow
+                            defaultValue:@0
+                          parameterFlags:kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE])
+    {
+        if (error != NULL) {
+            NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_LaunchGyroflow"};
+            *error = [NSError errorWithDomain:FxPlugErrorDomain
+                                         code:kFxError_InvalidParameter
+                                     userInfo:userInfo];
+        }
+        return NO;
+    }
+    
+    //---------------------------------------------------------
+    // ADD PARAMETER: 'Reload Gyroflow Project' Button
+    //---------------------------------------------------------
+    if (![paramAPI addCustomParameterWithName:@""
+                             parameterID:kCB_ReloadGyroflowProject
+                            defaultValue:@0
+                          parameterFlags:kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE])
+    {
+        if (error != NULL) {
+            NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_ReloadGyroflowProject"};
+            *error = [NSError errorWithDomain:FxPlugErrorDomain
+                                         code:kFxError_InvalidParameter
+                                     userInfo:userInfo];
+        }
+        return NO;
+    }
+    
+    //---------------------------------------------------------
+    // ADD PARAMETER: 'Reveal in Finder' Button
+    //---------------------------------------------------------
+    if (![paramAPI addCustomParameterWithName:@""
+                             parameterID:kCB_RevealInFinder
+                            defaultValue:@0
+                          parameterFlags:kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE])
+    {
+        if (error != NULL) {
+            NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_RevealInFinder"};
+            *error = [NSError errorWithDomain:FxPlugErrorDomain
+                                         code:kFxError_InvalidParameter
+                                     userInfo:userInfo];
+        }
+        return NO;
+    }
+    
     //---------------------------------------------------------
     // ADD PARAMETER: 'Loaded Gyroflow Project' Text Box
     //---------------------------------------------------------
@@ -264,174 +448,10 @@
     }
     
     //---------------------------------------------------------
-    // ADD PARAMETER: 'Import Gyroflow Project' Button
+    //
+    // GYROFLOW PARAMETERS:
+    //
     //---------------------------------------------------------
-    if (![paramAPI addCustomParameterWithName:@"Import Gyroflow Project"
-                             parameterID:kCB_ImportGyroflowProject
-                            defaultValue:@0
-                          parameterFlags:kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE])
-    {
-        if (error != NULL) {
-            NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_ImportGyroflowProject"};
-            *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                         code:kFxError_InvalidParameter
-                                     userInfo:userInfo];
-        }
-        return NO;
-    }
-    
-    //---------------------------------------------------------
-    // ADD PARAMETER: 'Import Last Gyroflow Project' Button
-    //---------------------------------------------------------
-    if (![paramAPI addCustomParameterWithName:@"Import Last Gyroflow Project"
-                             parameterID:kCB_LoadLastGyroflowProject
-                            defaultValue:@0
-                          parameterFlags:kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE])
-    {
-        if (error != NULL) {
-            NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_LoadLastGyroflowProject"};
-            *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                         code:kFxError_InvalidParameter
-                                     userInfo:userInfo];
-        }
-        return NO;
-    }
-    
-    //---------------------------------------------------------
-    // ADD PARAMETER: 'Import Media File' Button
-    //---------------------------------------------------------
-    if (![paramAPI addCustomParameterWithName:@"Import Media File"
-                             parameterID:kCB_ImportMediaFile
-                            defaultValue:@0
-                          parameterFlags:kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE])
-    {
-        if (error != NULL) {
-            NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_ImportMediaFile"};
-            *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                         code:kFxError_InvalidParameter
-                                     userInfo:userInfo];
-        }
-        return NO;
-    }
-    
-    //---------------------------------------------------------
-    // ADD PARAMETER: Import Dropped Clip
-    //---------------------------------------------------------
-    if (![paramAPI addCustomParameterWithName:@"Import Dropped Clip"
-                             parameterID:kCB_DropZone
-                            defaultValue:@0
-                          parameterFlags:kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE])
-    {
-        if (error != NULL) {
-            NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_DropZone"};
-            *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                         code:kFxError_InvalidParameter
-                                     userInfo:userInfo];
-        }
-        return NO;
-    }
-    
-    //---------------------------------------------------------
-    // ADD PARAMETER: 'Open in Gyroflow' Button
-    //---------------------------------------------------------
-    if (![paramAPI addCustomParameterWithName:@"Open in Gyroflow"
-                             parameterID:kCB_LaunchGyroflow
-                            defaultValue:@0
-                          parameterFlags:kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE])
-    {
-        if (error != NULL) {
-            NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_LaunchGyroflow"};
-            *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                         code:kFxError_InvalidParameter
-                                     userInfo:userInfo];
-        }
-        return NO;
-    }
-    
-    //---------------------------------------------------------
-    // ADD PARAMETER: 'Reload Gyroflow Project' Button
-    //---------------------------------------------------------
-    if (![paramAPI addCustomParameterWithName:@"Reload Gyroflow Project"
-                             parameterID:kCB_ReloadGyroflowProject
-                            defaultValue:@0
-                          parameterFlags:kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE])
-    {
-        if (error != NULL) {
-            NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_ReloadGyroflowProject"};
-            *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                         code:kFxError_InvalidParameter
-                                     userInfo:userInfo];
-        }
-        return NO;
-    }
-    
-    //---------------------------------------------------------
-    // ADD PARAMETER: 'Reveal in Finder' Button
-    //---------------------------------------------------------
-    if (![paramAPI addCustomParameterWithName:@"Reveal in Finder"
-                             parameterID:kCB_RevealInFinder
-                            defaultValue:@0
-                          parameterFlags:kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE])
-    {
-        if (error != NULL) {
-            NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_RevealInFinder"};
-            *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                         code:kFxError_InvalidParameter
-                                     userInfo:userInfo];
-        }
-        return NO;
-    }
-    
-    //---------------------------------------------------------
-    // ADD PARAMETER: 'Gyroflow Project Path' Text Box
-    //---------------------------------------------------------
-    if (![paramAPI addStringParameterWithName:@"Gyroflow Project Path"
-                                  parameterID:kCB_GyroflowProjectPath
-                                 defaultValue:@""
-                               parameterFlags:kFxParameterFlag_HIDDEN | kFxParameterFlag_NOT_ANIMATABLE])
-    {
-        if (error != NULL) {
-            NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_GyroflowProjectPath"};
-            *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                         code:kFxError_InvalidParameter
-                                     userInfo:userInfo];
-        }
-        return NO;
-    }
-    
-    //---------------------------------------------------------
-    // ADD PARAMETER: 'Gyroflow Project Bookmark Data' Text Box
-    //---------------------------------------------------------
-    if (![paramAPI addStringParameterWithName:@"Gyroflow Project Bookmark Data"
-                                  parameterID:kCB_GyroflowProjectBookmarkData
-                                 defaultValue:@""
-                               parameterFlags:kFxParameterFlag_HIDDEN | kFxParameterFlag_NOT_ANIMATABLE])
-    {
-        if (error != NULL) {
-            NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_GyroflowProjectBookmarkData"};
-            *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                         code:kFxError_InvalidParameter
-                                     userInfo:userInfo];
-        }
-        return NO;
-    }
-    
-    //---------------------------------------------------------
-    // ADD PARAMETER: 'Gyroflow Project Data' Text Box
-    //---------------------------------------------------------
-    if (![paramAPI addStringParameterWithName:@"Gyroflow Project Data"
-                                  parameterID:kCB_GyroflowProjectData
-                                 defaultValue:@""
-                               parameterFlags:kFxParameterFlag_HIDDEN | kFxParameterFlag_NOT_ANIMATABLE])
-    {
-        if (error != NULL) {
-            NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_GyroflowProjectData"};
-            *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                         code:kFxError_InvalidParameter
-                                     userInfo:userInfo];
-        }
-        return NO;
-    }
 
     //---------------------------------------------------------
     // START GROUP: 'Gyroflow Parameters'
@@ -684,7 +704,11 @@
         return NO;
     }
     
+    //---------------------------------------------------------
     //
+    // HIDDEN PARAMETERS:
+    //
+    //---------------------------------------------------------
     
     //---------------------------------------------------------
     // ADD PARAMETER: Unique Identifier
@@ -696,6 +720,57 @@
     {
         if (error != NULL) {
             NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_UniqueIdentifier"};
+            *error = [NSError errorWithDomain:FxPlugErrorDomain
+                                         code:kFxError_InvalidParameter
+                                     userInfo:userInfo];
+        }
+        return NO;
+    }
+    
+    //---------------------------------------------------------
+    // ADD PARAMETER: 'Gyroflow Project Path' Text Box
+    //---------------------------------------------------------
+    if (![paramAPI addStringParameterWithName:@"Gyroflow Project Path"
+                                  parameterID:kCB_GyroflowProjectPath
+                                 defaultValue:@""
+                               parameterFlags:kFxParameterFlag_HIDDEN | kFxParameterFlag_NOT_ANIMATABLE])
+    {
+        if (error != NULL) {
+            NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_GyroflowProjectPath"};
+            *error = [NSError errorWithDomain:FxPlugErrorDomain
+                                         code:kFxError_InvalidParameter
+                                     userInfo:userInfo];
+        }
+        return NO;
+    }
+    
+    //---------------------------------------------------------
+    // ADD PARAMETER: 'Gyroflow Project Bookmark Data' Text Box
+    //---------------------------------------------------------
+    if (![paramAPI addStringParameterWithName:@"Gyroflow Project Bookmark Data"
+                                  parameterID:kCB_GyroflowProjectBookmarkData
+                                 defaultValue:@""
+                               parameterFlags:kFxParameterFlag_HIDDEN | kFxParameterFlag_NOT_ANIMATABLE])
+    {
+        if (error != NULL) {
+            NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_GyroflowProjectBookmarkData"};
+            *error = [NSError errorWithDomain:FxPlugErrorDomain
+                                         code:kFxError_InvalidParameter
+                                     userInfo:userInfo];
+        }
+        return NO;
+    }
+    
+    //---------------------------------------------------------
+    // ADD PARAMETER: 'Gyroflow Project Data' Text Box
+    //---------------------------------------------------------
+    if (![paramAPI addStringParameterWithName:@"Gyroflow Project Data"
+                                  parameterID:kCB_GyroflowProjectData
+                                 defaultValue:@""
+                               parameterFlags:kFxParameterFlag_HIDDEN | kFxParameterFlag_NOT_ANIMATABLE])
+    {
+        if (error != NULL) {
+            NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_GyroflowProjectData"};
             *error = [NSError errorWithDomain:FxPlugErrorDomain
                                          code:kFxError_InvalidParameter
                                      userInfo:userInfo];
@@ -927,6 +1002,12 @@
 }
 
 //---------------------------------------------------------
+//
+#pragma mark - Render
+//
+//---------------------------------------------------------
+
+//---------------------------------------------------------
 // destinationImageRect:sourceImages:destinationImage:pluginState:atTime:error
 //
 // This method will calculate the rectangular bounds of the output
@@ -1002,6 +1083,9 @@
                         atTime:(CMTime)renderTime
                          error:(NSError * _Nullable *)outError
 {
+    
+    //NSLog(@"[Gyroflow Toolbox Renderer] Render time!");
+    
     //---------------------------------------------------------
     // Make sure the plugin state is valid:
     //---------------------------------------------------------
@@ -1049,13 +1133,310 @@
     NSNumber *inputRotation     = params.inputRotation;
     NSNumber *videoRotation     = params.videoRotation;
     
+    //NSLog(@"[Gyroflow Toolbox Renderer] uniqueIdentifier: '%@'", uniqueIdentifier);
+        
+    //---------------------------------------------------------
+    // Calculate output width & height:
+    //---------------------------------------------------------
+    float outputWidth       = (destinationImage.tilePixelBounds.right - destinationImage.tilePixelBounds.left);
+    float outputHeight      = (destinationImage.tilePixelBounds.top - destinationImage.tilePixelBounds.bottom);
+    float fullWidth         = (destinationImage.imagePixelBounds.right - destinationImage.imagePixelBounds.left);
+    float fullHeight        = (destinationImage.imagePixelBounds.top - destinationImage.imagePixelBounds.bottom);
+        
+    //---------------------------------------------------------
+    // Prepare our aspect ratio correction objects:
+    //---------------------------------------------------------
+    float correctedHeight               = outputHeight;
+    float differenceBetweenHeights      = 0;
+    
+    //---------------------------------------------------------
+    //
+    // HOUSTON WE HAVE A PROBLEM!
+    //
+    // There's no unique identifier, so let's abort:
+    //
+    //---------------------------------------------------------
     if (uniqueIdentifier == nil || [uniqueIdentifier isEqualToString:@""]) {
-        //NSLog(@"[Gyroflow Toolbox Renderer] uniqueIdentifier was not valid during render!");
         
-        //NSUUID *uuid = [NSUUID UUID];
-        //uniqueIdentifier = uuid.UUIDString;
+        NSLog(@"[Gyroflow Toolbox Renderer] Showing early error message!");
         
-        return NO;
+        MetalDeviceCache* deviceCache       = [MetalDeviceCache deviceCache];
+        MTLPixelFormat pixelFormat          = [MetalDeviceCache MTLPixelFormatForImageTile:destinationImage];
+        id<MTLCommandQueue> commandQueue    = [deviceCache commandQueueWithRegistryID:destinationImage.deviceRegistryID
+                                                                          pixelFormat:pixelFormat];
+        if (commandQueue == nil)
+        {
+            NSString *errorMessage = @"[Gyroflow Toolbox Renderer] FATAL ERROR: commandQueue was nil when attempting to show an error message.";
+            NSLog(@"%@", errorMessage);
+            if (outError != NULL) {
+                *outError = [NSError errorWithDomain:FxPlugErrorDomain
+                                                code:kFxError_CommandQueueWasNilDuringShowErrorMessage
+                                            userInfo:@{ NSLocalizedDescriptionKey : errorMessage }];
+            }
+            return NO;
+        }
+        
+        id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
+        commandBuffer.label = @"Gyroflow Toolbox Error Command Buffer";
+        [commandBuffer enqueue];
+                
+        //---------------------------------------------------------
+        // Load the texture from our "Assets":
+        //---------------------------------------------------------
+        MTKTextureLoader *loader = [[MTKTextureLoader alloc] initWithDevice:commandQueue.device];
+        
+        NSDictionary *options = [[NSDictionary alloc] initWithObjectsAndKeys:
+                                 [NSNumber numberWithBool:YES], MTKTextureLoaderOptionSRGB,
+                                 nil];
+                
+        id<MTLTexture> inputTexture         = [loader newTextureWithName:@"NoGyroflowProjectLoaded" scaleFactor:1.0 bundle:[NSBundle mainBundle] options:options error:nil];
+        id<MTLTexture> outputTexture        = [destinationImage metalTextureForDevice:[deviceCache deviceWithRegistryID:destinationImage.deviceRegistryID]];
+        
+        //---------------------------------------------------------
+        // If square pixels, we'll manipulate the height and y
+        // axis manually:
+        //---------------------------------------------------------
+        if (fullHeight == outputHeight) {
+            correctedHeight = ((float)inputTexture.height/(float)inputTexture.width) * outputWidth;
+            differenceBetweenHeights = (outputHeight - correctedHeight) / 2;
+        }
+        
+        //---------------------------------------------------------
+        // Use a "Metal Performance Shader" to scale the texture
+        // to the correct size. Note, we're using the full width
+        // and height, to compensate for non-square pixels:
+        //---------------------------------------------------------
+        id<MTLTexture> scaledInputTexture = nil;
+        if (fullHeight != outputHeight) {
+            
+            //---------------------------------------------------------
+            // Create a new Command Buffer for scale transform:
+            //---------------------------------------------------------
+            id<MTLCommandBuffer> scaleCommandBuffer = [commandQueue commandBuffer];
+            scaleCommandBuffer.label = @"Gyroflow Toolbox Scale Command Buffer";
+            [scaleCommandBuffer enqueue];
+            
+            //---------------------------------------------------------
+            // Create a new texture for the scaled image:
+            //---------------------------------------------------------
+            MTLTextureDescriptor *scaleTextureDescriptor = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:inputTexture.pixelFormat
+                                                                                                              width:fullWidth
+                                                                                                             height:fullHeight
+                                                                                                          mipmapped:NO];
+            
+            scaledInputTexture = [inputTexture.device newTextureWithDescriptor:scaleTextureDescriptor];
+            
+            //---------------------------------------------------------
+            // Work out how much to scale/re-position:
+            //---------------------------------------------------------
+            float scaleX        = (float)(fullWidth / inputTexture.width);
+            float scaleY        = (float)(fullHeight / inputTexture.height);
+                          
+            if (scaleX > scaleY) {
+                scaleX = scaleY;
+            } else {
+                scaleY = scaleX;
+            }
+
+            float translateX    = (float)((fullWidth - inputTexture.width * scaleX) / 2);
+            float translateY    = (float)((fullHeight - inputTexture.height * scaleY) / 2);
+                        
+            MPSScaleTransform transform;
+            transform.scaleX        = scaleX;         // The horizontal scale factor.
+            transform.scaleY        = scaleY;         // The vertical scale factor.
+            transform.translateX    = translateX;     // The horizontal translation factor.
+            transform.translateY    = translateY;     // The vertical translation factor.
+
+            //---------------------------------------------------------
+            // A filter that resizes and changes the aspect ratio of
+            // an image:
+            //
+            // NOTE: In v1.0.0 we use MPSImageLanczosScale, however
+            //       I've changed to MPSImageBilinearScale as it's
+            //       faster, and we probably prefer speed over
+            //       quality for thumbnails.
+            //---------------------------------------------------------
+            MPSImageBilinearScale *filter = [[[MPSImageBilinearScale alloc] initWithDevice:commandQueue.device] autorelease];
+            [filter setScaleTransform:&transform];
+            [filter encodeToCommandBuffer:scaleCommandBuffer sourceTexture:inputTexture destinationTexture:scaledInputTexture];
+            
+            //---------------------------------------------------------
+            // Commits the scale command buffer for execution:
+            //---------------------------------------------------------
+            [scaleCommandBuffer commit];
+        }
+        
+        //---------------------------------------------------------
+        // Release the texture loader:
+        //---------------------------------------------------------
+        [options release];
+        [loader release];
+        
+        MTLRenderPassColorAttachmentDescriptor* colorAttachmentDescriptor   = [[MTLRenderPassColorAttachmentDescriptor alloc] init];
+        colorAttachmentDescriptor.texture = outputTexture;
+        colorAttachmentDescriptor.clearColor = MTLClearColorMake(1.0, 0.5, 0.0, 1.0);
+        colorAttachmentDescriptor.loadAction = MTLLoadActionClear;
+        MTLRenderPassDescriptor*    renderPassDescriptor    = [MTLRenderPassDescriptor renderPassDescriptor];
+        renderPassDescriptor.colorAttachments [ 0 ] = colorAttachmentDescriptor;
+        id<MTLRenderCommandEncoder>   commandEncoder  = [commandBuffer renderCommandEncoderWithDescriptor:renderPassDescriptor];
+        
+        //---------------------------------------------------------
+        // Calculate the vertex coordinates and the texture
+        // coordinates:
+        //---------------------------------------------------------
+        float   textureLeft     = (destinationImage.tilePixelBounds.left - destinationImage.imagePixelBounds.left) / fullWidth;
+        float   textureRight    = (destinationImage.tilePixelBounds.right - destinationImage.imagePixelBounds.left) / fullWidth;
+        float   textureBottom   = (destinationImage.tilePixelBounds.bottom - destinationImage.imagePixelBounds.bottom) / fullHeight;
+        float   textureTop      = (destinationImage.tilePixelBounds.top - destinationImage.imagePixelBounds.bottom) / fullHeight;
+        
+        Vertex2D    vertices[]  = {
+            { {  outputWidth / 2.0f, -outputHeight / 2.0f }, { textureRight, textureTop } },
+            { { -outputWidth / 2.0f, -outputHeight / 2.0f }, { textureLeft, textureTop } },
+            { {  outputWidth / 2.0f,  outputHeight / 2.0f }, { textureRight, textureBottom } },
+            { { -outputWidth / 2.0f,  outputHeight / 2.0f }, { textureLeft, textureBottom } }
+        };
+        
+        //---------------------------------------------------------
+        // Setup our viewport:
+        //
+        // MTLViewport: A 3D rectangular region for the viewport
+        // clipping.
+        //---------------------------------------------------------
+        MTLViewport viewport = {
+            0, differenceBetweenHeights, outputWidth, correctedHeight, -1.0, 1.0
+        };
+        
+        //---------------------------------------------------------
+        // Sets the viewport used for transformations and clipping:
+        //---------------------------------------------------------
+        [commandEncoder setViewport:viewport];
+        
+        //---------------------------------------------------------
+        // Setup our Render Pipeline State.
+        //
+        // MTLRenderPipelineState: An object that contains graphics
+        // functions and configuration state to use in a render
+        // command.
+        //---------------------------------------------------------
+        id<MTLRenderPipelineState> pipelineState = [deviceCache pipelineStateWithRegistryID:sourceImages[0].deviceRegistryID
+                                                                                pixelFormat:pixelFormat];
+        
+        //---------------------------------------------------------
+        // Sets the current render pipeline state object:
+        //---------------------------------------------------------
+        [commandEncoder setRenderPipelineState:pipelineState];
+        
+        //---------------------------------------------------------
+        // Sets a block of data for the vertex shader:
+        //---------------------------------------------------------
+        [commandEncoder setVertexBytes:vertices
+                                length:sizeof(vertices)
+                               atIndex:BVI_Vertices];
+        
+        //---------------------------------------------------------
+        // Set the viewport size:
+        //---------------------------------------------------------
+        simd_uint2  viewportSize = {
+            (unsigned int)(outputWidth),
+            (unsigned int)(outputHeight)
+        };
+        
+        //---------------------------------------------------------
+        // Sets a block of data for the vertex shader:
+        //---------------------------------------------------------
+        [commandEncoder setVertexBytes:&viewportSize
+                                length:sizeof(viewportSize)
+                               atIndex:BVI_ViewportSize];
+        
+        //---------------------------------------------------------
+        // Sets a texture for the fragment function at an index
+        // in the texture argument table:
+        //---------------------------------------------------------
+        if (scaledInputTexture != nil) {
+            //---------------------------------------------------------
+            // Use our scaled input texture for non-square pixels:
+            //---------------------------------------------------------
+            [commandEncoder setFragmentTexture:scaledInputTexture
+                                       atIndex:BTI_InputImage];
+        } else {
+            //---------------------------------------------------------
+            // Use the data straight from the MTLBuffer for square
+            // pixels to avoid any extra processing:
+            //---------------------------------------------------------
+            [commandEncoder setFragmentTexture:inputTexture
+                                       atIndex:BTI_InputImage];
+        }
+        
+        //---------------------------------------------------------
+        // drawPrimitives: Encodes a command to render one instance
+        // of primitives using vertex data in contiguous array
+        // elements.
+        //
+        // MTLPrimitiveTypeTriangleStrip: For every three adjacent
+        // vertices, rasterize a triangle.
+        //---------------------------------------------------------
+        [commandEncoder drawPrimitives:MTLPrimitiveTypeTriangleStrip
+                           vertexStart:0
+                           vertexCount:4];
+        
+        //---------------------------------------------------------
+        // Declares that all command generation from the encoder
+        // is completed. After `endEncoding` is called, the
+        // command encoder has no further use. You cannot encode
+        // any other commands with this encoder.
+        //---------------------------------------------------------
+        [commandEncoder endEncoding];
+        
+        //---------------------------------------------------------
+        // Commits the command buffer for execution.
+        // After you call the commit method, the MTLDevice schedules
+        // and executes the commands in the command buffer. If you
+        // haven’t already enqueued the command buffer with a call
+        // to enqueue, calling this function also enqueues the
+        // command buffer. The GPU executes the command buffer
+        // after any command buffers enqueued before it on the same
+        // command queue.
+        //
+        // You can only commit a command buffer once. You can’t
+        // commit a command buffer if the command buffer has an
+        // active command encoder. Once you commit a command buffer,
+        // you may not encode additional commands into it, nor can
+        // you add a schedule or completion handler.
+        //---------------------------------------------------------
+        [commandBuffer commit];
+        
+        //---------------------------------------------------------
+        // Blocks execution of the current thread until execution
+        // of the command buffer is completed.
+        //---------------------------------------------------------
+        [commandBuffer waitUntilCompleted];
+        
+        //---------------------------------------------------------
+        // Release the `colorAttachmentDescriptor` we created
+        // earlier:
+        //---------------------------------------------------------
+        [colorAttachmentDescriptor release];
+        
+        //---------------------------------------------------------
+        // Release the Input Texture:
+        //---------------------------------------------------------
+        if (inputTexture != nil) {
+            [inputTexture setPurgeableState:MTLPurgeableStateEmpty];
+            [inputTexture release];
+            inputTexture = nil;
+        }
+        if (scaledInputTexture != nil) {
+            [scaledInputTexture setPurgeableState:MTLPurgeableStateEmpty];
+            [scaledInputTexture release];
+            scaledInputTexture = nil;
+        }
+        
+        //---------------------------------------------------------
+        // Return the Command Queue back to the cache:
+        //---------------------------------------------------------
+        [deviceCache returnCommandQueueToCache:commandQueue];
+        
+        return YES;
     }
     
     //NSLog(@"[Gyroflow Toolbox Renderer] uniqueIdentifier during render: %@", uniqueIdentifier);
@@ -1210,7 +1591,7 @@
     */
     
     //NSLog(@"[Gyroflow Toolbox Renderer] inputTexture.debugDescription: %@", inputTexture.debugDescription);
-
+    
     //---------------------------------------------------------
     // Return the command queue back into the cache,
     // so we can re-use it again:
@@ -1248,7 +1629,16 @@
         [self buttonImportMediaFile];
     } else if (buttonID == kCB_RevealInFinder) {
         [self buttonRevealInFinder];
+    } else if (buttonID == kCB_LoadPresetLensProfile) {
+        [self buttonLoadPresetLensProfile];
     }
+}
+
+//---------------------------------------------------------
+// BUTTON: 'Load Preset/Lens Profile'
+//---------------------------------------------------------
+- (void)buttonLoadPresetLensProfile {
+    [self showAlertWithMessage:@"Hello!" info:@"This will eventually do stuff."];
 }
 
 //---------------------------------------------------------
@@ -1593,6 +1983,13 @@
     [paramSetAPI setParameterFlags:kFxParameterFlag_HIDDEN toParameter:kCB_GyroflowProjectData];
         
     //---------------------------------------------------------
+    // Generate a new unique identifier:
+    //---------------------------------------------------------
+    NSUUID *uuid = [NSUUID UUID];
+    NSString *uniqueIdentifier = uuid.UUIDString;
+    [paramSetAPI setStringParameterValue:uniqueIdentifier toParameter:kCB_UniqueIdentifier];
+    
+    //---------------------------------------------------------
     // Stop Action API:
     //---------------------------------------------------------
     [actionAPI endAction:self];
@@ -1899,6 +2296,33 @@
 //---------------------------------------------------------
 
 //---------------------------------------------------------
+// Get MXF Metadata With Path:
+//---------------------------------------------------------
+- (void)getMXFMetadataWithPath:(NSString *)filePath {
+    NSURL *fileURL = [NSURL fileURLWithPath:filePath];
+    
+    AVURLAsset *asset = [AVURLAsset URLAssetWithURL:fileURL options:nil];
+    
+    //Duration
+    CMTime duration = asset.duration;
+    float durationInSeconds = CMTimeGetSeconds(duration);
+    NSLog(@"Duration: %f seconds", durationInSeconds);
+    
+    //Frames per second
+    NSArray *videoTracks = [asset tracksWithMediaType:AVMediaTypeVideo];
+    if([videoTracks count] > 0) {
+        AVAssetTrack *videoTrack = [videoTracks objectAtIndex:0];
+        float fps = videoTrack.nominalFrameRate;
+        NSLog(@"FPS: %f", fps);
+        
+        //Width and Height
+        CGSize videoSize = videoTrack.naturalSize;
+        NSLog(@"Width: %f", videoSize.width);
+        NSLog(@"Height: %f", videoSize.height);
+    }
+}
+
+//---------------------------------------------------------
 // Import Gyroflow Project with Optional URL:
 //---------------------------------------------------------
 - (void)importMediaWithOptionalURL:(NSURL*)optionalURL {
@@ -1923,13 +2347,16 @@
         [panel setDirectoryURL:optionalURL];
         
         //---------------------------------------------------------
-        // Limit the file type to .gyroflow files:
+        // Limit the file type to Gyroflow supported media files:
         //---------------------------------------------------------
+        UTType *mov                     = [UTType typeWithFilenameExtension:@"mov"];
         UTType *mxf                     = [UTType typeWithFilenameExtension:@"mxf"];
         UTType *braw                    = [UTType typeWithFilenameExtension:@"braw"];
         UTType *mpFour                  = [UTType typeWithFilenameExtension:@"mp4"];
-        
-        NSArray *allowedContentTypes    = [NSArray arrayWithObjects:mxf, braw, mpFour, nil];
+        UTType *r3d                     = [UTType typeWithFilenameExtension:@"r3d"];
+        UTType *insv                    = [UTType typeWithFilenameExtension:@"insv"];
+                
+        NSArray *allowedContentTypes    = [NSArray arrayWithObjects:mov, mxf, braw, mpFour, r3d, insv, nil];
         [panel setAllowedContentTypes:allowedContentTypes];
         
         //---------------------------------------------------------
@@ -1956,7 +2383,87 @@
     
     NSLog(@"[Gyroflow Toolbox Renderer] Import Media File Path: %@", path);
     
-    const char* importResult = importMediaFile([path UTF8String]);
+    //---------------------------------------------------------
+    // If the media is a BRAW or MXF, then we need to pass
+    // in some metadata.
+    //---------------------------------------------------------
+    uint32_t width      = 0;
+    uint32_t height     = 0;
+    double duration_s   = 0;
+    double fps          = 0;
+    int32_t rotation    = 0;
+    
+    NSString *extension = [url pathExtension];
+    if ([extension isEqualToString:@"braw"]) {
+        //---------------------------------------------------------
+        // It's a BRAW file:
+        //---------------------------------------------------------
+        NSLog(@"[Gyroflow Toolbox Renderer] It's a BRAW file!");
+              
+        BRAWMetadataReader *metadataReader = [[BRAWMetadataReader alloc] init];
+        BRAWParameters *params = [metadataReader readMetadataFromPath:[url path]];
+        if (params == nil) {
+            NSLog(@"[Gyroflow Toolbox Renderer] Failed to read BRAW metadata!");
+        } else {
+            width       = [params.width doubleValue];
+            height      = [params.height doubleValue];
+            duration_s  = [params.frameCount doubleValue] / [params.frameRate doubleValue];
+            fps         = [params.frameRate doubleValue];
+        }
+    } else if ([extension isEqualToString:@"mxf"]) {
+        //---------------------------------------------------------
+        // It's a MXF file:
+        //---------------------------------------------------------
+        AVURLAsset *asset = [AVURLAsset URLAssetWithURL:url options:nil];
+        
+        if (asset == nil) {
+            NSLog(@"[Gyroflow Toolbox Renderer] MXF Metadata Error - AVURLAsset is nil.");
+        } else {
+            //---------------------------------------------------------
+            // Get Duration:
+            //---------------------------------------------------------
+            CMTime duration = asset.duration;
+            duration_s = CMTimeGetSeconds(duration);
+            
+            //---------------------------------------------------------
+            // Get Video Track Metadata:
+            //---------------------------------------------------------
+            NSArray *videoTracks = [asset tracksWithMediaType:AVMediaTypeVideo];
+            if([videoTracks count] > 0) {
+                AVAssetTrack *videoTrack = [videoTracks objectAtIndex:0];
+                
+                //---------------------------------------------------------
+                // Get Frames per Second:
+                //---------------------------------------------------------
+                fps = videoTrack.nominalFrameRate;
+                
+                //---------------------------------------------------------
+                // Get Width & Height:
+                //---------------------------------------------------------
+                CGSize videoSize = videoTrack.naturalSize;
+                width = videoSize.width;
+                height = videoSize.height;
+            }
+            
+            NSLog(@"[Gyroflow Toolbox Renderer] MXF Metadata");
+        }
+    }
+    
+    NSLog(@"[Gyroflow Toolbox Renderer] width: %u", width);
+    NSLog(@"[Gyroflow Toolbox Renderer] height: %u", height);
+    NSLog(@"[Gyroflow Toolbox Renderer] duration_s: %f", duration_s);
+    NSLog(@"[Gyroflow Toolbox Renderer] fps: %f", fps);
+    NSLog(@"[Gyroflow Toolbox Renderer] rotation: %d", rotation);
+   
+    const char* importResult = importMediaFile(
+                                               [path UTF8String],       // const char*
+                                               width,                   // uint32_t
+                                               height,                  // uint32_t
+                                               duration_s,              // double
+                                               fps,                     // double
+                                               rotation                 // int32_t
+                                               );
+    
     NSString *resultString = [NSString stringWithUTF8String: importResult];
     //NSLog(@"[Gyroflow Toolbox Renderer] resultString: %@", resultString);
         

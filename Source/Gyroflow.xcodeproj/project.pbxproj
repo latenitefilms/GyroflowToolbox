@@ -32,6 +32,18 @@
 		22BED1C32A5D6805000562A3 /* CustomButtonView.m in Sources */ = {isa = PBXBuildFile; fileRef = 22BED1BF2A5D6805000562A3 /* CustomButtonView.m */; };
 		22BED1C42A5D6805000562A3 /* CustomDropZoneView.m in Sources */ = {isa = PBXBuildFile; fileRef = 22BED1C22A5D6805000562A3 /* CustomDropZoneView.m */; };
 		22DAC75F2953B1A7001F2E06 /* GyroflowDocument.icns in Resources */ = {isa = PBXBuildFile; fileRef = 22DAC75E2953B1A7001F2E06 /* GyroflowDocument.icns */; };
+		22F73D712A6009AA00A6F326 /* HeaderView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 22F73D702A6009AA00A6F326 /* HeaderView.xib */; };
+		22F73D742A600B3A00A6F326 /* HeaderView.m in Sources */ = {isa = PBXBuildFile; fileRef = 22F73D732A600B3A00A6F326 /* HeaderView.m */; };
+		22F73D782A6030BB00A6F326 /* Lens Profiles in Resources */ = {isa = PBXBuildFile; fileRef = 22F73D772A6030BB00A6F326 /* Lens Profiles */; };
+		22F73D7A2A6038E300A6F326 /* BlackmagicRawAPI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 22F73D792A6038E300A6F326 /* BlackmagicRawAPI.framework */; };
+		22F73D802A60392100A6F326 /* BlackmagicRawAPIDispatch.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 22F73D7F2A60392100A6F326 /* BlackmagicRawAPIDispatch.cpp */; };
+		22F73D832A60398600A6F326 /* BRAWMetadataReader.mm in Sources */ = {isa = PBXBuildFile; fileRef = 22F73D822A60398600A6F326 /* BRAWMetadataReader.mm */; };
+		22F73D862A6039A300A6F326 /* BRAWParameters.mm in Sources */ = {isa = PBXBuildFile; fileRef = 22F73D842A6039A300A6F326 /* BRAWParameters.mm */; };
+		22F73D882A603CAC00A6F326 /* BlackmagicRawAPI.framework in Embed Blackmagic RAW Framework */ = {isa = PBXBuildFile; fileRef = 22F73D792A6038E300A6F326 /* BlackmagicRawAPI.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		22F73D8A2A604A2500A6F326 /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 22F73D892A604A2500A6F326 /* Metal.framework */; };
+		22F73D8C2A604A2B00A6F326 /* MetalKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 22F73D8B2A604A2B00A6F326 /* MetalKit.framework */; };
+		22F73D8E2A604A3100A6F326 /* MetalPerformanceShaders.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 22F73D8D2A604A3100A6F326 /* MetalPerformanceShaders.framework */; };
+		22F73D912A604BB100A6F326 /* TileableRemoteBRAW.metal in Sources */ = {isa = PBXBuildFile; fileRef = 22F73D8F2A604BB100A6F326 /* TileableRemoteBRAW.metal */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -72,6 +84,17 @@
 				2239AB792945979800028B77 /* libgyroflow_toolbox.dylib in Embed Libraries */,
 			);
 			name = "Embed Libraries";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		22F73D872A603C9E00A6F326 /* Embed Blackmagic RAW Framework */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				22F73D882A603CAC00A6F326 /* BlackmagicRawAPI.framework in Embed Blackmagic RAW Framework */,
+			);
+			name = "Embed Blackmagic RAW Framework";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
@@ -117,6 +140,22 @@
 		22DAC75E2953B1A7001F2E06 /* GyroflowDocument.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = GyroflowDocument.icns; sourceTree = "<group>"; };
 		22E4989F29492E8100580F67 /* Cargo.toml */ = {isa = PBXFileReference; lastKnownFileType = text; name = Cargo.toml; path = Frameworks/gyroflow/Cargo.toml; sourceTree = SOURCE_ROOT; };
 		22F73D6F2A5FF9A000A6F326 /* SandboxEntitlements.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SandboxEntitlements.entitlements; sourceTree = "<group>"; };
+		22F73D702A6009AA00A6F326 /* HeaderView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = HeaderView.xib; sourceTree = "<group>"; };
+		22F73D722A600B3A00A6F326 /* HeaderView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HeaderView.h; sourceTree = "<group>"; };
+		22F73D732A600B3A00A6F326 /* HeaderView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HeaderView.m; sourceTree = "<group>"; };
+		22F73D772A6030BB00A6F326 /* Lens Profiles */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "Lens Profiles"; path = "Gyroflow/Plugin/Resources/Lens Profiles"; sourceTree = "<group>"; };
+		22F73D792A6038E300A6F326 /* BlackmagicRawAPI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = BlackmagicRawAPI.framework; path = Frameworks/BlackmagicRawAPI.framework; sourceTree = "<group>"; };
+		22F73D7E2A60392100A6F326 /* BlackmagicRawAPI.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = BlackmagicRawAPI.h; path = BlackmagicRawAPI/BlackmagicRawAPI.h; sourceTree = "<group>"; };
+		22F73D7F2A60392100A6F326 /* BlackmagicRawAPIDispatch.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = BlackmagicRawAPIDispatch.cpp; path = BlackmagicRawAPI/BlackmagicRawAPIDispatch.cpp; sourceTree = "<group>"; };
+		22F73D812A60398600A6F326 /* BRAWMetadataReader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BRAWMetadataReader.h; sourceTree = "<group>"; };
+		22F73D822A60398600A6F326 /* BRAWMetadataReader.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = BRAWMetadataReader.mm; sourceTree = "<group>"; };
+		22F73D842A6039A300A6F326 /* BRAWParameters.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = BRAWParameters.mm; sourceTree = "<group>"; };
+		22F73D852A6039A300A6F326 /* BRAWParameters.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BRAWParameters.h; sourceTree = "<group>"; };
+		22F73D892A604A2500A6F326 /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
+		22F73D8B2A604A2B00A6F326 /* MetalKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MetalKit.framework; path = System/Library/Frameworks/MetalKit.framework; sourceTree = SDKROOT; };
+		22F73D8D2A604A3100A6F326 /* MetalPerformanceShaders.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MetalPerformanceShaders.framework; path = System/Library/Frameworks/MetalPerformanceShaders.framework; sourceTree = SDKROOT; };
+		22F73D8F2A604BB100A6F326 /* TileableRemoteBRAW.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = TileableRemoteBRAW.metal; sourceTree = "<group>"; };
+		22F73D902A604BB100A6F326 /* TileableRemoteBRAWShaderTypes.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TileableRemoteBRAWShaderTypes.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -132,11 +171,15 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				22F73D8E2A604A3100A6F326 /* MetalPerformanceShaders.framework in Frameworks */,
+				22F73D8C2A604A2B00A6F326 /* MetalKit.framework in Frameworks */,
+				22F73D7A2A6038E300A6F326 /* BlackmagicRawAPI.framework in Frameworks */,
 				2239AB212943F8F600028B77 /* Accelerate.framework in Frameworks */,
 				2239AB232943F8F600028B77 /* PluginManager.framework in Frameworks */,
 				2239AB1D2943F8F600028B77 /* Foundation.framework in Frameworks */,
 				2239AB1F2943F8F600028B77 /* AppKit.framework in Frameworks */,
 				2239AB252943F8F600028B77 /* FxPlug.framework in Frameworks */,
+				22F73D8A2A604A2500A6F326 /* Metal.framework in Frameworks */,
 				2239AB782945979800028B77 /* libgyroflow_toolbox.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -147,6 +190,7 @@
 		2239AB042943F8F600028B77 = {
 			isa = PBXGroup;
 			children = (
+				22F73D772A6030BB00A6F326 /* Lens Profiles */,
 				2239AB282943F8F600028B77 /* Gyroflow */,
 				2239AB0F2943F8F600028B77 /* Frameworks */,
 				2239AB0E2943F8F600028B77 /* Products */,
@@ -165,6 +209,10 @@
 		2239AB0F2943F8F600028B77 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				22F73D8D2A604A3100A6F326 /* MetalPerformanceShaders.framework */,
+				22F73D8B2A604A2B00A6F326 /* MetalKit.framework */,
+				22F73D892A604A2500A6F326 /* Metal.framework */,
+				22F73D792A6038E300A6F326 /* BlackmagicRawAPI.framework */,
 				2239AB772945979800028B77 /* libgyroflow_toolbox.dylib */,
 				2239AB102943F8F600028B77 /* Cocoa.framework */,
 				2239AB1C2943F8F600028B77 /* Foundation.framework */,
@@ -203,6 +251,7 @@
 				2239AB7B2945A67600028B77 /* Rust */,
 				228E9E13294E815E00B2571E /* Code */,
 				228E9E12294E815200B2571E /* Metal Device Cache */,
+				22F73D922A6051A200A6F326 /* Shader */,
 				228E9E15294E817700B2571E /* Extras */,
 			);
 			path = Plugin;
@@ -277,6 +326,7 @@
 		228E9E13294E815E00B2571E /* Code */ = {
 			isa = PBXGroup;
 			children = (
+				22F73D7D2A60391300A6F326 /* Blackmagic */,
 				228E9E1929517DDA00B2571E /* GyroflowConstants.h */,
 				2239AB2E2943F8F600028B77 /* GyroflowPlugIn.h */,
 				2239AB312943F8F600028B77 /* GyroflowPlugIn.m */,
@@ -303,12 +353,37 @@
 		22DAC7632953D1CF001F2E06 /* Custom Views */ = {
 			isa = PBXGroup;
 			children = (
+				22F73D702A6009AA00A6F326 /* HeaderView.xib */,
+				22F73D722A600B3A00A6F326 /* HeaderView.h */,
+				22F73D732A600B3A00A6F326 /* HeaderView.m */,
 				22BED1C02A5D6805000562A3 /* CustomButtonView.h */,
 				22BED1BF2A5D6805000562A3 /* CustomButtonView.m */,
 				22BED1C12A5D6805000562A3 /* CustomDropZoneView.h */,
 				22BED1C22A5D6805000562A3 /* CustomDropZoneView.m */,
 			);
 			name = "Custom Views";
+			sourceTree = "<group>";
+		};
+		22F73D7D2A60391300A6F326 /* Blackmagic */ = {
+			isa = PBXGroup;
+			children = (
+				22F73D812A60398600A6F326 /* BRAWMetadataReader.h */,
+				22F73D822A60398600A6F326 /* BRAWMetadataReader.mm */,
+				22F73D852A6039A300A6F326 /* BRAWParameters.h */,
+				22F73D842A6039A300A6F326 /* BRAWParameters.mm */,
+				22F73D7E2A60392100A6F326 /* BlackmagicRawAPI.h */,
+				22F73D7F2A60392100A6F326 /* BlackmagicRawAPIDispatch.cpp */,
+			);
+			name = Blackmagic;
+			sourceTree = "<group>";
+		};
+		22F73D922A6051A200A6F326 /* Shader */ = {
+			isa = PBXGroup;
+			children = (
+				22F73D8F2A604BB100A6F326 /* TileableRemoteBRAW.metal */,
+				22F73D902A604BB100A6F326 /* TileableRemoteBRAWShaderTypes.h */,
+			);
+			name = Shader;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -344,6 +419,7 @@
 				2239AB152943F8F600028B77 /* Copy and Code Sign FxPlug.framework */,
 				2239AB162943F8F600028B77 /* Copy and Code Sign PluginManager.framework */,
 				2239AB752945960300028B77 /* Embed Libraries */,
+				22F73D872A603C9E00A6F326 /* Embed Blackmagic RAW Framework */,
 			);
 			buildRules = (
 			);
@@ -407,9 +483,11 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				22F73D782A6030BB00A6F326 /* Lens Profiles in Resources */,
 				2239AB492943F8F600028B77 /* InfoPlist.strings in Resources */,
 				224321B829615C4400EA591A /* Assets.xcassets in Resources */,
 				2239AB4C2943F8F600028B77 /* Localizable.strings in Resources */,
+				22F73D712A6009AA00A6F326 /* HeaderView.xib in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -470,12 +548,17 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				22F73D742A600B3A00A6F326 /* HeaderView.m in Sources */,
+				22F73D862A6039A300A6F326 /* BRAWParameters.mm in Sources */,
+				22F73D912A604BB100A6F326 /* TileableRemoteBRAW.metal in Sources */,
 				2239AB392943F8F600028B77 /* MetalDeviceCache.m in Sources */,
 				22BED1C32A5D6805000562A3 /* CustomButtonView.m in Sources */,
 				2239AB452943F8F600028B77 /* main.m in Sources */,
 				22BED1C42A5D6805000562A3 /* CustomDropZoneView.m in Sources */,
+				22F73D832A60398600A6F326 /* BRAWMetadataReader.mm in Sources */,
 				2239AB57294400B500028B77 /* GyroflowParameters.m in Sources */,
 				2239AB322943F8F600028B77 /* GyroflowPlugIn.m in Sources */,
+				22F73D802A60392100A6F326 /* BlackmagicRawAPIDispatch.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -663,6 +746,10 @@
 				CURRENT_PROJECT_VERSION = "$(HARDCODED_BUILD)";
 				DEVELOPMENT_TEAM = A5HDJTY9X5;
 				ENABLE_HARDENED_RUNTIME = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Frameworks",
+				);
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				INFOPLIST_FILE = Gyroflow/Plugin/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -690,6 +777,10 @@
 				CURRENT_PROJECT_VERSION = "$(HARDCODED_BUILD)";
 				DEVELOPMENT_TEAM = A5HDJTY9X5;
 				ENABLE_HARDENED_RUNTIME = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Frameworks",
+				);
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				INFOPLIST_FILE = Gyroflow/Plugin/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (

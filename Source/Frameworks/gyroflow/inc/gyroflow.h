@@ -40,7 +40,12 @@ uint32_t trashCache(
 );
 
 const char* importMediaFile(
-    const char*                 media_file_path
+    const char*                 media_file_path,
+    uint32_t                    width,
+    uint32_t                    height,
+    double                      duration_s,
+    double                      fps,
+    int32_t                     rotation
 );
 
 const char* doesGyroflowProjectContainStabilisationData(

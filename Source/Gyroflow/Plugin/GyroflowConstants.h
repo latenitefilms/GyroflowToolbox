@@ -23,6 +23,8 @@ enum {
     kCB_LoadedGyroflowProject               = 40,
     kCB_ReloadGyroflowProject               = 50,
     
+    kCB_LoadPresetLensProfile               = 52,
+    
     kCB_RevealInFinder                      = 55,
         
     kCB_GyroflowProjectPath                 = 60,
@@ -59,11 +61,12 @@ enum {
 // none of the above error enum values are sufficient.
 //---------------------------------------------------------
 enum {
-    kFxError_FailedToLoadTimingAPI = 100010,    // Failed to load FxTimingAPI_v4
-    kFxError_FailedToLoadParameterGetAPI,       // Failed to load FxParameterRetrievalAPI_v6
-    kFxError_PlugInStateIsNil,                  // Plugin State is `nil`
-    kFxError_UnsupportedPixelFormat,            // Unsupported Pixel Format
-    kFxError_FailedToCreatePluginState          // Failed to create plugin state
+    kFxError_FailedToLoadTimingAPI = 100010,                    // Failed to load FxTimingAPI_v4
+    kFxError_FailedToLoadParameterGetAPI,                       // Failed to load FxParameterRetrievalAPI_v6
+    kFxError_PlugInStateIsNil,                                  // Plugin State is `nil`
+    kFxError_UnsupportedPixelFormat,                            // Unsupported Pixel Format
+    kFxError_FailedToCreatePluginState,                         // Failed to create plugin state
+    kFxError_CommandQueueWasNilDuringShowErrorMessage           // Command Queue was `nil` during a show error message render.
 };
 
 #endif /* GyroflowConstants_h */

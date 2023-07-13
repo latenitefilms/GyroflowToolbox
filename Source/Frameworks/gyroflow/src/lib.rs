@@ -117,6 +117,11 @@ pub extern "C" fn trashCache() -> u32 {
 #[no_mangle]
 pub extern "C" fn importMediaFile(
     media_file_path: *const c_char,
+    width: u32,
+    height: u32,
+    duration_s: f64,
+    fps: f64,
+    rotation: i32
 ) -> *const c_char {
     //---------------------------------------------------------
     // Convert the file path to a `&str`:
@@ -144,19 +149,15 @@ pub extern "C" fn importMediaFile(
     // Prepare metadata if file has .mxf or .braw extension:
     //---------------------------------------------------------    
     let metadata;
-    if media_file_path_string.to_ascii_lowercase().ends_with(".mxf") || media_file_path_string.to_ascii_lowercase().ends_with(".braw") {
-        /*
-        let mut fileMetadata = gyroflow_core::util::get_video_metadata(&media_file_path_string);
-                
+    if width > 0 && height > 0 {        
+        log::info!("[Gyroflow Toolbox Rust] It's a MXF or BRAW file!");
         metadata = Some(VideoMetadata {
-            duration_s: fileMetadata.duration_s,
-            fps: fileMetadata.fps,
-            width: fileMetadata.width,
-            height: fileMetadata.height,
-            rotation: 0
-        });
-        */
-        metadata = None;        
+            duration_s: duration_s,
+            fps: fps,
+            width: width as usize,
+            height: height as usize,
+            rotation: rotation
+        });        
     } else {
         metadata = None;
     };
