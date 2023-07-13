@@ -49,14 +49,13 @@ pub extern "C" fn doesGyroflowProjectContainStabilisationData(
     //---------------------------------------------------------
     // Import the `gyroflow_project_data_string`:
     //---------------------------------------------------------
-    let blocking = true;
-    let path = Some(std::path::PathBuf::from(&*gyroflow_project_data_string));
+    let blocking = true;    
     let cancel_flag = Arc::new(AtomicBool::new(false));
     let mut is_preset = false;
     match stab.import_gyroflow_data(
         gyroflow_project_data_string.as_bytes(), 
         blocking, 
-        path, 
+        None, 
         |_|(),
         cancel_flag,
         &mut is_preset
@@ -227,11 +226,12 @@ pub extern "C" fn importMediaFile(
     }
 
     //---------------------------------------------------------
-    // Prepare metadata if file has .mxf or .braw extension:
+    // If it's a BRAW file, then we'll get metadata from
+    // Objective-C land:
     //---------------------------------------------------------    
     let metadata;
     if width > 0 && height > 0 {        
-        log::info!("[Gyroflow Toolbox Rust] It's a MXF or BRAW file!");
+        //log::info!("[Gyroflow Toolbox Rust] It's a MXF or BRAW file!");
         metadata = Some(VideoMetadata {
             duration_s: duration_s,
             fps: fps,

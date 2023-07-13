@@ -44,6 +44,7 @@
 		22F73D8C2A604A2B00A6F326 /* MetalKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 22F73D8B2A604A2B00A6F326 /* MetalKit.framework */; };
 		22F73D8E2A604A3100A6F326 /* MetalPerformanceShaders.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 22F73D8D2A604A3100A6F326 /* MetalPerformanceShaders.framework */; };
 		22F73D912A604BB100A6F326 /* TileableRemoteBRAW.metal in Sources */ = {isa = PBXBuildFile; fileRef = 22F73D8F2A604BB100A6F326 /* TileableRemoteBRAW.metal */; };
+		22F73D942A606DF400A6F326 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 22F73D932A606DF400A6F326 /* AVFoundation.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -156,6 +157,7 @@
 		22F73D8D2A604A3100A6F326 /* MetalPerformanceShaders.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MetalPerformanceShaders.framework; path = System/Library/Frameworks/MetalPerformanceShaders.framework; sourceTree = SDKROOT; };
 		22F73D8F2A604BB100A6F326 /* TileableRemoteBRAW.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = TileableRemoteBRAW.metal; sourceTree = "<group>"; };
 		22F73D902A604BB100A6F326 /* TileableRemoteBRAWShaderTypes.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TileableRemoteBRAWShaderTypes.h; sourceTree = "<group>"; };
+		22F73D932A606DF400A6F326 /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -173,6 +175,7 @@
 			files = (
 				22F73D8E2A604A3100A6F326 /* MetalPerformanceShaders.framework in Frameworks */,
 				22F73D8C2A604A2B00A6F326 /* MetalKit.framework in Frameworks */,
+				22F73D942A606DF400A6F326 /* AVFoundation.framework in Frameworks */,
 				22F73D7A2A6038E300A6F326 /* BlackmagicRawAPI.framework in Frameworks */,
 				2239AB212943F8F600028B77 /* Accelerate.framework in Frameworks */,
 				2239AB232943F8F600028B77 /* PluginManager.framework in Frameworks */,
@@ -209,6 +212,7 @@
 		2239AB0F2943F8F600028B77 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				22F73D932A606DF400A6F326 /* AVFoundation.framework */,
 				22F73D8D2A604A3100A6F326 /* MetalPerformanceShaders.framework */,
 				22F73D8B2A604A2B00A6F326 /* MetalKit.framework */,
 				22F73D892A604A2500A6F326 /* Metal.framework */,

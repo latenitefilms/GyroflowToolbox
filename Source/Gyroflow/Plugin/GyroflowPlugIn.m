@@ -2424,7 +2424,7 @@
     
     NSLog(@"[Gyroflow Toolbox Renderer] importDroppedMedia URL: %@", [url path]);
     
-    NSString *extension = [url pathExtension];
+    NSString *extension = [[url pathExtension] lowercaseString];
     NSFileManager *fileManager = [NSFileManager defaultManager];
 
     if ([extension isEqualToString:@"gyroflow"]) {
@@ -2702,38 +2702,11 @@
 //---------------------------------------------------------
 
 //---------------------------------------------------------
-// Get MXF Metadata With Path:
-//---------------------------------------------------------
-- (void)getMXFMetadataWithPath:(NSString *)filePath {
-    NSURL *fileURL = [NSURL fileURLWithPath:filePath];
-    
-    AVURLAsset *asset = [AVURLAsset URLAssetWithURL:fileURL options:nil];
-    
-    //Duration
-    CMTime duration = asset.duration;
-    float durationInSeconds = CMTimeGetSeconds(duration);
-    NSLog(@"Duration: %f seconds", durationInSeconds);
-    
-    //Frames per second
-    NSArray *videoTracks = [asset tracksWithMediaType:AVMediaTypeVideo];
-    if([videoTracks count] > 0) {
-        AVAssetTrack *videoTrack = [videoTracks objectAtIndex:0];
-        float fps = videoTrack.nominalFrameRate;
-        NSLog(@"FPS: %f", fps);
-        
-        //Width and Height
-        CGSize videoSize = videoTrack.naturalSize;
-        NSLog(@"Width: %f", videoSize.width);
-        NSLog(@"Height: %f", videoSize.height);
-    }
-}
-
-//---------------------------------------------------------
 // Import Gyroflow Project with Optional URL:
 //---------------------------------------------------------
 - (void)importMediaWithOptionalURL:(NSURL*)optionalURL {
     
-    //NSLog(@"[Gyroflow Toolbox Renderer] Import Media File!");
+    NSLog(@"[Gyroflow Toolbox Renderer] Import Media File!");
     
     NSURL *url = nil;
     BOOL isAccessible = [optionalURL startAccessingSecurityScopedResource];
@@ -2790,8 +2763,8 @@
     NSLog(@"[Gyroflow Toolbox Renderer] Import Media File Path: %@", path);
     
     //---------------------------------------------------------
-    // If the media is a BRAW or MXF, then we need to pass
-    // in some metadata.
+    // If the media is a BRAW file then we need to pass
+    // in some metadata to Rust-land:
     //---------------------------------------------------------
     uint32_t width      = 0;
     uint32_t height     = 0;
@@ -2799,7 +2772,8 @@
     double fps          = 0;
     int32_t rotation    = 0;
     
-    NSString *extension = [url pathExtension];
+    NSString *extension = [[url pathExtension] lowercaseString];
+    
     if ([extension isEqualToString:@"braw"]) {
         //---------------------------------------------------------
         // It's a BRAW file:
@@ -2815,43 +2789,6 @@
             height      = [params.height doubleValue];
             duration_s  = [params.frameCount doubleValue] / [params.frameRate doubleValue];
             fps         = [params.frameRate doubleValue];
-        }
-    } else if ([extension isEqualToString:@"mxf"]) {
-        //---------------------------------------------------------
-        // It's a MXF file:
-        //---------------------------------------------------------
-        AVURLAsset *asset = [AVURLAsset URLAssetWithURL:url options:nil];
-        
-        if (asset == nil) {
-            NSLog(@"[Gyroflow Toolbox Renderer] MXF Metadata Error - AVURLAsset is nil.");
-        } else {
-            //---------------------------------------------------------
-            // Get Duration:
-            //---------------------------------------------------------
-            CMTime duration = asset.duration;
-            duration_s = CMTimeGetSeconds(duration);
-            
-            //---------------------------------------------------------
-            // Get Video Track Metadata:
-            //---------------------------------------------------------
-            NSArray *videoTracks = [asset tracksWithMediaType:AVMediaTypeVideo];
-            if([videoTracks count] > 0) {
-                AVAssetTrack *videoTrack = [videoTracks objectAtIndex:0];
-                
-                //---------------------------------------------------------
-                // Get Frames per Second:
-                //---------------------------------------------------------
-                fps = videoTrack.nominalFrameRate;
-                
-                //---------------------------------------------------------
-                // Get Width & Height:
-                //---------------------------------------------------------
-                CGSize videoSize = videoTrack.naturalSize;
-                width = videoSize.width;
-                height = videoSize.height;
-            }
-            
-            NSLog(@"[Gyroflow Toolbox Renderer] MXF Metadata");
         }
     }
     
@@ -2871,7 +2808,7 @@
                                                );
     
     NSString *resultString = [NSString stringWithUTF8String: importResult];
-    //NSLog(@"[Gyroflow Toolbox Renderer] resultString: %@", resultString);
+    NSLog(@"[Gyroflow Toolbox Renderer] resultString: %@", resultString);
         
     if (resultString == nil || [resultString isEqualToString:@"FAIL"]) {
         [self showAlertWithMessage:@"An error has occurred" info:@"Failed to generate a Gyroflow Project from the Media File."];
