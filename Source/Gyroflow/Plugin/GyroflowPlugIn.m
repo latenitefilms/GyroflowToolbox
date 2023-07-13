@@ -1992,6 +1992,18 @@
     }
     
     //---------------------------------------------------------
+    // Load the Parameter Set API:
+    //---------------------------------------------------------
+    id<FxParameterSettingAPI_v5> paramSetAPI = [_apiManager apiForProtocol:@protocol(FxParameterSettingAPI_v5)];
+    if (paramSetAPI == nil)
+    {
+        NSString *errorMessage = @"Unable to retrieve FxParameterSettingAPI_v5 in 'selectFileButtonPressed'. This shouldn't happen.";
+        NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
+        [self showAlertWithMessage:@"An error has occurred." info:errorMessage];
+        return;
+    }
+    
+    //---------------------------------------------------------
     // Get the existing Gyroflow Project data:
     //---------------------------------------------------------
     NSString *gyroflowProjectData = nil;
@@ -2001,11 +2013,6 @@
         [self showAlertWithMessage:@"Failed to get Gyroflow Project" info:@"Please ensure you have a Gyroflow Project already loaded."];
         return;
     }
-    
-    //---------------------------------------------------------
-    // Stop Action API:
-    //---------------------------------------------------------
-    [actionAPI endAction:self];
         
     NSString *lensProfilePath = [url path];
     
@@ -2020,10 +2027,23 @@
     
     if (loadResultString == nil || [loadResultString isEqualToString:@"FAIL"]) {
         [self showAlertWithMessage:@"An error has occurred" info:@"Failed to load a Lens Profile or Preset."];
+        [actionAPI endAction:self];
         return;
-    } else {
-        [self showAlertWithMessage:@"VICTORY!" info:@"The Lens Profile has been activated."];
     }
+    
+    [paramSetAPI setStringParameterValue:loadResultString toParameter:kCB_GyroflowProjectData];
+    
+    //---------------------------------------------------------
+    // Trash the cache!
+    //---------------------------------------------------------
+    trashCache();
+    
+    [self showAlertWithMessage:@"VICTORY!" info:@""];
+    
+    //---------------------------------------------------------
+    // Stop Action API:
+    //---------------------------------------------------------
+    [actionAPI endAction:self];
     
 }
 
