@@ -635,6 +635,25 @@
         return NO;
     }
     
+    //
+    
+    //---------------------------------------------------------
+    // ADD PARAMETER: Unique Identifier
+    //---------------------------------------------------------
+    if (![paramAPI addStringParameterWithName:@"Unique Identifier"
+                                  parameterID:kCB_UniqueIdentifier
+                                 defaultValue:@""
+                               parameterFlags:kFxParameterFlag_DISABLED])
+    {
+        if (error != NULL) {
+            NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_UniqueIdentifier"};
+            *error = [NSError errorWithDomain:FxPlugErrorDomain
+                                         code:kFxError_InvalidParameter
+                                     userInfo:userInfo];
+        }
+        return NO;
+    }
+    
     return YES;
 }
 
@@ -742,6 +761,33 @@
     NSLog(@"timestamp: %f", timestamp);
     NSLog(@"---------------------------------");
     */
+    
+    //---------------------------------------------------------
+    // Unique Identifier:
+    //---------------------------------------------------------
+    NSString *uniqueIdentifier;
+    [paramGetAPI getStringParameterValue:&uniqueIdentifier fromParameter:kCB_UniqueIdentifier];
+    
+    if (uniqueIdentifier == nil || [uniqueIdentifier isEqualToString:@""]) {
+        NSLog(@"[Gyroflow Toolbox Renderer] pluginState was handed a clip that doesn't already have a unique identifier!");
+        
+        //---------------------------------------------------------
+        // Load the Parameter Set API:
+        //---------------------------------------------------------
+        id<FxParameterSettingAPI_v5> paramSetAPI = [_apiManager apiForProtocol:@protocol(FxParameterSettingAPI_v5)];
+        if (paramSetAPI == nil)
+        {
+            NSLog(@"[Gyroflow Toolbox Renderer] Failed to load paramSetAPI in pluginState!");
+        }
+        
+        NSUUID *uuid = [NSUUID UUID];
+        uniqueIdentifier = uuid.UUIDString;
+        [paramSetAPI setStringParameterValue:uniqueIdentifier toParameter:kCB_UniqueIdentifier];
+    }
+    
+    params.uniqueIdentifier = uniqueIdentifier;
+    
+    NSLog(@"[Gyroflow Toolbox Renderer] Unique Identifier in Plugin State: %@", uniqueIdentifier);
     
     //---------------------------------------------------------
     // Gyroflow Path:
@@ -957,6 +1003,7 @@
     //---------------------------------------------------------
     // Get the parameter data:
     //---------------------------------------------------------
+    NSString *uniqueIdentifier  = params.uniqueIdentifier;
     NSNumber *timestamp         = params.timestamp;
     NSString *gyroflowPath      = params.gyroflowPath;
     NSString *gyroflowData      = params.gyroflowData;
@@ -971,6 +1018,15 @@
     NSNumber *inputRotation     = params.inputRotation;
     NSNumber *videoRotation     = params.videoRotation;
     
+    if (uniqueIdentifier == nil || [uniqueIdentifier isEqualToString:@""]) {
+        NSLog(@"[Gyroflow Toolbox Renderer] BUG! uniqueIdentifier was not valid during render!");
+        
+        NSUUID *uuid = [NSUUID UUID];
+        uniqueIdentifier = uuid.UUIDString;
+    }
+    
+    NSLog(@"[Gyroflow Toolbox Renderer] uniqueIdentifier during render: %@", uniqueIdentifier);
+        
     //---------------------------------------------------------
     // Set up the renderer, in this case we are using Metal.
     //---------------------------------------------------------
@@ -1038,6 +1094,7 @@
     //---------------------------------------------------------
     // Collect all the Parameters for Gyroflow:
     //---------------------------------------------------------
+    const char*     sourceUniqueIdentifier  = [uniqueIdentifier UTF8String];
     uint32_t        sourceWidth             = (uint32_t)inputTexture.width;
     uint32_t        sourceHeight            = (uint32_t)inputTexture.height;
     const char*     sourcePixelFormat       = [inputPixelFormat UTF8String];
@@ -1062,6 +1119,7 @@
         // Trigger the Gyroflow Rust Function:
         //---------------------------------------------------------
         const char* result = processFrame(
+                              sourceUniqueIdentifier,   // const char*
                               sourceWidth,              // uint32_t
                               sourceHeight,             // uint32_t
                               sourcePixelFormat,        // const char*
@@ -1498,7 +1556,7 @@
             
             if (bookmarkError != nil) {
                 NSString *errorMessage = [NSString stringWithFormat:@"Failed to create a security-scoped bookmark due to the following error:\n\n %@", [bookmarkError localizedDescription]];
-                NSLog(@"[Gyroflow Toolbox] %@", errorMessage);
+                NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
                 [self showAlertWithMessage:@"An error has occurred" info:errorMessage];
                 [url stopAccessingSecurityScopedResource];
                 return;
@@ -1510,7 +1568,7 @@
                 return;
             }
                 
-            //NSLog(@"[Gyroflow Toolbox] Bookmark created successfully for: %@", [url path]);
+            //NSLog(@"[Gyroflow Toolbox Renderer] Bookmark created successfully for: %@", [url path]);
             
             NSUserDefaults *userDefaults = [[NSUserDefaults alloc] init];
             [userDefaults setObject:bookmark forKey:@"gyroFlowPreferencesBookmarkData"];
@@ -1718,7 +1776,7 @@
     NSString *selectedGyroflowProjectFile            = [[url lastPathComponent] stringByDeletingPathExtension];
     NSString *selectedGyroflowProjectPath            = [url path];
     NSString *selectedGyroflowProjectBookmarkData    = [bookmark base64EncodedStringWithOptions:0];
-                    
+    
     //---------------------------------------------------------
     // Read the Gyroflow Project Data from File:
     //---------------------------------------------------------
@@ -1806,6 +1864,13 @@
         return;
     }
 
+    //---------------------------------------------------------
+    // Generate a unique identifier:
+    //---------------------------------------------------------
+    NSUUID *uuid = [NSUUID UUID];
+    NSString *uniqueIdentifier = uuid.UUIDString;
+    [paramSetAPI setStringParameterValue:uniqueIdentifier toParameter:kCB_UniqueIdentifier];
+    
     //---------------------------------------------------------
     // Update 'Gyroflow Project Path':
     //---------------------------------------------------------

@@ -12,9 +12,10 @@
 // Plugin Parameter Constants:
 //---------------------------------------------------------
 enum {
+    kCB_Header                              = 1,
     
     kCB_DropZone                            = 10,
-        
+           
     kCB_LaunchGyroflow                      = 20,
     kCB_LoadLastGyroflowProject             = 25,
     kCB_ImportGyroflowProject               = 30,
@@ -25,6 +26,9 @@ enum {
     kCB_GyroflowProjectBookmarkData         = 70,
     kCB_GyroflowProjectData                 = 80,
     
+    //---------------------------------------------------------
+    // Parameters:
+    //---------------------------------------------------------
     kCB_GyroflowParameters                  = 90,
     kCB_FOV                                 = 100,
     kCB_Smoothness                          = 110,
@@ -38,6 +42,11 @@ enum {
     kCB_InputRotation                       = 170,
     kCB_VideoRotation                       = 180,
     kCB_VideoSpeed                          = 190,
+    
+    //---------------------------------------------------------
+    // Hidden Metadata:
+    //---------------------------------------------------------
+    kCB_UniqueIdentifier                    = 500,
 };
 
 //---------------------------------------------------------

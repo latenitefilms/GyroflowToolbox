@@ -13,6 +13,7 @@
 // This is the "interface" to the Rust code:
 //
 const char* processFrame(
+    const char*                 unique_identifier,
     uint32_t                    width,
     uint32_t                    height,
     const char*                 pixel_format,

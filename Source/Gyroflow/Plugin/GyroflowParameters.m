@@ -16,6 +16,7 @@
 //---------------------------------------------------------
 @implementation GyroflowParameters
 
+@synthesize uniqueIdentifier;
 @synthesize gyroflowPath;
 @synthesize gyroflowData;
 @synthesize timestamp;
@@ -36,6 +37,7 @@
 }
 
 - (void)dealloc {
+    [uniqueIdentifier release];
     [gyroflowPath release];
     [gyroflowData release];
     [timestamp release];
@@ -55,6 +57,7 @@
 
 - (id)initWithCoder:(NSCoder *)decoder {
     if (self = [super init]) {
+        self.uniqueIdentifier       = [decoder decodeObjectOfClass:[NSString class] forKey:@"uniqueIdentifier"];
         self.gyroflowPath           = [decoder decodeObjectOfClass:[NSString class] forKey:@"gyroflowPath"];
         self.gyroflowData           = [decoder decodeObjectOfClass:[NSString class] forKey:@"gyroflowData"];
         self.timestamp              = [decoder decodeObjectOfClass:[NSNumber class] forKey:@"timestamp"];
@@ -73,6 +76,7 @@
 }
 
 - (void)encodeWithCoder:(NSCoder *)encoder {
+    [encoder encodeObject:uniqueIdentifier  forKey:@"uniqueIdentifier"];
     [encoder encodeObject:gyroflowPath      forKey:@"gyroflowPath"];
     [encoder encodeObject:gyroflowData      forKey:@"gyroflowData"];
     [encoder encodeObject:timestamp         forKey:@"timestamp"];

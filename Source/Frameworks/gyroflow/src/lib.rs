@@ -36,6 +36,7 @@ lazy_static! {
 //---------------------------------------------------------
 #[no_mangle]
 pub extern "C" fn processFrame(
+    unique_identifier: *const c_char,
     width: u32,
     height: u32,
     pixel_format: *const c_char,
@@ -67,6 +68,14 @@ pub extern "C" fn processFrame(
             .init().ok();
         Mutex::new(logger)
     });
+
+    //---------------------------------------------------------
+    // Get the Unique Identifier:
+    //---------------------------------------------------------
+    let unique_identifier_pointer = unsafe { CStr::from_ptr(unique_identifier) };
+    let unique_identifier_string = unique_identifier_pointer.to_string_lossy();
+
+    log::info!("[Gyroflow Toolbox] stabilization_result: {:?}", unique_identifier_string);
 
     //---------------------------------------------------------
     // Get Pixel Format:

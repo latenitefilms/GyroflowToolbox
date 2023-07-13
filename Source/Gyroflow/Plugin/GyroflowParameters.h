@@ -8,7 +8,8 @@
 //---------------------------------------------------------
 // Plugin Parameters:
 //---------------------------------------------------------
-@interface GyroflowParameters : NSObject <NSCoding, NSSecureCoding> {    
+@interface GyroflowParameters : NSObject <NSCoding, NSSecureCoding> {
+    NSString *uniqueIdentifier;
     NSString *gyroflowPath;
     NSString *gyroflowData;
     NSNumber *timestamp;
@@ -24,6 +25,7 @@
     NSNumber *videoRotation;
 }
 
+@property (nonatomic, copy) NSString *uniqueIdentifier;
 @property (nonatomic, copy) NSString *gyroflowPath;
 @property (nonatomic, copy) NSString *gyroflowData;
 @property (nonatomic, copy) NSNumber *timestamp;

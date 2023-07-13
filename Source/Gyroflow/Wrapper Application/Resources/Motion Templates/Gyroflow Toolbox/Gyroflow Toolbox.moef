@@ -159,7 +159,7 @@
 		<savePreviewMovie>0</savePreviewMovie>
 		<Object3DEnvironments>100</Object3DEnvironments>
 		<DRTSupport>0</DRTSupport>
-		<onHDRDisplay>1</onHDRDisplay>
+		<onHDRDisplay>0</onHDRDisplay>
 	</sceneSettings>
 	<publishSettings>
 		<version>2</version>
@@ -172,6 +172,7 @@
 		<target object="10036" channel="./90" name="Gyroflow Parameters"/>
 	</publishSettings>
 	<currentFrame>36864 153600 1 0</currentFrame>
+	<currentObject>10016</currentObject>
 	<activeLayer>10013</activeLayer>
 	<timeRange offset="0 1 1 0" duration="1536000 153600 1 0"/>
 	<playRange offset="0 1 1 0" duration="1536000 153600 1 0"/>
@@ -207,7 +208,7 @@
 			<aspectRatio>1</aspectRatio>
 			<flags>0</flags>
 			<timing in="0 1 1 0" out="1529856 153600 1 0" offset="0 1 1 0"/>
-			<foldFlags>16384</foldFlags>
+			<foldFlags>24576</foldFlags>
 			<baseFlags>524304</baseFlags>
 			<parameter name="Properties" id="1" flags="8589938704">
 				<parameter name="Cinematic" id="344" flags="8589938706">
@@ -259,7 +260,7 @@
 			</parameter>
 			<filter name="Gyroflow Toolbox" id="10036" factoryID="6" pluginUUID="92ADB2F9-C649-48C2-B2D4-441CFC0633CB" pluginVersion="1" pluginName="Gyroflow Toolbox" pluginDynamicParams="0">
 				<timing in="0 1 1 0" out="1529856 153600 1 0" offset="0 1 1 0"/>
-				<baseFlags>8589934608</baseFlags>
+				<baseFlags>8589934609</baseFlags>
 				<parameter name="Drop Zone" id="10" flags="12884901904">
 					<numberOfKeypoints>0</numberOfKeypoints>
 					<defaultVal>*********J2eMb-gOLBoA11I*E61-*I4-klM75NZQbBdPqtN743mMqVdRaJmJ0FoPr-M74xWOaJXR5AG**44c3wE1otHGqJtNKF-QaBcOLNZQh660Ec9L2FVR437QolZNq3XSJwE1o7gOKtYF43oMIxWOaJXR6*0U*4X1EsDJGFiRKlgHl0GMb-gOLBoA11I*E61-*I4-kdM75NZQbBdPqtN743mMqVdRaJmJ0FoPr-M74xWOaJXR5AG**44c3wE1otHGqJtNKF-QaBcOLNZQh260Jh1RLBoPqoUF43oMM*-cUgAJGFiRKlg2**62FcY8H6rGIlMKZpX*********E2*********1E*******************4I6**U*2E*O*0E*8E*m*1Q*GE-C*3g*PE-j*52*RE-v*F*********0*E*********E*******************-2E**</defaultVal>
@@ -302,6 +303,7 @@
 					<parameter name="Input Rotation" id="170" flags="12884901904" default="0" value="0"/>
 					<parameter name="Video Rotation" id="180" flags="12884901904" default="0" value="0"/>
 				</parameter>
+				<parameter name="Unique Identifier" id="500" flags="12884967428"/>
 				<parameter name="Mix" id="10001" flags="12884901888" default="1" value="1"/>
 				<parameter name="Flip" id="10002" flags="12889161760" default="0" value="0"/>
 				<parameter name="Input Points" id="10003" flags="12889161760" default="1" value="1"/>
