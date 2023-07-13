@@ -1559,16 +1559,287 @@
         //NSLog(@"[Gyroflow Toolbox Renderer] resultString: %@", resultString);
         
         if ([resultString isEqualToString:@"FAIL"]) {
-            //---------------------------------------------------------
-            // If we get a "FAIL" then abort:
-            //---------------------------------------------------------
-            NSString *errorMessage = @"[Gyroflow Toolbox Renderer] A fail message was received from the Rust function.";
-            if (outError != NULL) {
-                *outError = [NSError errorWithDomain:FxPlugErrorDomain
-                                                code:kFxError_InvalidParameter
-                                            userInfo:@{ NSLocalizedDescriptionKey : errorMessage }];
+            
+            NSLog(@"[Gyroflow Toolbox Renderer] Showing fail error message!");
+            
+            MetalDeviceCache* deviceCache       = [MetalDeviceCache deviceCache];
+            MTLPixelFormat pixelFormat          = [MetalDeviceCache MTLPixelFormatForImageTile:destinationImage];
+            id<MTLCommandQueue> commandQueue    = [deviceCache commandQueueWithRegistryID:destinationImage.deviceRegistryID
+                                                                              pixelFormat:pixelFormat];
+            if (commandQueue == nil)
+            {
+                NSString *errorMessage = @"[Gyroflow Toolbox Renderer] FATAL ERROR: commandQueue was nil when attempting to show an error message.";
+                NSLog(@"%@", errorMessage);
+                if (outError != NULL) {
+                    *outError = [NSError errorWithDomain:FxPlugErrorDomain
+                                                    code:kFxError_CommandQueueWasNilDuringShowErrorMessage
+                                                userInfo:@{ NSLocalizedDescriptionKey : errorMessage }];
+                }
+                return NO;
             }
-            return NO;
+            
+            id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
+            commandBuffer.label = @"Gyroflow Toolbox Error Command Buffer";
+            [commandBuffer enqueue];
+                    
+            //---------------------------------------------------------
+            // Load the texture from our "Assets":
+            //---------------------------------------------------------
+            MTKTextureLoader *loader = [[MTKTextureLoader alloc] initWithDevice:commandQueue.device];
+            
+            NSDictionary *options = [[NSDictionary alloc] initWithObjectsAndKeys:
+                                     [NSNumber numberWithBool:YES], MTKTextureLoaderOptionSRGB,
+                                     nil];
+                    
+            id<MTLTexture> inputTexture         = [loader newTextureWithName:@"NoGyroflowProjectLoaded" scaleFactor:1.0 bundle:[NSBundle mainBundle] options:options error:nil];
+            id<MTLTexture> outputTexture        = [destinationImage metalTextureForDevice:[deviceCache deviceWithRegistryID:destinationImage.deviceRegistryID]];
+            
+            //---------------------------------------------------------
+            // If square pixels, we'll manipulate the height and y
+            // axis manually:
+            //---------------------------------------------------------
+            if (fullHeight == outputHeight) {
+                correctedHeight = ((float)inputTexture.height/(float)inputTexture.width) * outputWidth;
+                differenceBetweenHeights = (outputHeight - correctedHeight) / 2;
+            }
+            
+            //---------------------------------------------------------
+            // Use a "Metal Performance Shader" to scale the texture
+            // to the correct size. Note, we're using the full width
+            // and height, to compensate for non-square pixels:
+            //---------------------------------------------------------
+            id<MTLTexture> scaledInputTexture = nil;
+            if (fullHeight != outputHeight) {
+                
+                //---------------------------------------------------------
+                // Create a new Command Buffer for scale transform:
+                //---------------------------------------------------------
+                id<MTLCommandBuffer> scaleCommandBuffer = [commandQueue commandBuffer];
+                scaleCommandBuffer.label = @"Gyroflow Toolbox Scale Command Buffer";
+                [scaleCommandBuffer enqueue];
+                
+                //---------------------------------------------------------
+                // Create a new texture for the scaled image:
+                //---------------------------------------------------------
+                MTLTextureDescriptor *scaleTextureDescriptor = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:inputTexture.pixelFormat
+                                                                                                                  width:fullWidth
+                                                                                                                 height:fullHeight
+                                                                                                              mipmapped:NO];
+                
+                scaledInputTexture = [inputTexture.device newTextureWithDescriptor:scaleTextureDescriptor];
+                
+                //---------------------------------------------------------
+                // Work out how much to scale/re-position:
+                //---------------------------------------------------------
+                float scaleX        = (float)(fullWidth / inputTexture.width);
+                float scaleY        = (float)(fullHeight / inputTexture.height);
+                              
+                if (scaleX > scaleY) {
+                    scaleX = scaleY;
+                } else {
+                    scaleY = scaleX;
+                }
+
+                float translateX    = (float)((fullWidth - inputTexture.width * scaleX) / 2);
+                float translateY    = (float)((fullHeight - inputTexture.height * scaleY) / 2);
+                            
+                MPSScaleTransform transform;
+                transform.scaleX        = scaleX;         // The horizontal scale factor.
+                transform.scaleY        = scaleY;         // The vertical scale factor.
+                transform.translateX    = translateX;     // The horizontal translation factor.
+                transform.translateY    = translateY;     // The vertical translation factor.
+
+                //---------------------------------------------------------
+                // A filter that resizes and changes the aspect ratio of
+                // an image:
+                //
+                // NOTE: In v1.0.0 we use MPSImageLanczosScale, however
+                //       I've changed to MPSImageBilinearScale as it's
+                //       faster, and we probably prefer speed over
+                //       quality for thumbnails.
+                //---------------------------------------------------------
+                MPSImageBilinearScale *filter = [[[MPSImageBilinearScale alloc] initWithDevice:commandQueue.device] autorelease];
+                [filter setScaleTransform:&transform];
+                [filter encodeToCommandBuffer:scaleCommandBuffer sourceTexture:inputTexture destinationTexture:scaledInputTexture];
+                
+                //---------------------------------------------------------
+                // Commits the scale command buffer for execution:
+                //---------------------------------------------------------
+                [scaleCommandBuffer commit];
+            }
+            
+            //---------------------------------------------------------
+            // Release the texture loader:
+            //---------------------------------------------------------
+            [options release];
+            [loader release];
+            
+            MTLRenderPassColorAttachmentDescriptor* colorAttachmentDescriptor   = [[MTLRenderPassColorAttachmentDescriptor alloc] init];
+            colorAttachmentDescriptor.texture = outputTexture;
+            colorAttachmentDescriptor.clearColor = MTLClearColorMake(1.0, 0.5, 0.0, 1.0);
+            colorAttachmentDescriptor.loadAction = MTLLoadActionClear;
+            MTLRenderPassDescriptor*    renderPassDescriptor    = [MTLRenderPassDescriptor renderPassDescriptor];
+            renderPassDescriptor.colorAttachments [ 0 ] = colorAttachmentDescriptor;
+            id<MTLRenderCommandEncoder>   commandEncoder  = [commandBuffer renderCommandEncoderWithDescriptor:renderPassDescriptor];
+            
+            //---------------------------------------------------------
+            // Calculate the vertex coordinates and the texture
+            // coordinates:
+            //---------------------------------------------------------
+            float   textureLeft     = (destinationImage.tilePixelBounds.left - destinationImage.imagePixelBounds.left) / fullWidth;
+            float   textureRight    = (destinationImage.tilePixelBounds.right - destinationImage.imagePixelBounds.left) / fullWidth;
+            float   textureBottom   = (destinationImage.tilePixelBounds.bottom - destinationImage.imagePixelBounds.bottom) / fullHeight;
+            float   textureTop      = (destinationImage.tilePixelBounds.top - destinationImage.imagePixelBounds.bottom) / fullHeight;
+            
+            Vertex2D    vertices[]  = {
+                { {  outputWidth / 2.0f, -outputHeight / 2.0f }, { textureRight, textureTop } },
+                { { -outputWidth / 2.0f, -outputHeight / 2.0f }, { textureLeft, textureTop } },
+                { {  outputWidth / 2.0f,  outputHeight / 2.0f }, { textureRight, textureBottom } },
+                { { -outputWidth / 2.0f,  outputHeight / 2.0f }, { textureLeft, textureBottom } }
+            };
+            
+            //---------------------------------------------------------
+            // Setup our viewport:
+            //
+            // MTLViewport: A 3D rectangular region for the viewport
+            // clipping.
+            //---------------------------------------------------------
+            MTLViewport viewport = {
+                0, differenceBetweenHeights, outputWidth, correctedHeight, -1.0, 1.0
+            };
+            
+            //---------------------------------------------------------
+            // Sets the viewport used for transformations and clipping:
+            //---------------------------------------------------------
+            [commandEncoder setViewport:viewport];
+            
+            //---------------------------------------------------------
+            // Setup our Render Pipeline State.
+            //
+            // MTLRenderPipelineState: An object that contains graphics
+            // functions and configuration state to use in a render
+            // command.
+            //---------------------------------------------------------
+            id<MTLRenderPipelineState> pipelineState = [deviceCache pipelineStateWithRegistryID:sourceImages[0].deviceRegistryID
+                                                                                    pixelFormat:pixelFormat];
+            
+            //---------------------------------------------------------
+            // Sets the current render pipeline state object:
+            //---------------------------------------------------------
+            [commandEncoder setRenderPipelineState:pipelineState];
+            
+            //---------------------------------------------------------
+            // Sets a block of data for the vertex shader:
+            //---------------------------------------------------------
+            [commandEncoder setVertexBytes:vertices
+                                    length:sizeof(vertices)
+                                   atIndex:BVI_Vertices];
+            
+            //---------------------------------------------------------
+            // Set the viewport size:
+            //---------------------------------------------------------
+            simd_uint2  viewportSize = {
+                (unsigned int)(outputWidth),
+                (unsigned int)(outputHeight)
+            };
+            
+            //---------------------------------------------------------
+            // Sets a block of data for the vertex shader:
+            //---------------------------------------------------------
+            [commandEncoder setVertexBytes:&viewportSize
+                                    length:sizeof(viewportSize)
+                                   atIndex:BVI_ViewportSize];
+            
+            //---------------------------------------------------------
+            // Sets a texture for the fragment function at an index
+            // in the texture argument table:
+            //---------------------------------------------------------
+            if (scaledInputTexture != nil) {
+                //---------------------------------------------------------
+                // Use our scaled input texture for non-square pixels:
+                //---------------------------------------------------------
+                [commandEncoder setFragmentTexture:scaledInputTexture
+                                           atIndex:BTI_InputImage];
+            } else {
+                //---------------------------------------------------------
+                // Use the data straight from the MTLBuffer for square
+                // pixels to avoid any extra processing:
+                //---------------------------------------------------------
+                [commandEncoder setFragmentTexture:inputTexture
+                                           atIndex:BTI_InputImage];
+            }
+            
+            //---------------------------------------------------------
+            // drawPrimitives: Encodes a command to render one instance
+            // of primitives using vertex data in contiguous array
+            // elements.
+            //
+            // MTLPrimitiveTypeTriangleStrip: For every three adjacent
+            // vertices, rasterize a triangle.
+            //---------------------------------------------------------
+            [commandEncoder drawPrimitives:MTLPrimitiveTypeTriangleStrip
+                               vertexStart:0
+                               vertexCount:4];
+            
+            //---------------------------------------------------------
+            // Declares that all command generation from the encoder
+            // is completed. After `endEncoding` is called, the
+            // command encoder has no further use. You cannot encode
+            // any other commands with this encoder.
+            //---------------------------------------------------------
+            [commandEncoder endEncoding];
+            
+            //---------------------------------------------------------
+            // Commits the command buffer for execution.
+            // After you call the commit method, the MTLDevice schedules
+            // and executes the commands in the command buffer. If you
+            // haven’t already enqueued the command buffer with a call
+            // to enqueue, calling this function also enqueues the
+            // command buffer. The GPU executes the command buffer
+            // after any command buffers enqueued before it on the same
+            // command queue.
+            //
+            // You can only commit a command buffer once. You can’t
+            // commit a command buffer if the command buffer has an
+            // active command encoder. Once you commit a command buffer,
+            // you may not encode additional commands into it, nor can
+            // you add a schedule or completion handler.
+            //---------------------------------------------------------
+            [commandBuffer commit];
+            
+            //---------------------------------------------------------
+            // Blocks execution of the current thread until execution
+            // of the command buffer is completed.
+            //---------------------------------------------------------
+            [commandBuffer waitUntilCompleted];
+            
+            //---------------------------------------------------------
+            // Release the `colorAttachmentDescriptor` we created
+            // earlier:
+            //---------------------------------------------------------
+            [colorAttachmentDescriptor release];
+            
+            //---------------------------------------------------------
+            // Release the Input Texture:
+            //---------------------------------------------------------
+            if (inputTexture != nil) {
+                [inputTexture setPurgeableState:MTLPurgeableStateEmpty];
+                [inputTexture release];
+                inputTexture = nil;
+            }
+            if (scaledInputTexture != nil) {
+                [scaledInputTexture setPurgeableState:MTLPurgeableStateEmpty];
+                [scaledInputTexture release];
+                scaledInputTexture = nil;
+            }
+            
+            //---------------------------------------------------------
+            // Return the Command Queue back to the cache:
+            //---------------------------------------------------------
+            [deviceCache returnCommandQueueToCache:commandQueue];
+            
+            return YES;
+            
         }        
     }
   
@@ -1638,7 +1909,122 @@
 // BUTTON: 'Load Preset/Lens Profile'
 //---------------------------------------------------------
 - (void)buttonLoadPresetLensProfile {
-    [self showAlertWithMessage:@"Hello!" info:@"This will eventually do stuff."];
+    
+    //---------------------------------------------------------
+    // Get the Lens Profiles path:
+    //---------------------------------------------------------
+    NSBundle *mainBundle = [NSBundle mainBundle];
+    NSString *lensProfilesPath = [mainBundle pathForResource:@"Lens Profiles" ofType:nil inDirectory:nil];
+    NSURL *lensProfilesURL = [NSURL fileURLWithPath:lensProfilesPath];
+    
+    //---------------------------------------------------------
+    // Setup an NSOpenPanel:
+    //---------------------------------------------------------
+    NSOpenPanel* panel = [NSOpenPanel openPanel];
+    [panel setCanChooseDirectories:NO];
+    [panel setCanCreateDirectories:YES];
+    [panel setCanChooseFiles:YES];
+    [panel setAllowsMultipleSelection:NO];
+    [panel setDirectoryURL:lensProfilesURL];
+    
+    //---------------------------------------------------------
+    // Limit the file type to Gyroflow supported media files:
+    //---------------------------------------------------------
+    UTType *gyroflow                 = [UTType typeWithFilenameExtension:@"gyroflow"];
+    UTType *json                     = [UTType typeWithFilenameExtension:@"json"];
+    
+    NSArray *allowedContentTypes    = [NSArray arrayWithObjects:gyroflow, json, nil];
+    [panel setAllowedContentTypes:allowedContentTypes];
+    
+    //---------------------------------------------------------
+    // Open the panel:
+    //---------------------------------------------------------
+    NSModalResponse result = [panel runModal];
+    if (result != NSModalResponseOK) {
+        return;
+    }
+    
+    NSURL *url = [panel URL];
+    
+    //---------------------------------------------------------
+    // Start accessing security scoped resource:
+    //---------------------------------------------------------
+    if (![url startAccessingSecurityScopedResource]) {
+        [self showAlertWithMessage:@"An error has occurred." info:@"Failed to startAccessingSecurityScopedResource. This shouldn't happen."];
+        return;
+    }
+    
+    /*
+     const char* loadLensProfile(
+         const char*                 gyroflow_project_data,
+         const char*                 lens_profile_path
+     );
+
+     */
+    
+    
+    //---------------------------------------------------------
+    // Load the Custom Parameter Action API:
+    //---------------------------------------------------------
+    id<FxCustomParameterActionAPI_v4> actionAPI = [_apiManager apiForProtocol:@protocol(FxCustomParameterActionAPI_v4)];
+    if (actionAPI == nil) {
+        [self showAlertWithMessage:@"An error has occurred." info:@"Unable to retrieve 'FxCustomParameterActionAPI_v4'. This shouldn't happen, so it's probably a bug."];
+        return;
+    }
+        
+    //---------------------------------------------------------
+    // Use the Action API to allow us to change the parameters:
+    //---------------------------------------------------------
+    [actionAPI startAction:self];
+    
+    //---------------------------------------------------------
+    // Load the Parameter Retrieval API:
+    //---------------------------------------------------------
+    id<FxParameterRetrievalAPI_v6> paramGetAPI = [_apiManager apiForProtocol:@protocol(FxParameterRetrievalAPI_v6)];
+    if (paramGetAPI == nil) {
+        //---------------------------------------------------------
+        // Stop Action API:
+        //---------------------------------------------------------
+        [actionAPI endAction:self];
+        
+        [self showAlertWithMessage:@"An error has occurred." info:@"Unable to retrieve 'FxParameterRetrievalAPI_v6'.\n\nThis shouldn't happen, so it's probably a bug."];
+        return;
+    }
+    
+    //---------------------------------------------------------
+    // Get the existing Gyroflow Project data:
+    //---------------------------------------------------------
+    NSString *gyroflowProjectData = nil;
+    [paramGetAPI getStringParameterValue:&gyroflowProjectData fromParameter:kCB_GyroflowProjectData];
+    
+    if (gyroflowProjectData == nil) {
+        [self showAlertWithMessage:@"Failed to get Gyroflow Project" info:@"Please ensure you have a Gyroflow Project already loaded."];
+        return;
+    }
+    
+    //---------------------------------------------------------
+    // Stop Action API:
+    //---------------------------------------------------------
+    [actionAPI endAction:self];
+        
+    NSString *lensProfilePath = [url path];
+    
+    const char* loadResult = loadLensProfile(
+                                             [gyroflowProjectData UTF8String],
+                                             [lensProfilePath UTF8String]
+                                             );
+    
+    [url stopAccessingSecurityScopedResource];
+    
+    NSString *loadResultString = [NSString stringWithUTF8String: loadResult];
+    
+    if (loadResultString == nil || [loadResultString isEqualToString:@"FAIL"]) {
+        [self showAlertWithMessage:@"An error has occurred" info:@"Failed to load a Lens Profile or Preset."];
+        return;
+    } else {
+        [self showAlertWithMessage:@"VICTORY!" info:@"The Lens Profile has been activated."];
+    }
+    
 }
 
 //---------------------------------------------------------

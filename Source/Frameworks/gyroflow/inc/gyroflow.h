@@ -51,3 +51,8 @@ const char* importMediaFile(
 const char* doesGyroflowProjectContainStabilisationData(
     const char*                 gyroflow_project_data
 );
+
+const char* loadLensProfile(
+    const char*                 gyroflow_project_data,
+    const char*                 lens_profile_path
+);

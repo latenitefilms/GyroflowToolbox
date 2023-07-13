@@ -93,6 +93,87 @@ pub extern "C" fn doesGyroflowProjectContainStabilisationData(
 }
 
 //---------------------------------------------------------
+// Load a Lens Profile to a supplied Gyroflow Project.
+// Returns the new Gyroflow Project or "FAIL".
+//---------------------------------------------------------
+#[no_mangle]
+pub extern "C" fn loadLensProfile(
+    gyroflow_project_data: *const c_char,
+    lens_profile_path: *const c_char,
+) -> *const c_char {
+    //---------------------------------------------------------
+    // Convert the Gyroflow Project data to a `&str`:
+    //---------------------------------------------------------
+    let gyroflow_project_data_pointer = unsafe { CStr::from_ptr(gyroflow_project_data) };
+    let gyroflow_project_data_string = gyroflow_project_data_pointer.to_string_lossy();
+
+    //---------------------------------------------------------
+    // Convert the Lens Profile data to a `&str`:
+    //---------------------------------------------------------
+    let lens_profile_path_pointer = unsafe { CStr::from_ptr(lens_profile_path) };
+    let lens_profile_path_string = lens_profile_path_pointer.to_string_lossy();
+
+    let stab = StabilizationManager::default();
+
+    //---------------------------------------------------------
+    // Import the `gyroflow_project_data_string`:
+    //---------------------------------------------------------
+    let blocking = true;
+    let path = Some(std::path::PathBuf::from(&*gyroflow_project_data_string));
+    let cancel_flag = Arc::new(AtomicBool::new(false));
+    let mut is_preset = false;
+    match stab.import_gyroflow_data(
+        gyroflow_project_data_string.as_bytes(), 
+        blocking, 
+        path, 
+        |_|(),
+        cancel_flag,
+        &mut is_preset
+    ) {
+        Ok(_) => {
+            //---------------------------------------------------------
+            // Load Lens Profile:
+            //---------------------------------------------------------
+            if let Err(e) = stab.load_lens_profile(&lens_profile_path_string) {
+                
+                log::error!("[Gyroflow Toolbox Rust] Error loading Lens Profile: {:?}", e);
+
+                let result = CString::new("FAIL").unwrap();
+                return result.into_raw()
+            }
+
+            //---------------------------------------------------------
+            // Export Gyroflow data:
+            //---------------------------------------------------------
+            let gyroflow_data: String;
+            match stab.export_gyroflow_data(false, false, "{}") {
+                Ok(data) => {
+                    gyroflow_data = data;
+                    log::info!("[Gyroflow Toolbox Rust] Gyroflow data exported successfully");
+                },
+                Err(e) => {
+                    log::error!("[Gyroflow Toolbox Rust] An error occured: {:?}", e);
+                    gyroflow_data = "FAIL".to_string();
+                }
+            }
+
+            //---------------------------------------------------------
+            // Return Gyroflow Project data as string:
+            //---------------------------------------------------------
+            let result = CString::new(gyroflow_data).unwrap();
+            return result.into_raw()            
+        },
+        Err(e) => {
+            // Handle the error case            
+            log::error!("[Gyroflow Toolbox Rust] Error importing Lens Profile: {:?}", e);
+            
+            let result = CString::new("FAIL").unwrap();
+            return result.into_raw()
+        },
+    }
+}
+
+//---------------------------------------------------------
 // The "Trash Cache" function that gets triggered from
 // Objective-C Land:
 //---------------------------------------------------------
