@@ -277,6 +277,7 @@ pub extern "C" fn processFrame(
     position_offset_y: f64,
     input_rotation: f64,
     video_rotation: f64,
+    fov_overview: u8,
     in_mtl_tex: *mut std::ffi::c_void,
     out_mtl_tex: *mut std::ffi::c_void,
     command_queue: *mut std::ffi::c_void,
@@ -299,7 +300,7 @@ pub extern "C" fn processFrame(
     let unique_identifier_pointer = unsafe { CStr::from_ptr(unique_identifier) };
     let unique_identifier_string = unique_identifier_pointer.to_string_lossy();
 
-    //log::info!("[Gyroflow Toolbox] unique_identifier_string: {:?}", unique_identifier_string);
+    //log::info!("[Gyroflow Toolbox Rust] unique_identifier_string: {:?}", unique_identifier_string);
 
     //---------------------------------------------------------
     // Get Pixel Format:
@@ -382,7 +383,7 @@ pub extern "C" fn processFrame(
                //---------------------------------------------------------
                // Return an error message is something fails:
                //---------------------------------------------------------
-               log::error!("[Gyroflow Toolbox] Failed to import Gyroflow File: {:?}", e);
+               log::error!("[Gyroflow Toolbox Rust] Failed to import Gyroflow File: {:?}", e);
            }
        }
 
@@ -393,9 +394,20 @@ pub extern "C" fn processFrame(
    //---------------------------------------------------------
    // Have parameters changed:
    //---------------------------------------------------------
-   let mut params_changed = false;
+   let mut params_changed = false;   
    {
        let mut params = manager.params.write();
+
+        //---------------------------------------------------------
+        // Set the FOV Overview:
+        //---------------------------------------------------------
+        let incoming_fov_overview = fov_overview != 0;
+        if incoming_fov_overview != params.fov_overview {
+            log::error!("[Gyroflow Toolbox Rust] FOV Changed!");
+            params.fov_overview = incoming_fov_overview;
+            params_changed = true;
+        }
+
        //---------------------------------------------------------
        // Set the FOV:
        //---------------------------------------------------------
@@ -512,7 +524,7 @@ pub extern "C" fn processFrame(
    //---------------------------------------------------------
    // Output the Stabilization result to the Console:
    //---------------------------------------------------------
-   //log::info!("[Gyroflow Toolbox] stabilization_result: {:?}", &_stabilization_result);
+   //log::info!("[Gyroflow Toolbox Rust] stabilization_result: {:?}", &_stabilization_result);
 
    //---------------------------------------------------------
    // Return "DONE":

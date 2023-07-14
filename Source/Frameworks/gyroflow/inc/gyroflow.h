@@ -30,6 +30,7 @@ const char* processFrame(
     double                      position_offset_y,
     double                      input_rotation,
     double                      video_rotation,
+    uint8_t                     fov_overview,
     void                        *in_mtl_texture,
     void                        *out_mtl_texture,
     void                        *command_queue

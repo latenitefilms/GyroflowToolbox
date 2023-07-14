@@ -31,6 +31,8 @@
 @synthesize inputRotation;
 @synthesize videoRotation;
 
+@synthesize fovOverview;
+
 + (BOOL)supportsSecureCoding
 {
     return YES;
@@ -52,6 +54,8 @@
     [inputRotation release];
     [videoRotation release];
     
+    [fovOverview release];
+    
     [super dealloc];
 }
 
@@ -71,6 +75,8 @@
         self.positionOffsetY        = [decoder decodeObjectOfClass:[NSNumber class] forKey:@"positionOffsetY"];
         self.inputRotation          = [decoder decodeObjectOfClass:[NSNumber class] forKey:@"inputRotation"];
         self.videoRotation          = [decoder decodeObjectOfClass:[NSNumber class] forKey:@"videoRotation"];
+        
+        self.fovOverview          = [decoder decodeObjectOfClass:[NSNumber class] forKey:@"fovOverview"];
     }
     return self;
 }
@@ -90,6 +96,8 @@
     [encoder encodeObject:positionOffsetY   forKey:@"positionOffsetY"];
     [encoder encodeObject:inputRotation     forKey:@"inputRotation"];
     [encoder encodeObject:videoRotation     forKey:@"videoRotation"];
+    
+    [encoder encodeObject:fovOverview       forKey:@"fovOverview"];
 }
 
 @end

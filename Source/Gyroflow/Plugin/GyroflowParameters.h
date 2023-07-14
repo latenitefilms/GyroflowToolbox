@@ -23,6 +23,8 @@
     NSNumber *positionOffsetY;
     NSNumber *inputRotation;
     NSNumber *videoRotation;
+    
+    NSNumber *fovOverview;
 }
 
 @property (nonatomic, copy) NSString *uniqueIdentifier;
@@ -39,5 +41,7 @@
 @property (nonatomic, copy) NSNumber *positionOffsetY;
 @property (nonatomic, copy) NSNumber *inputRotation;
 @property (nonatomic, copy) NSNumber *videoRotation;
+
+@property (nonatomic, copy) NSNumber *fovOverview;
 
 @end

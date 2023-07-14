@@ -766,11 +766,11 @@
         // ADD PARAMETER: 'Stabilisation Overview' Check Box
         //---------------------------------------------------------
         if (![paramAPI addToggleButtonWithName:@"Stabilisation Overview"
-                                   parameterID:kCB_StabilisationOverview
+                                   parameterID:kCB_FieldOfViewOverview
                                   defaultValue:NO
                                 parameterFlags:kFxParameterFlag_DEFAULT]) {
             if (error != NULL) {
-                NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_StabilisationOverview"};
+                NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_FieldOfViewOverview"};
                 *error = [NSError errorWithDomain:FxPlugErrorDomain
                                              code:kFxError_InvalidParameter
                                          userInfo:userInfo];
@@ -1189,6 +1189,13 @@
     params.videoRotation = [NSNumber numberWithDouble:videoRotation];
     
     //---------------------------------------------------------
+    // FOV Overview:
+    //---------------------------------------------------------
+    BOOL fovOverview;
+    [paramGetAPI getBoolValue:&fovOverview fromParameter:kCB_FieldOfViewOverview atTime:renderTime];
+    params.fovOverview = [NSNumber numberWithBool:fovOverview];
+    
+    //---------------------------------------------------------
     // Write the parameters to the pluginState as `NSData`:
     //---------------------------------------------------------
     NSError *newPluginStateError;
@@ -1348,6 +1355,8 @@
     NSNumber *positionOffsetY   = params.positionOffsetY;
     NSNumber *inputRotation     = params.inputRotation;
     NSNumber *videoRotation     = params.videoRotation;
+    
+    NSNumber *fovOverview       = params.fovOverview;
     
     //NSLog(@"[Gyroflow Toolbox Renderer] uniqueIdentifier: '%@'", uniqueIdentifier);
         
@@ -1740,7 +1749,10 @@
     double          sourcePositionOffsetY   = [positionOffsetY doubleValue];
     double          sourceInputRotation     = [inputRotation doubleValue];
     double          sourceVideoRotation     = [videoRotation doubleValue];
-
+    uint8_t         sourceFOVOverview       = [fovOverview unsignedCharValue];
+    
+    NSLog(@"[Gyroflow Toolbox Renderer] sourceFOVOverview: %hhu", sourceFOVOverview);
+    
     //---------------------------------------------------------
     // Only trigger the Rust function if we have Gyroflow Data:
     //---------------------------------------------------------
@@ -1766,6 +1778,7 @@
                               sourcePositionOffsetY,    // double
                               sourceInputRotation,      // double
                               sourceVideoRotation,      // double
+                              sourceFOVOverview,        // uint8_t
                               inputTexture,             // MTLTexture
                               outputTexture,            // MTLTexture
                               commandQueue              // MTLCommandQueue

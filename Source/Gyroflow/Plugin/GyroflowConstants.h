@@ -65,7 +65,7 @@ enum {
     //---------------------------------------------------------
     kCB_ToolsSection                            = 300,
     
-        kCB_StabilisationOverview               = 310,
+        kCB_FieldOfViewOverview                 = 310,
     
     //---------------------------------------------------------
     // File Management:
