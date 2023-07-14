@@ -21,6 +21,7 @@
     NSView* revealInFinderView;
     NSView* headerView;
     NSView* loadPresetLensProfileView;
+    NSView* exportGyroflowProjectView;
 }
 @property (assign) id<PROAPIAccessing> apiManager;
 @end

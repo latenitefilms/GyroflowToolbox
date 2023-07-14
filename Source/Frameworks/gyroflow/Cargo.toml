@@ -13,7 +13,7 @@ argh = "*"
 serde = "1.0"
 serde_json = "1.0"
 libc = "0.2"
-gyroflow-core = { git = "https://github.com/gyroflow/gyroflow.git", default-features = false, rev = "b8d6d96", features = ["bundle-lens-profiles"] }
+gyroflow-core = { git = "https://github.com/gyroflow/gyroflow.git", default-features = false, rev = "af4c575", features = ["bundle-lens-profiles"] }
 log = "0.4.17"
 oslog = "0.2.0"
 lazy_static = "1.4.0"

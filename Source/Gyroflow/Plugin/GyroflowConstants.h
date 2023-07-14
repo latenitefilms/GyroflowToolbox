@@ -12,46 +12,79 @@
 // Plugin Parameter Constants:
 //---------------------------------------------------------
 enum {
-    kCB_Header                              = 1,
+    /*
+     <publishSettings>
+         <version>2</version>
+         <target object="10036" channel="./1" name=""/>
+         <target object="10036" channel="./3" name=""/>
+         <target object="10036" channel="./5" name="Import"/>
+         <target object="10036" channel="./90" name="Gyroflow Parameters"/>
+         <target object="10036" channel="./300" name="Tools"/>
+         <target object="10036" channel="./400" name="File Management"/>
+     </publishSettings>
+     */
     
-    kCB_DropZone                            = 10,
-           
-    kCB_LaunchGyroflow                      = 20,
-    kCB_LoadLastGyroflowProject             = 25,
-    kCB_ImportGyroflowProject               = 30,
-    kCB_ImportMediaFile                     = 35,
-    kCB_LoadedGyroflowProject               = 40,
-    kCB_ReloadGyroflowProject               = 50,
+    //---------------------------------------------------------
+    // Top Section:
+    //---------------------------------------------------------
+    kCB_TopSection                              = 1,
+        kCB_Header                              = 2,
+        kCB_OpenUserGuide                       = 3,
     
-    kCB_LoadPresetLensProfile               = 52,
+    //---------------------------------------------------------
+    // Import Section:
+    //---------------------------------------------------------
+    kCB_ImportSection                           = 5,
     
-    kCB_RevealInFinder                      = 55,
-        
-    kCB_GyroflowProjectPath                 = 60,
-    kCB_GyroflowProjectBookmarkData         = 70,
-    kCB_GyroflowProjectData                 = 80,
+        kCB_DropZone                            = 10,
+        kCB_ImportGyroflowProject               = 30,
+        kCB_LoadLastGyroflowProject             = 25,
+        kCB_ImportMediaFile                     = 35,
+        kCB_LoadPresetLensProfile               = 52,
     
     //---------------------------------------------------------
     // Parameters:
     //---------------------------------------------------------
-    kCB_GyroflowParameters                  = 90,
-    kCB_FOV                                 = 100,
-    kCB_Smoothness                          = 110,
-    kCB_LensCorrection                      = 120,
-        
-    kCB_HorizonLock                         = 130,
-    kCB_HorizonRoll                         = 140,
-        
-    kCB_PositionOffsetX                     = 150,
-    kCB_PositionOffsetY                     = 160,
-    kCB_InputRotation                       = 170,
-    kCB_VideoRotation                       = 180,
-    kCB_VideoSpeed                          = 190,
+    kCB_GyroflowParameters                      = 90,
+    
+        kCB_FOV                                 = 100,
+        kCB_Smoothness                          = 110,
+        kCB_LensCorrection                      = 120,
+            
+        kCB_HorizonLock                         = 130,
+        kCB_HorizonRoll                         = 140,
+            
+        kCB_PositionOffsetX                     = 150,
+        kCB_PositionOffsetY                     = 160,
+        kCB_InputRotation                       = 170,
+        kCB_VideoRotation                       = 180,
+        kCB_VideoSpeed                          = 190,
+    
+    //---------------------------------------------------------
+    // Tools:
+    //---------------------------------------------------------
+    kCB_ToolsSection                            = 300,
+    
+        kCB_StabilisationOverview               = 310,
+    
+    //---------------------------------------------------------
+    // File Management:
+    //---------------------------------------------------------
+    kCB_FileManagementSection                   = 400,
+    
+        kCB_LoadedGyroflowProject               = 40,
+        kCB_ReloadGyroflowProject               = 50,
+        kCB_LaunchGyroflow                      = 20,
+        kCB_ExportGyroflowProject               = 51,
+        kCB_RevealInFinder                      = 55,
     
     //---------------------------------------------------------
     // Hidden Metadata:
     //---------------------------------------------------------
-    kCB_UniqueIdentifier                    = 500,
+    kCB_UniqueIdentifier                        = 500,
+    kCB_GyroflowProjectPath                     = 60,
+    kCB_GyroflowProjectBookmarkData             = 70,
+    kCB_GyroflowProjectData                     = 80,
 };
 
 //---------------------------------------------------------
