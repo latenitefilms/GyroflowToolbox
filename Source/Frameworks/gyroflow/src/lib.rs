@@ -278,6 +278,7 @@ pub extern "C" fn processFrame(
     input_rotation: f64,
     video_rotation: f64,
     fov_overview: u8,
+    disable_gyroflow_stretch: u8,
     in_mtl_tex: *mut std::ffi::c_void,
     out_mtl_tex: *mut std::ffi::c_void,
     command_queue: *mut std::ffi::c_void,
@@ -332,7 +333,7 @@ pub extern "C" fn processFrame(
    // Cache the manager:
    //---------------------------------------------------------
    let mut cache = MANAGER_CACHE.lock().unwrap();
-   let cache_key = format!("{path_string}{output_width}{output_height}{pixel_format_string}{unique_identifier_string}");
+   let cache_key = format!("{path_string}{output_width}{output_height}{pixel_format_string}{disable_gyroflow_stretch}{unique_identifier_string}");
    let manager = if let Some(manager) = cache.get(&cache_key) {
        //---------------------------------------------------------
        // Already cached:
@@ -353,6 +354,13 @@ pub extern "C" fn processFrame(
        let mut is_preset = false;
        match manager.import_gyroflow_data(&data_slice, true, None, |_|(), Arc::new(AtomicBool::new(false)), &mut is_preset) {
            Ok(_) => {
+                //---------------------------------------------------------
+                // Disable Gyroflow Stretch:
+                //---------------------------------------------------------
+                if disable_gyroflow_stretch != 0 {
+                    manager.disable_lens_stretch();
+                }
+
                //---------------------------------------------------------
                // Set the Input Size:
                //---------------------------------------------------------

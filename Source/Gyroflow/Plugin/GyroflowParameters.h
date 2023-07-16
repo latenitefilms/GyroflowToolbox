@@ -25,6 +25,7 @@
     NSNumber *videoRotation;
     
     NSNumber *fovOverview;
+    NSNumber *disableGyroflowStretch;
 }
 
 @property (nonatomic, copy) NSString *uniqueIdentifier;
@@ -43,5 +44,6 @@
 @property (nonatomic, copy) NSNumber *videoRotation;
 
 @property (nonatomic, copy) NSNumber *fovOverview;
+@property (nonatomic, copy) NSNumber *disableGyroflowStretch;
 
 @end

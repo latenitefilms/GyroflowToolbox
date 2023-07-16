@@ -768,9 +768,25 @@
         if (![paramAPI addToggleButtonWithName:@"Stabilisation Overview"
                                    parameterID:kCB_FieldOfViewOverview
                                   defaultValue:NO
-                                parameterFlags:kFxParameterFlag_DEFAULT]) {
+                                parameterFlags:kFxParameterFlag_DEFAULT | kFxParameterFlag_NOT_ANIMATABLE]) {
             if (error != NULL) {
                 NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_FieldOfViewOverview"};
+                *error = [NSError errorWithDomain:FxPlugErrorDomain
+                                             code:kFxError_InvalidParameter
+                                         userInfo:userInfo];
+            }
+            return NO;
+        }
+        
+        //---------------------------------------------------------
+        // ADD PARAMETER: 'Disable Gyroflow Stretch' Check Box
+        //---------------------------------------------------------
+        if (![paramAPI addToggleButtonWithName:@"Disable Gyroflow Stretch"
+                                   parameterID:kCB_DisableGyroflowStretch
+                                  defaultValue:NO
+                                parameterFlags:kFxParameterFlag_DEFAULT | kFxParameterFlag_NOT_ANIMATABLE]) {
+            if (error != NULL) {
+                NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_DisableGyroflowStretch"};
                 *error = [NSError errorWithDomain:FxPlugErrorDomain
                                              code:kFxError_InvalidParameter
                                          userInfo:userInfo];
@@ -992,6 +1008,22 @@
 }
 
 //---------------------------------------------------------
+// parameterChanged:atTime:error:
+//
+// Executes when the host detects that a parameter has changed.
+//---------------------------------------------------------
+- (BOOL)parameterChanged:(UInt32)paramID
+                  atTime:(CMTime)time
+                   error:(NSError * _Nullable *)error
+{
+    if (paramID == kCB_DisableGyroflowStretch) {
+        NSLog(@"[Gyroflow Toolbox Renderer] Disable Gyroflow Stretch Changed!");
+        trashCache();
+    }
+    return YES;
+}
+
+//---------------------------------------------------------
 //
 #pragma mark - Pre-Render
 //
@@ -1196,6 +1228,13 @@
     params.fovOverview = [NSNumber numberWithBool:fovOverview];
     
     //---------------------------------------------------------
+    // Disable Gyroflow Stretch:
+    //---------------------------------------------------------
+    BOOL disableGyroflowStretch;
+    [paramGetAPI getBoolValue:&disableGyroflowStretch fromParameter:kCB_DisableGyroflowStretch atTime:renderTime];
+    params.disableGyroflowStretch = [NSNumber numberWithBool:disableGyroflowStretch];
+    
+    //---------------------------------------------------------
     // Write the parameters to the pluginState as `NSData`:
     //---------------------------------------------------------
     NSError *newPluginStateError;
@@ -1341,22 +1380,23 @@
     //---------------------------------------------------------
     // Get the parameter data:
     //---------------------------------------------------------
-    NSString *uniqueIdentifier  = params.uniqueIdentifier;
-    NSNumber *timestamp         = params.timestamp;
-    NSString *gyroflowPath      = params.gyroflowPath;
-    NSString *gyroflowData      = params.gyroflowData;
-    NSNumber *fov               = params.fov;
-    NSNumber *smoothness        = params.smoothness;
-    NSNumber *lensCorrection    = params.lensCorrection;
+    NSString *uniqueIdentifier          = params.uniqueIdentifier;
+    NSNumber *timestamp                 = params.timestamp;
+    NSString *gyroflowPath              = params.gyroflowPath;
+    NSString *gyroflowData              = params.gyroflowData;
+    NSNumber *fov                       = params.fov;
+    NSNumber *smoothness                = params.smoothness;
+    NSNumber *lensCorrection            = params.lensCorrection;
+            
+    NSNumber *horizonLock               = params.horizonLock;
+    NSNumber *horizonRoll               = params.horizonRoll;
+    NSNumber *positionOffsetX           = params.positionOffsetX;
+    NSNumber *positionOffsetY           = params.positionOffsetY;
+    NSNumber *inputRotation             = params.inputRotation;
+    NSNumber *videoRotation             = params.videoRotation;
     
-    NSNumber *horizonLock       = params.horizonLock;
-    NSNumber *horizonRoll       = params.horizonRoll;
-    NSNumber *positionOffsetX   = params.positionOffsetX;
-    NSNumber *positionOffsetY   = params.positionOffsetY;
-    NSNumber *inputRotation     = params.inputRotation;
-    NSNumber *videoRotation     = params.videoRotation;
-    
-    NSNumber *fovOverview       = params.fovOverview;
+    NSNumber *fovOverview               = params.fovOverview;
+    NSNumber *disableGyroflowStretch    = params.disableGyroflowStretch;
     
     //NSLog(@"[Gyroflow Toolbox Renderer] uniqueIdentifier: '%@'", uniqueIdentifier);
         
@@ -1733,25 +1773,24 @@
     //---------------------------------------------------------
     // Collect all the Parameters for Gyroflow:
     //---------------------------------------------------------
-    const char*     sourceUniqueIdentifier  = [uniqueIdentifier UTF8String];
-    uint32_t        sourceWidth             = (uint32_t)inputTexture.width;
-    uint32_t        sourceHeight            = (uint32_t)inputTexture.height;
-    const char*     sourcePixelFormat       = [inputPixelFormat UTF8String];
-    const char*     sourcePath              = [gyroflowPath UTF8String];
-    const char*     sourceData              = [gyroflowData UTF8String];
-    int64_t         sourceTimestamp         = [timestamp floatValue];
-    double          sourceFOV               = [fov doubleValue];
-    double          sourceSmoothness        = [smoothness doubleValue];
-    double          sourceLensCorrection    = [lensCorrection doubleValue] / 100.0;
-    double          sourceHorizonLock       = [horizonLock doubleValue];
-    double          sourceHorizonRoll       = [horizonRoll doubleValue];
-    double          sourcePositionOffsetX   = [positionOffsetX doubleValue];
-    double          sourcePositionOffsetY   = [positionOffsetY doubleValue];
-    double          sourceInputRotation     = [inputRotation doubleValue];
-    double          sourceVideoRotation     = [videoRotation doubleValue];
-    uint8_t         sourceFOVOverview       = [fovOverview unsignedCharValue];
-    
-    NSLog(@"[Gyroflow Toolbox Renderer] sourceFOVOverview: %hhu", sourceFOVOverview);
+    const char*     xUniqueIdentifier          = [uniqueIdentifier UTF8String];
+    uint32_t        xWidth                     = (uint32_t)inputTexture.width;
+    uint32_t        xHeight                    = (uint32_t)inputTexture.height;
+    const char*     xPixelFormat               = [inputPixelFormat UTF8String];
+    const char*     xPath                      = [gyroflowPath UTF8String];
+    const char*     xData                      = [gyroflowData UTF8String];
+    int64_t         xTimestamp                 = [timestamp floatValue];
+    double          xFOV                       = [fov doubleValue];
+    double          xSmoothness                = [smoothness doubleValue];
+    double          xLensCorrection            = [lensCorrection doubleValue] / 100.0;
+    double          xHorizonLock               = [horizonLock doubleValue];
+    double          xHorizonRoll               = [horizonRoll doubleValue];
+    double          xPositionOffsetX           = [positionOffsetX doubleValue];
+    double          xPositionOffsetY           = [positionOffsetY doubleValue];
+    double          xInputRotation             = [inputRotation doubleValue];
+    double          xVideoRotation             = [videoRotation doubleValue];
+    uint8_t         xFOVOverview               = [fovOverview unsignedCharValue];
+    uint8_t         xDisableGyroflowStretch    = [disableGyroflowStretch unsignedCharValue];
     
     //---------------------------------------------------------
     // Only trigger the Rust function if we have Gyroflow Data:
@@ -1761,24 +1800,25 @@
         // Trigger the Gyroflow Rust Function:
         //---------------------------------------------------------
         const char* result = processFrame(
-                              sourceUniqueIdentifier,   // const char*
-                              sourceWidth,              // uint32_t
-                              sourceHeight,             // uint32_t
-                              sourcePixelFormat,        // const char*
+                              xUniqueIdentifier,        // const char*
+                              xWidth,                   // uint32_t
+                              xHeight,                  // uint32_t
+                              xPixelFormat,             // const char*
                               numberOfBytes,            // int
-                              sourcePath,               // const char*
-                              sourceData,               // const char*
-                              sourceTimestamp,          // int64_t
-                              sourceFOV,                // double
-                              sourceSmoothness,         // double
-                              sourceLensCorrection,     // double
-                              sourceHorizonLock,        // double
-                              sourceHorizonRoll,        // double
-                              sourcePositionOffsetX,    // double
-                              sourcePositionOffsetY,    // double
-                              sourceInputRotation,      // double
-                              sourceVideoRotation,      // double
-                              sourceFOVOverview,        // uint8_t
+                              xPath,                    // const char*
+                              xData,                    // const char*
+                              xTimestamp,               // int64_t
+                              xFOV,                     // double
+                              xSmoothness,              // double
+                              xLensCorrection,          // double
+                              xHorizonLock,             // double
+                              xHorizonRoll,             // double
+                              xPositionOffsetX,         // double
+                              xPositionOffsetY,         // double
+                              xInputRotation,           // double
+                              xVideoRotation,           // double
+                              xFOVOverview,             // uint8_t
+                              xDisableGyroflowStretch,  // uint8_t
                               inputTexture,             // MTLTexture
                               outputTexture,            // MTLTexture
                               commandQueue              // MTLCommandQueue

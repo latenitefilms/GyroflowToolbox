@@ -31,6 +31,7 @@ const char* processFrame(
     double                      input_rotation,
     double                      video_rotation,
     uint8_t                     fov_overview,
+    uint8_t                     disable_gyroflow_stretch,
     void                        *in_mtl_texture,
     void                        *out_mtl_texture,
     void                        *command_queue

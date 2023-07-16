@@ -10,13 +10,21 @@
 
 //---------------------------------------------------------
 // Plugin Parameter Constants:
+//
+// NOTE TO FUTURE SELF: The reason the below numbers are
+//                      out of order is to retain backwards
+//                      compatibility with the original
+//                      Mac App Store release.
 //---------------------------------------------------------
 enum {
+    
+    
     /*
+     THIS IS WHAT GOES IN THE MOTION TEMPLATE:
+     
      <publishSettings>
          <version>2</version>
          <target object="10036" channel="./1" name=""/>
-         <target object="10036" channel="./3" name=""/>
          <target object="10036" channel="./5" name="Import"/>
          <target object="10036" channel="./90" name="Gyroflow Parameters"/>
          <target object="10036" channel="./300" name="Tools"/>
@@ -66,6 +74,7 @@ enum {
     kCB_ToolsSection                            = 300,
     
         kCB_FieldOfViewOverview                 = 310,
+        kCB_DisableGyroflowStretch              = 320,
     
     //---------------------------------------------------------
     // File Management:

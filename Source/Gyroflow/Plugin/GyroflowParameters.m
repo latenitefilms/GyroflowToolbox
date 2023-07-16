@@ -32,6 +32,7 @@
 @synthesize videoRotation;
 
 @synthesize fovOverview;
+@synthesize disableGyroflowStretch;
 
 + (BOOL)supportsSecureCoding
 {
@@ -55,49 +56,52 @@
     [videoRotation release];
     
     [fovOverview release];
+    [disableGyroflowStretch release];
     
     [super dealloc];
 }
 
 - (id)initWithCoder:(NSCoder *)decoder {
     if (self = [super init]) {
-        self.uniqueIdentifier       = [decoder decodeObjectOfClass:[NSString class] forKey:@"uniqueIdentifier"];
-        self.gyroflowPath           = [decoder decodeObjectOfClass:[NSString class] forKey:@"gyroflowPath"];
-        self.gyroflowData           = [decoder decodeObjectOfClass:[NSString class] forKey:@"gyroflowData"];
-        self.timestamp              = [decoder decodeObjectOfClass:[NSNumber class] forKey:@"timestamp"];
-        self.fov                    = [decoder decodeObjectOfClass:[NSNumber class] forKey:@"fov"];
-        self.smoothness             = [decoder decodeObjectOfClass:[NSNumber class] forKey:@"smoothness"];
-        self.lensCorrection         = [decoder decodeObjectOfClass:[NSNumber class] forKey:@"lensCorrection"];
-                
-        self.horizonLock            = [decoder decodeObjectOfClass:[NSNumber class] forKey:@"horizonLock"];
-        self.horizonRoll            = [decoder decodeObjectOfClass:[NSNumber class] forKey:@"horizonRoll"];
-        self.positionOffsetX        = [decoder decodeObjectOfClass:[NSNumber class] forKey:@"positionOffsetX"];
-        self.positionOffsetY        = [decoder decodeObjectOfClass:[NSNumber class] forKey:@"positionOffsetY"];
-        self.inputRotation          = [decoder decodeObjectOfClass:[NSNumber class] forKey:@"inputRotation"];
-        self.videoRotation          = [decoder decodeObjectOfClass:[NSNumber class] forKey:@"videoRotation"];
-        
-        self.fovOverview          = [decoder decodeObjectOfClass:[NSNumber class] forKey:@"fovOverview"];
+        self.uniqueIdentifier           = [decoder decodeObjectOfClass:[NSString class] forKey:@"uniqueIdentifier"];
+        self.gyroflowPath               = [decoder decodeObjectOfClass:[NSString class] forKey:@"gyroflowPath"];
+        self.gyroflowData               = [decoder decodeObjectOfClass:[NSString class] forKey:@"gyroflowData"];
+        self.timestamp                  = [decoder decodeObjectOfClass:[NSNumber class] forKey:@"timestamp"];
+        self.fov                        = [decoder decodeObjectOfClass:[NSNumber class] forKey:@"fov"];
+        self.smoothness                 = [decoder decodeObjectOfClass:[NSNumber class] forKey:@"smoothness"];
+        self.lensCorrection             = [decoder decodeObjectOfClass:[NSNumber class] forKey:@"lensCorrection"];
+                    
+        self.horizonLock                = [decoder decodeObjectOfClass:[NSNumber class] forKey:@"horizonLock"];
+        self.horizonRoll                = [decoder decodeObjectOfClass:[NSNumber class] forKey:@"horizonRoll"];
+        self.positionOffsetX            = [decoder decodeObjectOfClass:[NSNumber class] forKey:@"positionOffsetX"];
+        self.positionOffsetY            = [decoder decodeObjectOfClass:[NSNumber class] forKey:@"positionOffsetY"];
+        self.inputRotation              = [decoder decodeObjectOfClass:[NSNumber class] forKey:@"inputRotation"];
+        self.videoRotation              = [decoder decodeObjectOfClass:[NSNumber class] forKey:@"videoRotation"];
+            
+        self.fovOverview                = [decoder decodeObjectOfClass:[NSNumber class] forKey:@"fovOverview"];
+        self.disableGyroflowStretch     = [decoder decodeObjectOfClass:[NSNumber class] forKey:@"disableGyroflowStretch"];
     }
     return self;
 }
 
 - (void)encodeWithCoder:(NSCoder *)encoder {
-    [encoder encodeObject:uniqueIdentifier  forKey:@"uniqueIdentifier"];
-    [encoder encodeObject:gyroflowPath      forKey:@"gyroflowPath"];
-    [encoder encodeObject:gyroflowData      forKey:@"gyroflowData"];
-    [encoder encodeObject:timestamp         forKey:@"timestamp"];
-    [encoder encodeObject:fov               forKey:@"fov"];
-    [encoder encodeObject:smoothness        forKey:@"smoothness"];
-    [encoder encodeObject:lensCorrection    forKey:@"lensCorrection"];
+    [encoder encodeObject:uniqueIdentifier          forKey:@"uniqueIdentifier"];
+    [encoder encodeObject:gyroflowPath              forKey:@"gyroflowPath"];
+    [encoder encodeObject:gyroflowData              forKey:@"gyroflowData"];
+    [encoder encodeObject:timestamp                 forKey:@"timestamp"];
+    [encoder encodeObject:fov                       forKey:@"fov"];
+    [encoder encodeObject:smoothness                forKey:@"smoothness"];
+    [encoder encodeObject:lensCorrection            forKey:@"lensCorrection"];
     
-    [encoder encodeObject:horizonLock       forKey:@"horizonLock"];
-    [encoder encodeObject:horizonRoll       forKey:@"horizonRoll"];
-    [encoder encodeObject:positionOffsetX   forKey:@"positionOffsetX"];
-    [encoder encodeObject:positionOffsetY   forKey:@"positionOffsetY"];
-    [encoder encodeObject:inputRotation     forKey:@"inputRotation"];
-    [encoder encodeObject:videoRotation     forKey:@"videoRotation"];
+    [encoder encodeObject:horizonLock               forKey:@"horizonLock"];
+    [encoder encodeObject:horizonRoll               forKey:@"horizonRoll"];
+    [encoder encodeObject:positionOffsetX           forKey:@"positionOffsetX"];
+    [encoder encodeObject:positionOffsetY           forKey:@"positionOffsetY"];
+    [encoder encodeObject:inputRotation             forKey:@"inputRotation"];
+    [encoder encodeObject:videoRotation             forKey:@"videoRotation"];
     
-    [encoder encodeObject:fovOverview       forKey:@"fovOverview"];
+    [encoder encodeObject:fovOverview               forKey:@"fovOverview"];
+    [encoder encodeObject:disableGyroflowStretch    forKey:@"disableGyroflowStretch"];    
 }
 
 @end
