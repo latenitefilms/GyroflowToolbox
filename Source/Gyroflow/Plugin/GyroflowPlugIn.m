@@ -78,6 +78,16 @@
         NSString *build = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleVersion"];
         NSLog(@"[Gyroflow Toolbox Renderer] Version: %@ (%@)", version, build);
                 
+        //---------------------------------------------------------
+        // Test Rust Block:
+        //---------------------------------------------------------
+        int32_t (^myBlock)(int32_t, int32_t) = ^int32_t(int32_t a, int32_t b) {
+            return a + b;
+        };
+        
+        int32_t result = run_block(myBlock);
+        NSLog(@"[Gyroflow Toolbox Renderer] Result from Rust: %d", result);
+        
         _apiManager = newApiManager;
     }
     return self;
@@ -231,7 +241,7 @@
         return view;
     } else if (parameterID == kCB_Header) {
         
-        NSRect frameRect = NSMakeRect(0, 0, 200, 184); // x y w h
+        NSRect frameRect = NSMakeRect(0, 0, 200, 234); // x y w h
         NSView* view = [[HeaderView alloc] initWithFrame:frameRect];
         
         headerView = view;
@@ -997,6 +1007,40 @@
     {
         if (error != NULL) {
             NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_GyroflowProjectData"};
+            *error = [NSError errorWithDomain:FxPlugErrorDomain
+                                         code:kFxError_InvalidParameter
+                                     userInfo:userInfo];
+        }
+        return NO;
+    }
+        
+    //---------------------------------------------------------
+    // ADD PARAMETER: 'Media Path' Text Box
+    //---------------------------------------------------------
+    if (![paramAPI addStringParameterWithName:@"Media Path"
+                                  parameterID:kCB_MediaPath
+                                 defaultValue:@""
+                               parameterFlags:kFxParameterFlag_HIDDEN | kFxParameterFlag_NOT_ANIMATABLE])
+    {
+        if (error != NULL) {
+            NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_MediaPath"};
+            *error = [NSError errorWithDomain:FxPlugErrorDomain
+                                         code:kFxError_InvalidParameter
+                                     userInfo:userInfo];
+        }
+        return NO;
+    }
+    
+    //---------------------------------------------------------
+    // ADD PARAMETER: 'Media Bookmark Data' Text Box
+    //---------------------------------------------------------
+    if (![paramAPI addStringParameterWithName:@"Media Bookmark Data"
+                                  parameterID:kCB_MediaBookmarkData
+                                 defaultValue:@""
+                               parameterFlags:kFxParameterFlag_HIDDEN | kFxParameterFlag_NOT_ANIMATABLE])
+    {
+        if (error != NULL) {
+            NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_MediaBookmarkData"};
             *error = [NSError errorWithDomain:FxPlugErrorDomain
                                          code:kFxError_InvalidParameter
                                      userInfo:userInfo];
@@ -2182,7 +2226,113 @@
 // BUTTON: 'Export Gyroflow Project'
 //---------------------------------------------------------
 - (void)buttonExportGyroflowProject {
-    [self showAlertWithMessage:@"Export!" info:@"Coming soon!"];
+    //---------------------------------------------------------
+    // Load the Custom Parameter Action API:
+    //---------------------------------------------------------
+    id<FxCustomParameterActionAPI_v4> actionAPI = [_apiManager apiForProtocol:@protocol(FxCustomParameterActionAPI_v4)];
+    if (actionAPI == nil) {
+        [self showAlertWithMessage:@"An error has occurred." info:@"Unable to retrieve 'FxCustomParameterActionAPI_v4'. This shouldn't happen, so it's probably a bug."];
+        return;
+    }
+        
+    //---------------------------------------------------------
+    // Use the Action API to allow us to change the parameters:
+    //---------------------------------------------------------
+    [actionAPI startAction:self];
+    
+    //---------------------------------------------------------
+    // Load the Parameter Retrieval API:
+    //---------------------------------------------------------
+    id<FxParameterRetrievalAPI_v6> paramGetAPI = [_apiManager apiForProtocol:@protocol(FxParameterRetrievalAPI_v6)];
+    if (paramGetAPI == nil) {
+        //---------------------------------------------------------
+        // Stop Action API:
+        //---------------------------------------------------------
+        [actionAPI endAction:self];
+        
+        [self showAlertWithMessage:@"An error has occurred." info:@"Unable to retrieve 'FxParameterRetrievalAPI_v6'.\n\nThis shouldn't happen, so it's probably a bug."];
+        return;
+    }
+    
+    //---------------------------------------------------------
+    // Get the existing Gyroflow Project Data:
+    //---------------------------------------------------------
+    NSString *gyroflowProjectData = nil;
+    [paramGetAPI getStringParameterValue:&gyroflowProjectData fromParameter:kCB_GyroflowProjectData];
+    
+    //---------------------------------------------------------
+    // Check that the Gyroflow Project is valid:
+    //---------------------------------------------------------
+    if (gyroflowProjectData == nil || [gyroflowProjectData isEqualToString:@""]) {
+        [actionAPI endAction:self];
+        NSString *errorMessage = @"There is currently no Gyroflow Project data loaded.\n\nPlease load a Gyroflow Project or Media File and try again.";
+        NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
+        [self showAlertWithMessage:@"No Gyroflow Project Found" info:errorMessage];
+        return;
+    }
+    
+    //---------------------------------------------------------
+    // Get the existing Gyroflow Project Path:
+    //---------------------------------------------------------
+    NSString *gyroflowProjectPath = nil;
+    [paramGetAPI getStringParameterValue:&gyroflowProjectPath fromParameter:kCB_GyroflowProjectPath];
+    
+    //---------------------------------------------------------
+    // Get the existing Gyroflow Project Path:
+    //---------------------------------------------------------
+    NSString *gyroflowProjectName = nil;
+    [paramGetAPI getStringParameterValue:&gyroflowProjectName fromParameter:kCB_LoadedGyroflowProject];
+    
+    if (gyroflowProjectName != nil || [gyroflowProjectName isEqualToString:@""]) {
+        gyroflowProjectName = [gyroflowProjectName stringByAppendingString:@".gyroflow"];
+    }
+    
+    //---------------------------------------------------------
+    // Stop the Action API:
+    //---------------------------------------------------------
+    [actionAPI endAction:self];
+    
+    //---------------------------------------------------------
+    // Display Save Panel:
+    //---------------------------------------------------------
+    NSSavePanel *savePanel = [NSSavePanel savePanel];
+
+    [savePanel setTitle:@"Choose a Location to Save Your Gyroflow Project"];
+    [savePanel setPrompt:@"Save"];
+    [savePanel setNameFieldStringValue:gyroflowProjectName];
+    [savePanel setDirectoryURL:[NSURL fileURLWithPath:gyroflowProjectPath]];
+    
+    //---------------------------------------------------------
+    // Limit the file type to Gyroflow supported media files:
+    //---------------------------------------------------------
+    UTType *gyroflow                 = [UTType typeWithFilenameExtension:@"gyroflow"];
+    
+    NSArray *allowedContentTypes    = [NSArray arrayWithObjects:gyroflow, nil];
+    [savePanel setAllowedContentTypes:allowedContentTypes];
+
+    //---------------------------------------------------------
+    // Show the Save Panel:
+    //---------------------------------------------------------
+    [savePanel beginWithCompletionHandler:^(NSInteger result){
+        if (result == NSModalResponseOK) {
+            NSURL *fileURL = [savePanel URL];
+                        
+            NSError *error = nil;
+            BOOL succeeded = [gyroflowProjectData writeToURL:fileURL
+                                                  atomically:YES
+                                                    encoding:NSUTF8StringEncoding
+                                                       error:&error];
+            if (!succeeded) {
+                //---------------------------------------------------------
+                // Failed to save:
+                //---------------------------------------------------------
+                [actionAPI endAction:self];
+                NSString *errorMessage = [NSString stringWithFormat:@"Failed to write the Gyroflow Project to '%@', due to:\n\n%@", [fileURL path], error.localizedDescription];
+                NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
+                [self showAlertWithMessage:@"An error has occurred" info:errorMessage];
+            }
+        }
+    }];
 }
 
 //---------------------------------------------------------
@@ -2410,7 +2560,7 @@
         [self showAlertWithMessage:@"An error has occurred." info:@"Unable to retrieve 'FxCustomParameterActionAPI_v4'. This shouldn't happen, so it's probably a bug."];
         return;
     }
-        
+    
     //---------------------------------------------------------
     // Use the Action API to allow us to change the parameters:
     //---------------------------------------------------------
@@ -2430,14 +2580,27 @@
         return;
     }
     
-    //---------------------------------------------------------
-    // Get the existing Gyroflow project path:
-    //---------------------------------------------------------
-    NSString *existingProjectPath = nil;
-    [paramGetAPI getStringParameterValue:&existingProjectPath fromParameter:kCB_GyroflowProjectPath];
+    NSString *pathToOpen = nil;
     
-    NSURL *existingProjectURL = [NSURL fileURLWithPath:existingProjectPath];
-            
+    //---------------------------------------------------------
+    // Get the existing Media path:
+    //---------------------------------------------------------
+    NSString *existingMediaPath = nil;
+    BOOL isMediaFile = NO;
+    [paramGetAPI getStringParameterValue:&existingMediaPath fromParameter:kCB_MediaPath];
+    
+    if (existingMediaPath != nil) {
+        isMediaFile = YES;
+        pathToOpen = [NSString stringWithString:existingMediaPath];
+    } else {
+        //---------------------------------------------------------
+        // Get the existing Gyroflow project path:
+        //---------------------------------------------------------
+        NSString *existingProjectPath = nil;
+        [paramGetAPI getStringParameterValue:&existingProjectPath fromParameter:kCB_GyroflowProjectPath];
+        pathToOpen = [NSString stringWithString:existingProjectPath];
+    }
+    
     //---------------------------------------------------------
     // Open Gyroflow or the current Gyroflow Project:
     //---------------------------------------------------------
@@ -2445,68 +2608,79 @@
     NSURL *appURL = [[NSWorkspace sharedWorkspace] URLForApplicationWithBundleIdentifier:bundleIdentifier];
     
     if (appURL == nil) {
+        //---------------------------------------------------------
+        // Gyroflow is not installed:
+        //---------------------------------------------------------
         NSLog(@"[Gyroflow Toolbox Renderer] Could not find Gyroflow Installation");
         [actionAPI endAction:self];
-        [self showAlertWithMessage:@"Failed to launch Gyroflow." info:@"Please check that Gyroflow is installed and try again."];
+        [self showAlertWithMessage:@"Gyroflow Application Not Found" info:@"The Gyroflow application could not be found on your system.\n\nGyroflow is a free and open-source application, that is separate and independent of this Gyroflow Toolbox plugin.\n\nYou can download the latest version of Gyroflow from:\n\nhttps://gyroflow.xyz"];
         return;
     }
     
-    if (existingProjectPath == nil || [existingProjectPath isEqualToString:@""] || existingProjectURL == nil) {
-        NSLog(@"[Gyroflow Toolbox Renderer] Could not find existing project.");
+    if (pathToOpen == nil || [pathToOpen isEqualToString:@""]) {
+        //---------------------------------------------------------
+        // No Media file or Gyroflow Project loaded:
+        //---------------------------------------------------------
+        NSLog(@"[Gyroflow Toolbox Renderer] WARNING - No existing media or Gyroflow project was found so loading blank Gyroflow.");
         [[NSWorkspace sharedWorkspace] openURL:appURL];
     } else {
-       //---------------------------------------------------------
-       // Get the encoded bookmark string:
-       //---------------------------------------------------------
-       NSString *encodedBookmark;
-       [paramGetAPI getStringParameterValue:&encodedBookmark fromParameter:kCB_GyroflowProjectBookmarkData];
-       
-       //---------------------------------------------------------
-       // Make sure there's actually encoded bookmark data:
-       //---------------------------------------------------------
-       if ([encodedBookmark isEqualToString:@""]) {
-           NSLog(@"[Gyroflow Toolbox Renderer] Encoded Bookmark is empty.");
-           [[NSWorkspace sharedWorkspace] openURL:appURL];
-           [actionAPI endAction:self];
-           return;
-       }
-       
-       //---------------------------------------------------------
-       // Decode the Base64 bookmark data:
-       //---------------------------------------------------------
-       NSData *decodedBookmark = [[[NSData alloc] initWithBase64EncodedString:encodedBookmark
-                                                                 options:0] autorelease];
-
-       //---------------------------------------------------------
-       // Resolve the decoded bookmark data into a
-       // security-scoped URL:
-       //---------------------------------------------------------
-       NSError *bookmarkError  = nil;
-       BOOL isStale            = NO;
-       
-       NSURL *url = [NSURL URLByResolvingBookmarkData:decodedBookmark
-                                              options:NSURLBookmarkResolutionWithSecurityScope
-                                        relativeToURL:nil
-                                  bookmarkDataIsStale:&isStale
-                                                error:&bookmarkError];
-       
-       if (bookmarkError != nil) {
-           NSLog(@"[Gyroflow Toolbox Renderer] Bookmark error: %@", bookmarkError.localizedDescription);
-           [[NSWorkspace sharedWorkspace] openURL:appURL];
-           [actionAPI endAction:self];
-           return;
-       }
-       
-       //---------------------------------------------------------
-       // Read the Gyroflow Project Data from File:
-       //---------------------------------------------------------
+        //---------------------------------------------------------
+        // Get the encoded bookmark string:
+        //---------------------------------------------------------
+        NSString *encodedBookmark;
+                
+        if (isMediaFile) {
+            [paramGetAPI getStringParameterValue:&encodedBookmark fromParameter:kCB_MediaBookmarkData];
+        } else {
+            [paramGetAPI getStringParameterValue:&encodedBookmark fromParameter:kCB_GyroflowProjectBookmarkData];
+        }
+        
+        //---------------------------------------------------------
+        // Make sure there's actually encoded bookmark data:
+        //---------------------------------------------------------
+        if ([encodedBookmark isEqualToString:@""]) {
+            NSLog(@"[Gyroflow Toolbox Renderer] ERROR - Encoded security-scoped bookmark is empty when trying to launch Gyroflow.");
+            [[NSWorkspace sharedWorkspace] openURL:appURL];
+            [actionAPI endAction:self];
+            return;
+        }
+        
+        //---------------------------------------------------------
+        // Decode the Base64 bookmark data:
+        //---------------------------------------------------------
+        NSData *decodedBookmark = [[[NSData alloc] initWithBase64EncodedString:encodedBookmark
+                                                                       options:0] autorelease];
+        
+        //---------------------------------------------------------
+        // Resolve the decoded bookmark data into a
+        // security-scoped URL:
+        //---------------------------------------------------------
+        NSError *bookmarkError  = nil;
+        BOOL isStale            = NO;
+        
+        NSURL *url = [NSURL URLByResolvingBookmarkData:decodedBookmark
+                                               options:NSURLBookmarkResolutionWithSecurityScope
+                                         relativeToURL:nil
+                                   bookmarkDataIsStale:&isStale
+                                                 error:&bookmarkError];
+        
+        if (bookmarkError != nil) {
+            NSLog(@"[Gyroflow Toolbox Renderer] ERROR - Failed to resolve security-scoped bookmark when trying to launch Gyroflow due to: %@", bookmarkError.localizedDescription);
+            [[NSWorkspace sharedWorkspace] openURL:appURL];
+            [actionAPI endAction:self];
+            return;
+        }
+        
+        //---------------------------------------------------------
+        // Read the Gyroflow Project Data from File:
+        //---------------------------------------------------------
         if (![url startAccessingSecurityScopedResource]) {
             NSLog(@"[Gyroflow Toolbox Renderer] Failed to start security scoped resource: %@", url);
             [[NSWorkspace sharedWorkspace] openURL:appURL];
             [actionAPI endAction:self];
             return;
         }
-       
+        
         //---------------------------------------------------------
         // There is an existing project path, so load Gyroflow
         // with that path:
@@ -2607,7 +2781,7 @@
         //---------------------------------------------------------
         [actionAPI endAction:self];
         
-        [self showAlertWithMessage:@"An error has occurred." info:@"There's no previous security-scoped bookmark data found.\n\nPlease make sure you import a Gyroflow Project before attempting to reload."];
+        [self showAlertWithMessage:@"No active Gyroflow Project" info:@"There is currently no active Gyroflow Project loaded.\n\nEither you haven't imported a Gyroflow Project yet, or you imported a Media File that doesn't have a corresponding Gyroflow Project.\n\nIf you imported a Media File, you can use the 'Export Gyroflow Project' to save a Gyroflow Project locally."];
         return;
     }
     
@@ -2707,13 +2881,42 @@
 //---------------------------------------------------------
 // Import Dropped Media:
 //---------------------------------------------------------
-- (void)importDroppedMedia:(NSURL*)url {
+- (BOOL)importDroppedMedia:(NSData*)bookmarkData {
     
-    if (url == nil) {
-        [self showAlertWithMessage:@"An error has occurred" info:@"The dropped item contains no data."];
-        return;
+    /*
+    if ([[NSFileManager defaultManager] isReadableFileAtPath:[fileURL path]]) {
+        NSLog(@"[Gyroflow Toolbox Renderer] Can read file: %@", [fileURL path]);
+    } else {
+        NSLog(@"[Gyroflow Toolbox Renderer] Failed to read file: %@", [fileURL path]);
+    }
+    */
+    
+    //---------------------------------------------------------
+    // Resolve the security-scope bookmark:
+    //---------------------------------------------------------
+    NSError *bookmarkError = nil;
+    BOOL isStale = NO;
+    
+    NSURL *url = [NSURL URLByResolvingBookmarkData:bookmarkData
+                                           options:NSURLBookmarkResolutionWithSecurityScope
+                                     relativeToURL:nil
+                               bookmarkDataIsStale:&isStale
+                                             error:&bookmarkError];
+    
+    if (bookmarkError != nil) {
+        NSLog(@"[Gyroflow Toolbox Renderer] ERROR - Failed to read security-scoped bookmark due to: %@", bookmarkError);
+        return NO;
     }
     
+    if (isStale) {
+        NSLog(@"[Gyroflow Toolbox Renderer] WARNING - Bookmark is stale!");
+    }
+    
+    if (![url startAccessingSecurityScopedResource]) {
+        NSLog(@"[Gyroflow Toolbox Renderer] ERROR - Could not start accessing the security-scoped bookmark.");
+        return NO;
+    }
+            
     NSLog(@"[Gyroflow Toolbox Renderer] importDroppedMedia URL: %@", [url path]);
     
     NSString *extension = [[url pathExtension] lowercaseString];
@@ -2741,6 +2944,13 @@
             [self importMediaWithOptionalURL:url];
         }
     }
+    
+    //---------------------------------------------------------
+    // Stop accessing the security scoped resource:
+    //---------------------------------------------------------
+    [url stopAccessingSecurityScopedResource];
+    
+    return YES;
 }
 
 //---------------------------------------------------------
@@ -2994,14 +3204,14 @@
 //---------------------------------------------------------
 
 //---------------------------------------------------------
-// Import Gyroflow Project with Optional URL:
+// Import Media with Optional URL:
 //---------------------------------------------------------
-- (void)importMediaWithOptionalURL:(NSURL*)optionalURL {
+- (BOOL)importMediaWithOptionalURL:(NSURL*)optionalURL {
     
     NSLog(@"[Gyroflow Toolbox Renderer] Import Media File!");
     
     NSURL *url = nil;
-    BOOL isAccessible = [optionalURL startAccessingSecurityScopedResource];
+    BOOL isAccessible = [[NSFileManager defaultManager] isReadableFileAtPath:[optionalURL path]]; //[optionalURL startAccessingSecurityScopedResource];
     
     if (isAccessible) {
         NSLog(@"[Gyroflow Toolbox Renderer] importMediaWithOptionalURL has an accessible NSURL!");
@@ -3035,7 +3245,7 @@
         //---------------------------------------------------------
         NSModalResponse result = [panel runModal];
         if (result != NSModalResponseOK) {
-            return;
+            return NO;
         }
         
         url = [panel URL];
@@ -3046,7 +3256,7 @@
         BOOL startedOK = [url startAccessingSecurityScopedResource];
         if (startedOK == NO) {
             [self showAlertWithMessage:@"An error has occurred." info:@"Failed to startAccessingSecurityScopedResource. This shouldn't happen."];
-            return;
+            return NO;
         }
     }
         
@@ -3059,11 +3269,11 @@
                                                );
     
     NSString *resultString = [NSString stringWithUTF8String: importResult];
-    NSLog(@"[Gyroflow Toolbox Renderer] resultString: %@", resultString);
+    //NSLog(@"[Gyroflow Toolbox Renderer] resultString: %@", resultString);
         
     if (resultString == nil || [resultString isEqualToString:@"FAIL"]) {
         [self showAlertWithMessage:@"An error has occurred" info:@"Failed to generate a Gyroflow Project from the Media File."];
-        return;
+        return NO;
     }
     
     //---------------------------------------------------------
@@ -3072,11 +3282,11 @@
     id<FxCustomParameterActionAPI_v4> actionAPI = [_apiManager apiForProtocol:@protocol(FxCustomParameterActionAPI_v4)];
     if (actionAPI == nil) {
         [self showAlertWithMessage:@"An error has occurred." info:@"Unable to retrieve 'FxCustomParameterActionAPI_v4' in ImportGyroflowProjectView's 'buttonPressed'. This shouldn't happen."];
-        return;
+        return NO;
     }
     
     NSString *selectedGyroflowProjectFile            = [[url lastPathComponent] stringByDeletingPathExtension];
-    NSString *selectedGyroflowProjectPath            = [[[url lastPathComponent] stringByDeletingPathExtension] stringByAppendingString:@".gyroflow"];
+    NSString *selectedGyroflowProjectPath            = [[url path] stringByAppendingString:@".gyroflow"];
     NSString *selectedGyroflowProjectBookmarkData    = @"";
     
     //---------------------------------------------------------
@@ -3090,7 +3300,7 @@
         NSString *errorMessage = [NSString stringWithFormat:@"There was an unexpected error reading the JSON data:\n\n%@", jsonError.localizedDescription];
         NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
         [self showAlertWithMessage:@"Failed to open Gyroflow Project" info:errorMessage];
-        return;
+        return NO;
     }
     
     //---------------------------------------------------------
@@ -3100,21 +3310,49 @@
     NSString *hasDataResult = [NSString stringWithUTF8String: hasData];
     NSLog(@"[Gyroflow Toolbox Renderer] hasDataResult: %@", hasDataResult);
     if (hasDataResult == nil || ![hasDataResult isEqualToString:@"PASS"]) {
-        NSString *errorMessage = @"The Gyroflow file you imported doesn't seem to contain any gyro data.\n\nPlease try exporting from Gyroflow again using the 'Export project file (including gyro data)' option.";
+        NSString *errorMessage = @"The file you imported doesn't seem to contain any gyroscope data.\n\nPlease check the media file to make sure it's correct and valid.";
         NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
-        [self showAlertWithMessage:@"Gyro Data Not Found." info:errorMessage];
-        return;
+        [self showAlertWithMessage:@"Missing Gyroscope Data" info:errorMessage];
+        return NO;
     }
+    
+    //---------------------------------------------------------
+    // Create a new security-scoped bookmark:
+    //---------------------------------------------------------
+    NSError *bookmarkError = nil;
+    NSURLBookmarkCreationOptions bookmarkOptions = NSURLBookmarkCreationWithSecurityScope | NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess;
+    NSData *bookmarkData = [url bookmarkDataWithOptions:bookmarkOptions
+                         includingResourceValuesForKeys:nil
+                                          relativeToURL:nil
+                                                  error:&bookmarkError];
+    
+    if (bookmarkError != nil) {
+        NSString *errorMessage = [NSString stringWithFormat:@"Unable to create security-scoped bookmark in importMediaWithOptionalURL ('%@') due to: %@", url, bookmarkError];
+        NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
+        [self showAlertWithMessage:@"An error has occurred" info:errorMessage];
+        return NO;
+    }
+    
+    if (bookmarkData == nil) {
+        NSString *errorMessage = [NSString stringWithFormat:@"Unable to create security-scoped bookmark in importMediaWithOptionalURL ('%@') due to: Bookmark is nil.", url];
+        NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
+        [self showAlertWithMessage:@"An error has occurred" info:errorMessage];
+        return NO;
+    }
+    
+    NSString *mediaBookmarkData = [bookmarkData base64EncodedStringWithOptions:0];
     
     //---------------------------------------------------------
     // Get the current 'FOV' value:
     //---------------------------------------------------------
+    // TODO: This should be using Rust API.
     NSDictionary *stabilizationData = [jsonData objectForKey:@"stabilization"];
     NSNumber *fov = [stabilizationData objectForKey:@"fov"];
     
     //---------------------------------------------------------
     // Get the current 'Smoothness' value:
     //---------------------------------------------------------
+    // TODO: This should be using Rust API.
     NSArray *smoothnessParams = [stabilizationData objectForKey:@"smoothing_params"];
     NSNumber *smoothness = nil;
     for (NSDictionary *param in smoothnessParams) {
@@ -3127,6 +3365,7 @@
     //---------------------------------------------------------
     // Get the current 'Lens Correction' value:
     //---------------------------------------------------------
+    // TODO: This should be using Rust API.
     NSNumber *lensCorrection = [stabilizationData objectForKey:@"lens_correction_amount"];
     
     //---------------------------------------------------------
@@ -3143,25 +3382,40 @@
         NSString *errorMessage = @"Unable to retrieve FxParameterSettingAPI_v5 in 'selectFileButtonPressed'. This shouldn't happen.";
         NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
         [self showAlertWithMessage:@"An error has occurred." info:errorMessage];
-        return;
+        return NO;
     }
     
+    //---------------------------------------------------------
+    // Update 'Media Path':
+    //---------------------------------------------------------
+    [paramSetAPI setStringParameterValue:path toParameter:kCB_MediaPath];
+    NSLog(@"[Gyroflow Toolbox Renderer] mediaPath: %@", path);
+    
+    //---------------------------------------------------------
+    // Update 'Media Bookmark Data':
+    //---------------------------------------------------------
+    [paramSetAPI setStringParameterValue:mediaBookmarkData toParameter:kCB_MediaBookmarkData];
+    //NSLog(@"[Gyroflow Toolbox Renderer] mediaBookmarkData: %@", mediaBookmarkData);
+            
     //---------------------------------------------------------
     // Generate a unique identifier:
     //---------------------------------------------------------
     NSUUID *uuid = [NSUUID UUID];
     NSString *uniqueIdentifier = uuid.UUIDString;
     [paramSetAPI setStringParameterValue:uniqueIdentifier toParameter:kCB_UniqueIdentifier];
-    
+    NSLog(@"[Gyroflow Toolbox Renderer] uniqueIdentifier: %@", uniqueIdentifier);
+          
     //---------------------------------------------------------
     // Update 'Gyroflow Project Path':
     //---------------------------------------------------------
     [paramSetAPI setStringParameterValue:selectedGyroflowProjectPath toParameter:kCB_GyroflowProjectPath];
+    NSLog(@"[Gyroflow Toolbox Renderer] selectedGyroflowProjectPath: %@", selectedGyroflowProjectPath);
     
     //---------------------------------------------------------
     // Update 'Gyroflow Project Bookmark Data':
     //---------------------------------------------------------
     [paramSetAPI setStringParameterValue:selectedGyroflowProjectBookmarkData toParameter:kCB_GyroflowProjectBookmarkData];
+    NSLog(@"[Gyroflow Toolbox Renderer] selectedGyroflowProjectBookmarkData: %@", selectedGyroflowProjectBookmarkData);
     
     //---------------------------------------------------------
     // Update 'Gyroflow Project Data':
@@ -3172,6 +3426,7 @@
     // Update 'Loaded Gyroflow Project' Text Box:
     //---------------------------------------------------------
     [paramSetAPI setStringParameterValue:selectedGyroflowProjectFile toParameter:kCB_LoadedGyroflowProject];
+    NSLog(@"[Gyroflow Toolbox Renderer] selectedGyroflowProjectFile: %@", selectedGyroflowProjectFile);
     
     //---------------------------------------------------------
     // Set parameters from Gyroflow Project file:
@@ -3201,6 +3456,7 @@
     //---------------------------------------------------------
     [self showAlertWithMessage:@"Success!" info:@"The Gyroflow Project has been successfully imported.\n\nYou can now adjust the parameters as required."];
     
+    return YES;
 }
 
 //---------------------------------------------------------

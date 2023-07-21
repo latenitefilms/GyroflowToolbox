@@ -49,7 +49,18 @@ const char* doesGyroflowProjectContainStabilisationData(
     const char*                 gyroflow_project_data
 );
 
+const char* isOfficialLensLoaded(
+    const char*                 gyroflow_project_data
+);
+
 const char* loadLensProfile(
     const char*                 gyroflow_project_data,
     const char*                 lens_profile_path
 );
+
+//
+// Just a test:
+//
+int32_t run_block(int32_t (^block)(int32_t, int32_t));
+
+//double set_keyframe_provider(const char *, double (^block)(int32_t, double));

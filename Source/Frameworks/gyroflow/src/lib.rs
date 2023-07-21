@@ -21,6 +21,15 @@ use std::os::raw::c_char;                   // Allows us to use `*const c_uchar`
 use std::sync::Arc;                         // Adds Atomic Reference Count support
 use std::sync::atomic::AtomicBool;          // The AtomicBool type is a type of atomic variable that can be used in concurrent (multi-threaded) contexts.
 use std::sync::Mutex;                       // A mutual exclusion primitive useful for protecting shared data
+use block2::Block;
+
+//---------------------------------------------------------
+// Test Block:
+//---------------------------------------------------------
+#[no_mangle]
+unsafe extern "C" fn run_block(block: &Block<(i32, i32), i32>) -> i32 {
+    block.call((5, 8))
+}
 
 //---------------------------------------------------------
 // We only want to setup the Gyroflow Manager once for
@@ -28,6 +37,93 @@ use std::sync::Mutex;                       // A mutual exclusion primitive usef
 //---------------------------------------------------------
 lazy_static! {
     static ref MANAGER_CACHE: Mutex<LruCache<String, Arc<StabilizationManager>>> = Mutex::new(LruCache::new(std::num::NonZeroUsize::new(8).unwrap()));
+}
+
+//---------------------------------------------------------
+// Set Keyframe Provider:
+//---------------------------------------------------------
+/*
+struct UnsafeBlock(Block<(*const c_char, f64), f64>);
+unsafe impl Send for UnsafeBlock {}
+unsafe impl Sync for UnsafeBlock {}
+unsafe extern "C" fn set_keyframe_provider(cache_key: *const c_char, block: &UnsafeBlock) -> bool {
+    let block = block2::RcBlock::copy(block.0);
+    let cache_key = unsafe { CStr::from_ptr(cache_key) }.to_string_lossy().to_string();
+ 
+    let mut cache = MANAGER_CACHE.lock().unwrap();
+    if let Some(manager) = cache.get(&cache_key) {
+
+        log::error!("[Gyroflow Toolbox Rust] Got manager for key:: {cache_key}");
+ 
+        manager.keyframes.write().set_custom_provider(move |kf, typ, timestamp_ms| -> Option<f64> {
+            let use_gyroflow_internal_keyframes = false; // TODO: set from UI
+            if use_gyroflow_internal_keyframes && kf.is_keyframed_internally(typ) { return None; }
+            let keyframe_type_str = std::ffi::CString::new(format!("{typ:?}")).unwrap();
+            let value_from_fcpx = block.0.call((keyframe_type_str.as_ptr(), timestamp_ms));
+            
+            log::error!("[Gyroflow Toolbox Rust] Got keyframe value from FCPX:: {value_from_fcpx:?}");
+ 
+            Some(value_from_fcpx)
+        });
+        true
+    } else {       
+        log::error!("[Gyroflow Toolbox Rust] Didn't find cache key: {cache_key}, keyframe provider not set");
+        false
+    }
+ }
+*/
+
+//---------------------------------------------------------
+// Is official lens loaded?
+// Returns "YES" or "NO".
+//---------------------------------------------------------
+#[no_mangle]
+pub extern "C" fn isOfficialLensLoaded(
+    gyroflow_project_data: *const c_char,
+) -> *const c_char {    
+    //---------------------------------------------------------
+    // Convert the Gyroflow Project data to a `&str`:
+    //---------------------------------------------------------
+    let gyroflow_project_data_pointer = unsafe { CStr::from_ptr(gyroflow_project_data) };
+    let gyroflow_project_data_string = gyroflow_project_data_pointer.to_string_lossy();
+
+    let stab = StabilizationManager::default();
+
+    //---------------------------------------------------------
+    // Import the `gyroflow_project_data_string`:
+    //---------------------------------------------------------
+    let blocking = true;    
+    let cancel_flag = Arc::new(AtomicBool::new(false));
+    let mut is_preset = false;
+    match stab.import_gyroflow_data(
+        gyroflow_project_data_string.as_bytes(), 
+        blocking, 
+        None, 
+        |_|(),
+        cancel_flag,
+        &mut is_preset
+    ) {
+        Ok(_) => {
+            //---------------------------------------------------------
+            // Is official lens loaded?
+            //---------------------------------------------------------
+            let is_official_lens_loaded = stab.lens.read().official;
+            if is_official_lens_loaded {
+                let result = CString::new("YES").unwrap();
+                return result.into_raw()
+            } else {
+                let result = CString::new("NO").unwrap();
+                return result.into_raw()
+            }
+        },
+        Err(e) => {
+            // Handle the error case            
+            log::error!("[Gyroflow Toolbox Rust] Error importing gyroflow data: {:?}", e);
+            
+            let result = CString::new("NO").unwrap();
+            return result.into_raw()
+        },
+    }
 }
 
 //---------------------------------------------------------

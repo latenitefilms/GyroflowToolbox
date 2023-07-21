@@ -91,9 +91,13 @@ enum {
     // Hidden Metadata:
     //---------------------------------------------------------
     kCB_UniqueIdentifier                        = 500,
+    
     kCB_GyroflowProjectPath                     = 60,
     kCB_GyroflowProjectBookmarkData             = 70,
     kCB_GyroflowProjectData                     = 80,
+    
+    kCB_MediaPath                               = 510,
+    kCB_MediaBookmarkData                       = 520,
 };
 
 //---------------------------------------------------------

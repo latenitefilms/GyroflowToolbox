@@ -8,8 +8,6 @@
 #import "CustomDropZoneView.h"
 #import <FxPlug/FxPlugSDK.h>
 
-static NSString *const kFinalCutProUTI = @"com.apple.flexo.proFFPasteboardUTI";
-
 @interface CustomDropZoneView ()
 
 @property (nonatomic) bool dragIsOver;
@@ -38,8 +36,7 @@ static NSString *const kFinalCutProUTI = @"com.apple.flexo.proFFPasteboardUTI";
     {
         _apiManager = apiManager;
         
-        //[self registerForDraggedTypes:@[kFinalCutProUTI]];
-        NSArray *sortedPasteboardTypes = @[@"com.apple.finalcutpro.xml.v1-11", @"com.apple.finalcutpro.xml.v1-10", @"com.apple.finalcutpro.xml.v1-9", @"com.apple.finalcutpro.xml", kFinalCutProUTI, NSPasteboardTypeFileURL];
+        NSArray *sortedPasteboardTypes = @[NSPasteboardTypeFileURL, @"com.apple.finalcutpro.xml.v1-11", @"com.apple.finalcutpro.xml.v1-10", @"com.apple.finalcutpro.xml.v1-9", @"com.apple.finalcutpro.xml", @"com.apple.flexo.proFFPasteboardUTI"];
         [self registerForDraggedTypes:sortedPasteboardTypes];
         
         self.wantsLayer                 = YES;
@@ -62,7 +59,7 @@ static NSString *const kFinalCutProUTI = @"com.apple.flexo.proFFPasteboardUTI";
 //---------------------------------------------------------
 - (NSDragOperation)draggingEntered:(id <NSDraggingInfo>)sender {
     
-    NSArray *sortedPasteboardTypes = @[@"com.apple.finalcutpro.xml.v1-11", @"com.apple.finalcutpro.xml.v1-10", @"com.apple.finalcutpro.xml.v1-9", @"com.apple.finalcutpro.xml", NSPasteboardTypeFileURL];
+    NSArray *sortedPasteboardTypes = @[NSPasteboardTypeFileURL, @"com.apple.finalcutpro.xml.v1-11", @"com.apple.finalcutpro.xml.v1-10", @"com.apple.finalcutpro.xml.v1-9", @"com.apple.finalcutpro.xml"];
     for (NSPasteboardType pasteboardType in sortedPasteboardTypes) {
         if ( [[[sender draggingPasteboard] types] containsObject:pasteboardType] ) {
             _dragIsOver = true;
@@ -92,21 +89,38 @@ static NSString *const kFinalCutProUTI = @"com.apple.flexo.proFFPasteboardUTI";
         NSDictionary *options = [NSDictionary dictionaryWithObject:[NSNumber numberWithBool:YES] forKey:NSPasteboardURLReadingFileURLsOnlyKey];
         NSArray *fileURLs = [pasteboard readObjectsForClasses:classArray options:options];
         for (NSURL *fileURL in fileURLs) {
-            // Do something with fileURL
-            NSLog(@"[Gyroflow Toolbox Renderer] Dropped file: %@", [fileURL path]);
+            //---------------------------------------------------------
+            // Trigger Dropped File Method:
+            //---------------------------------------------------------
             
-            if ([fileURL startAccessingSecurityScopedResource]) {
-                NSLog(@"[Gyroflow Toolbox Renderer] SUCCESSFUL startAccessingSecurityScopedResource");
-            } else {
-                NSLog(@"[Gyroflow Toolbox Renderer] FAILED to startAccessingSecurityScopedResource");
+            NSLog(@"[Gyroflow Toolbox Renderer] Dropped file path: %@", [fileURL path]);
+                          
+            //---------------------------------------------------------
+            // Create a new security-scoped bookmark:
+            //---------------------------------------------------------
+            NSError *bookmarkError = nil;
+            NSURLBookmarkCreationOptions bookmarkOptions = NSURLBookmarkCreationWithSecurityScope | NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess;
+            NSData *bookmarkData = [fileURL bookmarkDataWithOptions:bookmarkOptions
+                                     includingResourceValuesForKeys:nil
+                                                      relativeToURL:nil
+                                                              error:&bookmarkError];
+            
+            if (bookmarkError != nil) {
+                NSLog(@"[Gyroflow Toolbox Renderer] ERROR - Unable to create security-scoped bookmark for dragged file ('%@') due to: %@", fileURL, bookmarkError);
+                return NO;
+            }
+            
+            if (bookmarkData == nil) {
+                NSLog(@"[Gyroflow Toolbox Renderer] ERROR - Unable to create security-scoped bookmark for dragged file ('%@') due to: Bookmark is nil.", fileURL);
+                return NO;
             }
             
             #pragma clang diagnostic push
             #pragma clang diagnostic ignored "-Wobjc-method-access"
-            [_parentPlugin importDroppedMedia:fileURL];
+            BOOL result = [_parentPlugin importDroppedMedia:bookmarkData];
             #pragma clang diagnostic pop
-            
-            return YES;
+                        
+            return result;
         }
         
     } else {
