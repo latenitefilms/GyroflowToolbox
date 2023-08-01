@@ -8,7 +8,7 @@ export REPO_HOME ; REPO_HOME="$(greadlink -f "${SCRIPT_HOME}/../")"
 
 cd "${REPO_HOME}/Source/Frameworks/gyroflow"
 ~/.cargo/bin/cargo clean
-~/.cargo/bin/cargo update
+#~/.cargo/bin/cargo update
 ~/.cargo/bin/cargo build --release --target x86_64-apple-darwin
 ~/.cargo/bin/cargo build --release --target aarch64-apple-darwin
 lipo -create -output "${REPO_HOME}/Source/Frameworks/gyroflow/target/libgyroflow_toolbox.dylib" "${REPO_HOME}/Source/Frameworks/gyroflow/target/x86_64-apple-darwin/release/libgyroflow_toolbox.dylib" "${REPO_HOME}/Source/Frameworks/gyroflow/target/aarch64-apple-darwin/release/libgyroflow_toolbox.dylib"

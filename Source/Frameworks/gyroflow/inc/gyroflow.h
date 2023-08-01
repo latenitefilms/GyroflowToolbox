@@ -9,9 +9,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-//
-// This is the "interface" to the Rust code:
-//
+//---------------------------------------------------------
+// Process a frame:
+//---------------------------------------------------------
 const char* processFrame(
     const char*                 unique_identifier,
     uint32_t                    width,
@@ -37,30 +37,66 @@ const char* processFrame(
     void                        *command_queue
 );
 
+//---------------------------------------------------------
+// Get default values from a Gyroflow Project:
+//---------------------------------------------------------
+const char* getDefaultValues(
+    const char* gyroflow_project_data,
+    double* fov,
+    double* smoothness,
+    double* lens_correction,
+    double* horizon_lock,
+    double* horizon_roll,
+    double* position_offset_x,
+    double* position_offset_y,
+    double* video_rotation
+);
+
+//---------------------------------------------------------
+// Trash the gyroflow_core cache:
+//---------------------------------------------------------
 uint32_t trashCache(
     void
 );
 
+//---------------------------------------------------------
+// Import Media File:
+//---------------------------------------------------------
 const char* importMediaFile(
     const char*                 media_file_path
 );
 
+//---------------------------------------------------------
+// Does the Gyroflow Project contain Stabilisation Data?
+//---------------------------------------------------------
 const char* doesGyroflowProjectContainStabilisationData(
     const char*                 gyroflow_project_data
 );
 
+//---------------------------------------------------------
+// Does the Gyroflow Project have accurate timestamps?
+//---------------------------------------------------------
+const char* hasAccurateTimestamps(
+    const char*                 gyroflow_project_data
+);
+
+//---------------------------------------------------------
+// Is an official lens loaded in the Gyroflow Project?
+//---------------------------------------------------------
 const char* isOfficialLensLoaded(
     const char*                 gyroflow_project_data
 );
 
+//---------------------------------------------------------
+// Load a Lens Profile into a Gyroflow Project:
+//---------------------------------------------------------
 const char* loadLensProfile(
     const char*                 gyroflow_project_data,
     const char*                 lens_profile_path
 );
 
-//
-// Just a test:
-//
-int32_t run_block(int32_t (^block)(int32_t, int32_t));
-
+//---------------------------------------------------------
+// Keyframe Provider Tests:
+//---------------------------------------------------------
+//int32_t run_block(int32_t (^block)(int32_t, int32_t));
 //double set_keyframe_provider(const char *, double (^block)(int32_t, double));
