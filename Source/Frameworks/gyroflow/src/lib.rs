@@ -1,7 +1,6 @@
 //! # Gyroflow Toolbox: Rust Interface
 //!
 //! This module allows for communication between the Gyroflow Toolbox Objective-C FxPlug4 code and the `gyroflow_core` Rust library.
-//!
 
 //---------------------------------------------------------
 // Local name bindings:
@@ -19,15 +18,6 @@ use std::os::raw::c_char;                   // Allows us to use `*const c_uchar`
 use std::sync::Arc;                         // Adds Atomic Reference Count support
 use std::sync::atomic::AtomicBool;          // The AtomicBool type is a type of atomic variable that can be used in concurrent (multi-threaded) contexts.
 use std::sync::Mutex;                       // A mutual exclusion primitive useful for protecting shared data
-use block2::Block;                          // Adds support for C Blocks
-
-//---------------------------------------------------------
-// Test Block:
-//---------------------------------------------------------
-#[no_mangle]
-unsafe extern "C" fn run_block(block: &Block<(i32, i32), i32>) -> i32 {
-    block.call((5, 8))
-}
 
 //---------------------------------------------------------
 // We only want to setup the Gyroflow Manager once for
@@ -36,42 +26,6 @@ unsafe extern "C" fn run_block(block: &Block<(i32, i32), i32>) -> i32 {
 lazy_static! {
     static ref MANAGER_CACHE: Mutex<LruCache<String, Arc<StabilizationManager>>> = Mutex::new(LruCache::new(std::num::NonZeroUsize::new(8).unwrap()));
 }
-
-//---------------------------------------------------------
-// Set Keyframe Provider:
-//
-// NOTE: This doesn't current work.
-//---------------------------------------------------------
-/*
-struct UnsafeBlock(Block<(*const c_char, f64), f64>);
-unsafe impl Send for UnsafeBlock {}
-unsafe impl Sync for UnsafeBlock {}
-unsafe extern "C" fn set_keyframe_provider(cache_key: *const c_char, block: &UnsafeBlock) -> bool {
-    let block = block2::RcBlock::copy(block.0);
-    let cache_key = unsafe { CStr::from_ptr(cache_key) }.to_string_lossy().to_string();
- 
-    let mut cache = MANAGER_CACHE.lock().unwrap();
-    if let Some(manager) = cache.get(&cache_key) {
-
-        log::error!("[Gyroflow Toolbox Rust] Got manager for key:: {cache_key}");
- 
-        manager.keyframes.write().set_custom_provider(move |kf, typ, timestamp_ms| -> Option<f64> {
-            let use_gyroflow_internal_keyframes = false; // TODO: set from UI
-            if use_gyroflow_internal_keyframes && kf.is_keyframed_internally(typ) { return None; }
-            let keyframe_type_str = std::ffi::CString::new(format!("{typ:?}")).unwrap();
-            let value_from_fcpx = block.0.call((keyframe_type_str.as_ptr(), timestamp_ms));
-            
-            log::error!("[Gyroflow Toolbox Rust] Got keyframe value from FCPX:: {value_from_fcpx:?}");
- 
-            Some(value_from_fcpx)
-        });
-        true
-    } else {       
-        log::error!("[Gyroflow Toolbox Rust] Didn't find cache key: {cache_key}, keyframe provider not set");
-        false
-    }
- }
-*/
 
 /// This function retrieves default values from a Gyroflow Project.
 ///
@@ -318,13 +272,6 @@ pub extern "C" fn doesGyroflowProjectContainStabilisationData(
             }
         }
     }
-
-    //---------------------------------------------------------
-    // NOTE: This doesn't actually do anything:
-    //---------------------------------------------------------
-    //stab.clear();
-
-    log::error!("[Gyroflow Toolbox Rust] gyroflow_project_data_string: {:?}", gyroflow_project_data_string);
 
     //---------------------------------------------------------
     // Import the `gyroflow_project_data_string`:
@@ -626,11 +573,6 @@ pub extern "C" fn importMediaFile(
     }
 
     //---------------------------------------------------------
-    // NOTE: This doesn't actually do anything:
-    //---------------------------------------------------------
-    //stab.clear();
-
-    //---------------------------------------------------------
     // Load video file:
     //---------------------------------------------------------
     match stab.load_video_file(&media_file_path_string, None) {
@@ -641,13 +583,6 @@ pub extern "C" fn importMediaFile(
             log::error!("[Gyroflow Toolbox Rust] An error occured: {:?}", e);
         }
     }
-
-    //---------------------------------------------------------
-    // Write the media file path:
-    //
-    // NOTE: This doesn't actually do anything:
-    //---------------------------------------------------------    
-    //stab.input_file.write().path = media_file_path_string.to_string();
     
     //---------------------------------------------------------
     // Export Gyroflow data:
