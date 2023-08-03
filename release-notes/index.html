@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="3.1.0.744388851719">
+    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="3.1.0.744413406544">
 
     <!-- See retype.com -->
     <meta name="generator" content="Retype 3.1.0">
@@ -11,7 +11,7 @@
     <!-- Primary Meta Tags -->
     <title>Release Notes</title>
     <meta name="title" content="Release Notes">
-    <meta name="description" content="🎉 Released:">
+    <meta name="description" content="4th August 2023">
 
     <!-- Canonical -->
     <link rel="canonical" href="https://gyroflowtoolbox.io/release-notes/">
@@ -20,24 +20,24 @@
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://gyroflowtoolbox.io/release-notes/">
     <meta property="og:title" content="Release Notes">
-    <meta property="og:description" content="🎉 Released:">
+    <meta property="og:description" content="4th August 2023">
     <meta property="og:image" content="https://gyroflowtoolbox.io/static/thumbnail.jpg">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
     <meta property="twitter:url" content="https://gyroflowtoolbox.io/release-notes/">
     <meta property="twitter:title" content="Release Notes">
-    <meta property="twitter:description" content="🎉 Released:">
+    <meta property="twitter:description" content="4th August 2023">
     <meta property="twitter:image" content="https://gyroflowtoolbox.io/static/thumbnail.jpg">
 
     <script data-cfasync="false">(function () { var el = document.documentElement, m = localStorage.getItem("doc_theme"), wm = window.matchMedia; if (m === "dark" || (!m && wm && wm("(prefers-color-scheme: dark)").matches)) { el.classList.add("dark") } else { el.classList.remove("dark") } })();</script>
 
     <link href="../static/favicon.ico" rel="icon">
-    <link href="../resources/css/retype.css?v=3.1.0.744388851719" rel="stylesheet">
+    <link href="../resources/css/retype.css?v=3.1.0.744413406544" rel="stylesheet">
 
-    <script data-cfasync="false" src="../resources/js/config.js?v=3.1.0.744388851719" data-turbo-eval="false" defer></script>
+    <script data-cfasync="false" src="../resources/js/config.js?v=3.1.0.744413406544" data-turbo-eval="false" defer></script>
     <script data-cfasync="false" src="../resources/js/retype.js?v=3.1.0" data-turbo-eval="false" defer></script>
-    <script id="lunr-js" data-cfasync="false" src="../resources/js/lunr.js?v=3.1.0.744388851719" data-turbo-eval="false" defer></script>
+    <script id="lunr-js" data-cfasync="false" src="../resources/js/lunr.js?v=3.1.0.744413406544" data-turbo-eval="false" defer></script>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <style>
@@ -371,19 +371,73 @@
         <span>Release Notes</span>
     </h1>
 </doc-anchor-target>
+<doc-anchor-target id="110">
+    <h3>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#110">#</doc-anchor-trigger>
+        <span>1.1.0</span>
+    </h3>
+</doc-anchor-target>
+<doc-anchor-target id="released">
+    <h4>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#released">#</doc-anchor-trigger>
+        <span><span class="docs-emoji">&#x1F389;</span> Released:</span>
+    </h4>
+</doc-anchor-target>
+<ul>
+<li>4th August 2023</li>
+</ul>
+<doc-anchor-target id="new-features">
+    <h4>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#new-features">#</doc-anchor-trigger>
+        <span><span class="docs-emoji">&#x1F389;</span> New Features:</span>
+    </h4>
+</doc-anchor-target>
+<ul>
+<li>This is the first update for Gyroflow Toolbox since its launch. We&#x27;ve listened to your feedback and have tried to make it easier, cleaner and faster to use. We&#x27;ve completely re-designed the interface in the Final Cut Pro Inspector, and have re-designed everything under-the-hood to make it faster. HUGE thank you to AdrianEddy for all his help, support and genius! AdrianEddy is the brains behind Gyroflow, and Gyroflow Toolbox wouldn&#x27;t exist without him - so again, thank you!</li>
+<li>You can now drag-and-drop media files from Final Cut Pro and Finder into the Inspector to load media into Gyroflow Toolbox. This includes BRAW Toolbox clips.</li>
+<li>You can now drag-and-drop Gyroflow Project files from Finder into the Inspector to load Gyroflow Projects into Gyroflow Toolbox.</li>
+<li>You can now press &quot;Import Last Gyroflow Project&quot; to load the last project that was opened in the Gyroflow application.</li>
+<li>You can now load Presets and Lens Profiles directly within Final Cut Pro.</li>
+<li>Gyroflow Toolbox is now compatible with the latest Gyroflow v1.5.2 release, as well as previous older releases.</li>
+<li>Added keyframe-able parameter controls for Horizontal Lock, Horizontal Roll, Position Offset, Input Rotation and Video Rotation.</li>
+<li>Added &quot;Stabilisation Overview&quot; &amp; &quot;Disable Gyroflow Stretch&quot; Tools.</li>
+<li>Added &quot;Reveal in Finder&quot; and &quot;Export Gyroflow Project&quot; File Management Utilities.</li>
+<li>The &quot;Launch Gyroflow&quot; button now opens the active Gyroflow Project or Media File if an existing file has already been loaded into Gyroflow Toolbox.</li>
+</ul>
+<doc-anchor-target id="bug-fixes">
+    <h4>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#bug-fixes">#</doc-anchor-trigger>
+        <span><span class="docs-emoji">&#x1F41E;</span> Bug Fixes:</span>
+    </h4>
+</doc-anchor-target>
+<ul>
+<li>Fixed a bug where reloading the Gyroflow Project didn&#x27;t do anything due to caching. Thanks for reporting richo!</li>
+<li>Fixed a bug where the Lens Correction was scaling at a different scale compared to Gyroflow. Thanks for reporting lagezon!</li>
+</ul>
+<hr>
 <doc-anchor-target id="100">
     <h3>
         <doc-anchor-trigger class="header-anchor-trigger" to="#100">#</doc-anchor-trigger>
         <span>1.0.0</span>
     </h3>
 </doc-anchor-target>
-<p><strong><span class="docs-emoji">&#x1F389;</span> Released:</strong></p>
+<doc-anchor-target id="released">
+    <h4>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#released">#</doc-anchor-trigger>
+        <span><span class="docs-emoji">&#x1F389;</span> Released:</span>
+    </h4>
+</doc-anchor-target>
 <ul>
 <li>1st January 2023</li>
 </ul>
 <p>This is the first non-beta release of Gyroflow Toolbox on GitHub! <span class="docs-emoji">&#x1F973;</span></p>
 <p>Thanks to everyone who helped beta test - especially <a href="https://github.com/JW144754" class="outbound" target="_blank"><span>@JW144754</span><svg xmlns="http://www.w3.org/2000/svg" class="docs-icon ml-1" viewBox="0 0 24 24" role="presentation"><g fill="currentColor"><path d="M15.5 2.25a.75.75 0 0 1 .75-.75h5.5a.75.75 0 0 1 .75.75v5.5a.75.75 0 0 1-1.5 0V4.06l-6.22 6.22a.75.75 0 1 1-1.06-1.06L19.94 3h-3.69a.75.75 0 0 1-.75-.75Z"/><path d="M2.5 4.25c0-.966.784-1.75 1.75-1.75h8.5a.75.75 0 0 1 0 1.5h-8.5a.25.25 0 0 0-.25.25v15.5c0 .138.112.25.25.25h15.5a.25.25 0 0 0 .25-.25v-8.5a.75.75 0 0 1 1.5 0v8.5a1.75 1.75 0 0 1-1.75 1.75H4.25a1.75 1.75 0 0 1-1.75-1.75V4.25Z"/></g></svg></a>! Also a HUGE thank you to the amazing <a href="https://github.com/AdrianEddy" class="outbound" target="_blank"><span>@AdrianEddy</span><svg xmlns="http://www.w3.org/2000/svg" class="docs-icon ml-1" viewBox="0 0 24 24" role="presentation"><g fill="currentColor"><path d="M15.5 2.25a.75.75 0 0 1 .75-.75h5.5a.75.75 0 0 1 .75.75v5.5a.75.75 0 0 1-1.5 0V4.06l-6.22 6.22a.75.75 0 1 1-1.06-1.06L19.94 3h-3.69a.75.75 0 0 1-.75-.75Z"/><path d="M2.5 4.25c0-.966.784-1.75 1.75-1.75h8.5a.75.75 0 0 1 0 1.5h-8.5a.25.25 0 0 0-.25.25v15.5c0 .138.112.25.25.25h15.5a.25.25 0 0 0 .25-.25v-8.5a.75.75 0 0 1 1.5 0v8.5a1.75 1.75 0 0 1-1.75 1.75H4.25a1.75 1.75 0 0 1-1.75-1.75V4.25Z"/></g></svg></a> for all his endless help, support and technical genius!</p>
-<p><strong><span class="docs-emoji">&#x1F528;</span> Improvements:</strong></p>
+<doc-anchor-target id="improvements">
+    <h4>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#improvements">#</doc-anchor-trigger>
+        <span><span class="docs-emoji">&#x1F528;</span> Improvements:</span>
+    </h4>
+</doc-anchor-target>
 <ul>
 <li>We have a new icon for Gyroflow Toolbox, designed by the insanely talented <a href="https://matthewskiles.com" class="outbound" target="_blank"><span>Matthew Skiles</span><svg xmlns="http://www.w3.org/2000/svg" class="docs-icon ml-1" viewBox="0 0 24 24" role="presentation"><g fill="currentColor"><path d="M15.5 2.25a.75.75 0 0 1 .75-.75h5.5a.75.75 0 0 1 .75.75v5.5a.75.75 0 0 1-1.5 0V4.06l-6.22 6.22a.75.75 0 1 1-1.06-1.06L19.94 3h-3.69a.75.75 0 0 1-.75-.75Z"/><path d="M2.5 4.25c0-.966.784-1.75 1.75-1.75h8.5a.75.75 0 0 1 0 1.5h-8.5a.25.25 0 0 0-.25.25v15.5c0 .138.112.25.25.25h15.5a.25.25 0 0 0 .25-.25v-8.5a.75.75 0 0 1 1.5 0v8.5a1.75 1.75 0 0 1-1.75 1.75H4.25a1.75 1.75 0 0 1-1.75-1.75V4.25Z"/></g></svg></a>.</li>
 <li>We no longer ask you for permission to the Movies folder again, if the Motion Template needs updating in a future update.</li>
@@ -395,11 +449,21 @@
         <span>1.0.0-beta.9</span>
     </h3>
 </doc-anchor-target>
-<p><strong><span class="docs-emoji">&#x1F389;</span> Released:</strong></p>
+<doc-anchor-target id="released">
+    <h4>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#released">#</doc-anchor-trigger>
+        <span><span class="docs-emoji">&#x1F389;</span> Released:</span>
+    </h4>
+</doc-anchor-target>
 <ul>
 <li>30th December 2022</li>
 </ul>
-<p><strong><span class="docs-emoji">&#x26A0;&#xFE0F;</span> Changes:</strong></p>
+<doc-anchor-target id="changes">
+    <h4>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#changes">#</doc-anchor-trigger>
+        <span><span class="docs-emoji">&#x26A0;&#xFE0F;</span> Changes:</span>
+    </h4>
+</doc-anchor-target>
 <ul>
 <li>Added support for macOS Big Sur. Thanks for suggesting <a href="https://twitter.com/Nikolai_Ch2" class="outbound" target="_blank"><span>Nikolai_Ch2</span><svg xmlns="http://www.w3.org/2000/svg" class="docs-icon ml-1" viewBox="0 0 24 24" role="presentation"><g fill="currentColor"><path d="M15.5 2.25a.75.75 0 0 1 .75-.75h5.5a.75.75 0 0 1 .75.75v5.5a.75.75 0 0 1-1.5 0V4.06l-6.22 6.22a.75.75 0 1 1-1.06-1.06L19.94 3h-3.69a.75.75 0 0 1-.75-.75Z"/><path d="M2.5 4.25c0-.966.784-1.75 1.75-1.75h8.5a.75.75 0 0 1 0 1.5h-8.5a.25.25 0 0 0-.25.25v15.5c0 .138.112.25.25.25h15.5a.25.25 0 0 0 .25-.25v-8.5a.75.75 0 0 1 1.5 0v8.5a1.75 1.75 0 0 1-1.75 1.75H4.25a1.75 1.75 0 0 1-1.75-1.75V4.25Z"/></g></svg></a>!</li>
 </ul>
@@ -410,11 +474,21 @@
         <span>1.0.0-beta.8</span>
     </h3>
 </doc-anchor-target>
-<p><strong><span class="docs-emoji">&#x1F389;</span> Released:</strong></p>
+<doc-anchor-target id="released">
+    <h4>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#released">#</doc-anchor-trigger>
+        <span><span class="docs-emoji">&#x1F389;</span> Released:</span>
+    </h4>
+</doc-anchor-target>
 <ul>
 <li>30th December 2022</li>
 </ul>
-<p><strong><span class="docs-emoji">&#x26A0;&#xFE0F;</span> Changes:</strong></p>
+<doc-anchor-target id="changes">
+    <h4>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#changes">#</doc-anchor-trigger>
+        <span><span class="docs-emoji">&#x26A0;&#xFE0F;</span> Changes:</span>
+    </h4>
+</doc-anchor-target>
 <ul>
 <li>Updated <code v-pre>gyroflow_core</code> which addresses the issue discussed in the 1.0.0-beta.6 release notes. Thanks <a href="https://github.com/AdrianEddy" class="outbound" target="_blank"><span>@AdrianEddy</span><svg xmlns="http://www.w3.org/2000/svg" class="docs-icon ml-1" viewBox="0 0 24 24" role="presentation"><g fill="currentColor"><path d="M15.5 2.25a.75.75 0 0 1 .75-.75h5.5a.75.75 0 0 1 .75.75v5.5a.75.75 0 0 1-1.5 0V4.06l-6.22 6.22a.75.75 0 1 1-1.06-1.06L19.94 3h-3.69a.75.75 0 0 1-.75-.75Z"/><path d="M2.5 4.25c0-.966.784-1.75 1.75-1.75h8.5a.75.75 0 0 1 0 1.5h-8.5a.25.25 0 0 0-.25.25v15.5c0 .138.112.25.25.25h15.5a.25.25 0 0 0 .25-.25v-8.5a.75.75 0 0 1 1.5 0v8.5a1.75 1.75 0 0 1-1.75 1.75H4.25a1.75 1.75 0 0 1-1.75-1.75V4.25Z"/></g></svg></a>!</li>
 </ul>
@@ -425,11 +499,21 @@
         <span>1.0.0-beta.7</span>
     </h3>
 </doc-anchor-target>
-<p><strong><span class="docs-emoji">&#x1F389;</span> Released:</strong></p>
+<doc-anchor-target id="released">
+    <h4>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#released">#</doc-anchor-trigger>
+        <span><span class="docs-emoji">&#x1F389;</span> Released:</span>
+    </h4>
+</doc-anchor-target>
 <ul>
 <li>30th December 2022</li>
 </ul>
-<p><strong><span class="docs-emoji">&#x1F41E;</span> Bug Fix:</strong></p>
+<doc-anchor-target id="bug-fix">
+    <h4>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#bug-fix">#</doc-anchor-trigger>
+        <span><span class="docs-emoji">&#x1F41E;</span> Bug Fix:</span>
+    </h4>
+</doc-anchor-target>
 <ul>
 <li>Fixed a memory leak by adding <code v-pre>[inputTexture setPurgeableState:MTLPurgeableStateEmpty];</code>.</li>
 </ul>
@@ -440,11 +524,21 @@
         <span>1.0.0-beta.6</span>
     </h3>
 </doc-anchor-target>
-<p><strong><span class="docs-emoji">&#x1F389;</span> Released:</strong></p>
+<doc-anchor-target id="released">
+    <h4>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#released">#</doc-anchor-trigger>
+        <span><span class="docs-emoji">&#x1F389;</span> Released:</span>
+    </h4>
+</doc-anchor-target>
 <ul>
 <li>30th December 2022</li>
 </ul>
-<p><strong><span class="docs-emoji">&#x1F41E;</span> Bug Fix:</strong></p>
+<doc-anchor-target id="bug-fix">
+    <h4>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#bug-fix">#</doc-anchor-trigger>
+        <span><span class="docs-emoji">&#x1F41E;</span> Bug Fix:</span>
+    </h4>
+</doc-anchor-target>
 <ul>
 <li>Fixed a bug where randomly sometimes the Gyroflow Toolbox effect would inconsistently just render the original image for a frame or two (as opposed to the stabilised image from Gyroflow). We&#x27;ve temporarily added a <code v-pre>command_buffer.wait_until_completed();</code> call inside <code v-pre>wgpu-hal</code> to fix the Metal scheduling order. This should be fixed in the <code v-pre>gyroflow_core</code> Rust code properly at some point. Thanks to <a href="https://github.com/AdrianEddy" class="outbound" target="_blank"><span>@AdrianEddy</span><svg xmlns="http://www.w3.org/2000/svg" class="docs-icon ml-1" viewBox="0 0 24 24" role="presentation"><g fill="currentColor"><path d="M15.5 2.25a.75.75 0 0 1 .75-.75h5.5a.75.75 0 0 1 .75.75v5.5a.75.75 0 0 1-1.5 0V4.06l-6.22 6.22a.75.75 0 1 1-1.06-1.06L19.94 3h-3.69a.75.75 0 0 1-.75-.75Z"/><path d="M2.5 4.25c0-.966.784-1.75 1.75-1.75h8.5a.75.75 0 0 1 0 1.5h-8.5a.25.25 0 0 0-.25.25v15.5c0 .138.112.25.25.25h15.5a.25.25 0 0 0 .25-.25v-8.5a.75.75 0 0 1 1.5 0v8.5a1.75 1.75 0 0 1-1.75 1.75H4.25a1.75 1.75 0 0 1-1.75-1.75V4.25Z"/></g></svg></a> for all his Discord problem solving genius!</li>
 </ul>
@@ -455,11 +549,21 @@
         <span>1.0.0-beta.5</span>
     </h3>
 </doc-anchor-target>
-<p><strong><span class="docs-emoji">&#x1F389;</span> Released:</strong></p>
+<doc-anchor-target id="released">
+    <h4>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#released">#</doc-anchor-trigger>
+        <span><span class="docs-emoji">&#x1F389;</span> Released:</span>
+    </h4>
+</doc-anchor-target>
 <ul>
 <li>30th December 2022</li>
 </ul>
-<p><strong><span class="docs-emoji">&#x1F41E;</span> Bug Fix:</strong></p>
+<doc-anchor-target id="bug-fix">
+    <h4>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#bug-fix">#</doc-anchor-trigger>
+        <span><span class="docs-emoji">&#x1F41E;</span> Bug Fix:</span>
+    </h4>
+</doc-anchor-target>
 <ul>
 <li>Fixed potential bug where images in Final Cut Pro could look funky and corrupt, by changing the <code v-pre>texture_copy</code> flag in <code v-pre>gyroflow_core</code> to <code v-pre>true</code> for both input and output Metal Textures.</li>
 </ul>
@@ -470,13 +574,23 @@
         <span>1.0.0-beta.4</span>
     </h3>
 </doc-anchor-target>
-<p><strong><span class="docs-emoji">&#x1F389;</span> Released:</strong></p>
+<doc-anchor-target id="released">
+    <h4>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#released">#</doc-anchor-trigger>
+        <span><span class="docs-emoji">&#x1F389;</span> Released:</span>
+    </h4>
+</doc-anchor-target>
 <ul>
 <li>29th December 2022</li>
 </ul>
-<p><strong><span class="docs-emoji">&#x1F528;</span> Improvements:</strong></p>
+<doc-anchor-target id="improvements">
+    <h4>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#improvements">#</doc-anchor-trigger>
+        <span><span class="docs-emoji">&#x1F528;</span> Improvements:</span>
+    </h4>
+</doc-anchor-target>
 <ul>
-<li>Gyroflow Toolbox now exchanges rendered data from <code v-pre>gyroflow_core</code> directly over a Metal. This should now give Gyroflow Toolbox very similar playback performance to the Gyroflow application. MASSIVE thank you to <a href="https://github.com/AdrianEddy" class="outbound" target="_blank"><span>@AdrianEddy</span><svg xmlns="http://www.w3.org/2000/svg" class="docs-icon ml-1" viewBox="0 0 24 24" role="presentation"><g fill="currentColor"><path d="M15.5 2.25a.75.75 0 0 1 .75-.75h5.5a.75.75 0 0 1 .75.75v5.5a.75.75 0 0 1-1.5 0V4.06l-6.22 6.22a.75.75 0 1 1-1.06-1.06L19.94 3h-3.69a.75.75 0 0 1-.75-.75Z"/><path d="M2.5 4.25c0-.966.784-1.75 1.75-1.75h8.5a.75.75 0 0 1 0 1.5h-8.5a.25.25 0 0 0-.25.25v15.5c0 .138.112.25.25.25h15.5a.25.25 0 0 0 .25-.25v-8.5a.75.75 0 0 1 1.5 0v8.5a1.75 1.75 0 0 1-1.75 1.75H4.25a1.75 1.75 0 0 1-1.75-1.75V4.25Z"/></g></svg></a> for all his amazing work and support making this happen! If you notice any glitches or issues on your machine, please submit a <a href="https://github.com/latenitefilms/GyroflowToolbox/issues" class="outbound" target="_blank"><span>GitHub Issue</span><svg xmlns="http://www.w3.org/2000/svg" class="docs-icon ml-1" viewBox="0 0 24 24" role="presentation"><g fill="currentColor"><path d="M15.5 2.25a.75.75 0 0 1 .75-.75h5.5a.75.75 0 0 1 .75.75v5.5a.75.75 0 0 1-1.5 0V4.06l-6.22 6.22a.75.75 0 1 1-1.06-1.06L19.94 3h-3.69a.75.75 0 0 1-.75-.75Z"/><path d="M2.5 4.25c0-.966.784-1.75 1.75-1.75h8.5a.75.75 0 0 1 0 1.5h-8.5a.25.25 0 0 0-.25.25v15.5c0 .138.112.25.25.25h15.5a.25.25 0 0 0 .25-.25v-8.5a.75.75 0 0 1 1.5 0v8.5a1.75 1.75 0 0 1-1.75 1.75H4.25a1.75 1.75 0 0 1-1.75-1.75V4.25Z"/></g></svg></a> and roll back to the previous 1.0.0-beta.3 release.</li>
+<li>Gyroflow Toolbox now exchanges rendered data from <code v-pre>gyroflow_core</code> directly over a Metal. This should now give Gyroflow Toolbox very similar playback performance to the Gyroflow application. MASSIVE thank you to <a href="https://github.com/AdrianEddy" class="outbound" target="_blank"><span>@AdrianEddy</span><svg xmlns="http://www.w3.org/2000/svg" class="docs-icon ml-1" viewBox="0 0 24 24" role="presentation"><g fill="currentColor"><path d="M15.5 2.25a.75.75 0 0 1 .75-.75h5.5a.75.75 0 0 1 .75.75v5.5a.75.75 0 0 1-1.5 0V4.06l-6.22 6.22a.75.75 0 1 1-1.06-1.06L19.94 3h-3.69a.75.75 0 0 1-.75-.75Z"/><path d="M2.5 4.25c0-.966.784-1.75 1.75-1.75h8.5a.75.75 0 0 1 0 1.5h-8.5a.25.25 0 0 0-.25.25v15.5c0 .138.112.25.25.25h15.5a.25.25 0 0 0 .25-.25v-8.5a.75.75 0 0 1 1.5 0v8.5a1.75 1.75 0 0 1-1.75 1.75H4.25a1.75 1.75 0 0 1-1.75-1.75V4.25Z"/></g></svg></a> for all his amazing work and support making this happen! If you notice any glitches or issues on your machine, please submit a <a href="https://github.com/latenitefilms/GyroflowToolbox/issues">GitHub Issue</a> and roll back to the previous 1.0.0-beta.3 release.</li>
 </ul>
 <hr>
 <doc-anchor-target id="100-beta3">
@@ -485,11 +599,21 @@
         <span>1.0.0-beta.3</span>
     </h3>
 </doc-anchor-target>
-<p><strong><span class="docs-emoji">&#x1F389;</span> Released:</strong></p>
+<doc-anchor-target id="released">
+    <h4>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#released">#</doc-anchor-trigger>
+        <span><span class="docs-emoji">&#x1F389;</span> Released:</span>
+    </h4>
+</doc-anchor-target>
 <ul>
 <li>22nd December 2022</li>
 </ul>
-<p><strong><span class="docs-emoji">&#x1F528;</span> Improvements:</strong></p>
+<doc-anchor-target id="improvements">
+    <h4>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#improvements">#</doc-anchor-trigger>
+        <span><span class="docs-emoji">&#x1F528;</span> Improvements:</span>
+    </h4>
+</doc-anchor-target>
 <ul>
 <li>Added support for 32-bit float and 8-bit images from Final Cut Pro and Apple Motion. MASSIVE thank you to <a href="https://github.com/AdrianEddy" class="outbound" target="_blank"><span>@AdrianEddy</span><svg xmlns="http://www.w3.org/2000/svg" class="docs-icon ml-1" viewBox="0 0 24 24" role="presentation"><g fill="currentColor"><path d="M15.5 2.25a.75.75 0 0 1 .75-.75h5.5a.75.75 0 0 1 .75.75v5.5a.75.75 0 0 1-1.5 0V4.06l-6.22 6.22a.75.75 0 1 1-1.06-1.06L19.94 3h-3.69a.75.75 0 0 1-.75-.75Z"/><path d="M2.5 4.25c0-.966.784-1.75 1.75-1.75h8.5a.75.75 0 0 1 0 1.5h-8.5a.25.25 0 0 0-.25.25v15.5c0 .138.112.25.25.25h15.5a.25.25 0 0 0 .25-.25v-8.5a.75.75 0 0 1 1.5 0v8.5a1.75 1.75 0 0 1-1.75 1.75H4.25a1.75 1.75 0 0 1-1.75-1.75V4.25Z"/></g></svg></a> for all his help and support! [Issue #5]</li>
 <li><code v-pre>OsLogger</code> initialisation now only happens once to avoid Console spamming. Thanks <a href="https://github.com/AdrianEddy" class="outbound" target="_blank"><span>@AdrianEddy</span><svg xmlns="http://www.w3.org/2000/svg" class="docs-icon ml-1" viewBox="0 0 24 24" role="presentation"><g fill="currentColor"><path d="M15.5 2.25a.75.75 0 0 1 .75-.75h5.5a.75.75 0 0 1 .75.75v5.5a.75.75 0 0 1-1.5 0V4.06l-6.22 6.22a.75.75 0 1 1-1.06-1.06L19.94 3h-3.69a.75.75 0 0 1-.75-.75Z"/><path d="M2.5 4.25c0-.966.784-1.75 1.75-1.75h8.5a.75.75 0 0 1 0 1.5h-8.5a.25.25 0 0 0-.25.25v15.5c0 .138.112.25.25.25h15.5a.25.25 0 0 0 .25-.25v-8.5a.75.75 0 0 1 1.5 0v8.5a1.75 1.75 0 0 1-1.75 1.75H4.25a1.75 1.75 0 0 1-1.75-1.75V4.25Z"/></g></svg></a>! [Issue #7]</li>
@@ -502,7 +626,12 @@
         <span>1.0.0-beta.2</span>
     </h3>
 </doc-anchor-target>
-<p><strong><span class="docs-emoji">&#x1F389;</span> Released:</strong></p>
+<doc-anchor-target id="released">
+    <h4>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#released">#</doc-anchor-trigger>
+        <span><span class="docs-emoji">&#x1F389;</span> Released:</span>
+    </h4>
+</doc-anchor-target>
 <ul>
 <li>22nd December 2022</li>
 </ul>
@@ -510,15 +639,25 @@
 <ul>
 <li>1.0.0-beta.2 makes changes to the Motion Template, so you&#x27;ll need to install the new Motion Template, then delete and reapply any Gyroflow Toolbox effects you have in your timeline.</li>
 </ul>
-<p><strong><span class="docs-emoji">&#x1F528;</span> Improvements:</strong></p>
+<doc-anchor-target id="improvements">
+    <h4>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#improvements">#</doc-anchor-trigger>
+        <span><span class="docs-emoji">&#x1F528;</span> Improvements:</span>
+    </h4>
+</doc-anchor-target>
 <ul>
 <li>We now make sure the Gyroflow Project contains processed gyro data before importing to avoid any confusion.</li>
-<li>We&#x27;ve renamed &quot;Import Gyroflow Project&quot; to &quot;Import Project&quot;, and &quot;Reload Gyroflow Project&quot; to &quot;Reload Project&quot; to avoid the buttons being clipped in the Final Cut Pro Inspector if you make the width of the Inspector as small as possible. Thanks <a href="https://github.com/JW144754" class="outbound" target="_blank"><span>@JW144754</span><svg xmlns="http://www.w3.org/2000/svg" class="docs-icon ml-1" viewBox="0 0 24 24" role="presentation"><g fill="currentColor"><path d="M15.5 2.25a.75.75 0 0 1 .75-.75h5.5a.75.75 0 0 1 .75.75v5.5a.75.75 0 0 1-1.5 0V4.06l-6.22 6.22a.75.75 0 1 1-1.06-1.06L19.94 3h-3.69a.75.75 0 0 1-.75-.75Z"/><path d="M2.5 4.25c0-.966.784-1.75 1.75-1.75h8.5a.75.75 0 0 1 0 1.5h-8.5a.25.25 0 0 0-.25.25v15.5c0 .138.112.25.25.25h15.5a.25.25 0 0 0 .25-.25v-8.5a.75.75 0 0 1 1.5 0v8.5a1.75 1.75 0 0 1-1.75 1.75H4.25a1.75 1.75 0 0 1-1.75-1.75V4.25Z"/></g></svg></a>! <a href="https://github.com/latenitefilms/GyroflowToolbox/issues/2" class="outbound" target="_blank"><span>Issue #2</span><svg xmlns="http://www.w3.org/2000/svg" class="docs-icon ml-1" viewBox="0 0 24 24" role="presentation"><g fill="currentColor"><path d="M15.5 2.25a.75.75 0 0 1 .75-.75h5.5a.75.75 0 0 1 .75.75v5.5a.75.75 0 0 1-1.5 0V4.06l-6.22 6.22a.75.75 0 1 1-1.06-1.06L19.94 3h-3.69a.75.75 0 0 1-.75-.75Z"/><path d="M2.5 4.25c0-.966.784-1.75 1.75-1.75h8.5a.75.75 0 0 1 0 1.5h-8.5a.25.25 0 0 0-.25.25v15.5c0 .138.112.25.25.25h15.5a.25.25 0 0 0 .25-.25v-8.5a.75.75 0 0 1 1.5 0v8.5a1.75 1.75 0 0 1-1.75 1.75H4.25a1.75 1.75 0 0 1-1.75-1.75V4.25Z"/></g></svg></a></li>
+<li>We&#x27;ve renamed &quot;Import Gyroflow Project&quot; to &quot;Import Project&quot;, and &quot;Reload Gyroflow Project&quot; to &quot;Reload Project&quot; to avoid the buttons being clipped in the Final Cut Pro Inspector if you make the width of the Inspector as small as possible. Thanks <a href="https://github.com/JW144754" class="outbound" target="_blank"><span>@JW144754</span><svg xmlns="http://www.w3.org/2000/svg" class="docs-icon ml-1" viewBox="0 0 24 24" role="presentation"><g fill="currentColor"><path d="M15.5 2.25a.75.75 0 0 1 .75-.75h5.5a.75.75 0 0 1 .75.75v5.5a.75.75 0 0 1-1.5 0V4.06l-6.22 6.22a.75.75 0 1 1-1.06-1.06L19.94 3h-3.69a.75.75 0 0 1-.75-.75Z"/><path d="M2.5 4.25c0-.966.784-1.75 1.75-1.75h8.5a.75.75 0 0 1 0 1.5h-8.5a.25.25 0 0 0-.25.25v15.5c0 .138.112.25.25.25h15.5a.25.25 0 0 0 .25-.25v-8.5a.75.75 0 0 1 1.5 0v8.5a1.75 1.75 0 0 1-1.75 1.75H4.25a1.75 1.75 0 0 1-1.75-1.75V4.25Z"/></g></svg></a>! <a href="https://github.com/latenitefilms/GyroflowToolbox/issues/2">Issue #2</a></li>
 <li>Improved error messages if pressing the &quot;Import Project&quot; button fails.</li>
 </ul>
-<p><strong><span class="docs-emoji">&#x1F41E;</span> Bug Fixes:</strong></p>
+<doc-anchor-target id="bug-fixes">
+    <h4>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#bug-fixes">#</doc-anchor-trigger>
+        <span><span class="docs-emoji">&#x1F41E;</span> Bug Fixes:</span>
+    </h4>
+</doc-anchor-target>
 <ul>
-<li>The Final Cut Pro Inspector should no longer hang for a long time when selecting a clip with Gyroflow Toolbox applied. Thanks <a href="https://github.com/JW144754" class="outbound" target="_blank"><span>@JW144754</span><svg xmlns="http://www.w3.org/2000/svg" class="docs-icon ml-1" viewBox="0 0 24 24" role="presentation"><g fill="currentColor"><path d="M15.5 2.25a.75.75 0 0 1 .75-.75h5.5a.75.75 0 0 1 .75.75v5.5a.75.75 0 0 1-1.5 0V4.06l-6.22 6.22a.75.75 0 1 1-1.06-1.06L19.94 3h-3.69a.75.75 0 0 1-.75-.75Z"/><path d="M2.5 4.25c0-.966.784-1.75 1.75-1.75h8.5a.75.75 0 0 1 0 1.5h-8.5a.25.25 0 0 0-.25.25v15.5c0 .138.112.25.25.25h15.5a.25.25 0 0 0 .25-.25v-8.5a.75.75 0 0 1 1.5 0v8.5a1.75 1.75 0 0 1-1.75 1.75H4.25a1.75 1.75 0 0 1-1.75-1.75V4.25Z"/></g></svg></a>! <a href="https://github.com/latenitefilms/GyroflowToolbox/issues/4" class="outbound" target="_blank"><span>Issue #4</span><svg xmlns="http://www.w3.org/2000/svg" class="docs-icon ml-1" viewBox="0 0 24 24" role="presentation"><g fill="currentColor"><path d="M15.5 2.25a.75.75 0 0 1 .75-.75h5.5a.75.75 0 0 1 .75.75v5.5a.75.75 0 0 1-1.5 0V4.06l-6.22 6.22a.75.75 0 1 1-1.06-1.06L19.94 3h-3.69a.75.75 0 0 1-.75-.75Z"/><path d="M2.5 4.25c0-.966.784-1.75 1.75-1.75h8.5a.75.75 0 0 1 0 1.5h-8.5a.25.25 0 0 0-.25.25v15.5c0 .138.112.25.25.25h15.5a.25.25 0 0 0 .25-.25v-8.5a.75.75 0 0 1 1.5 0v8.5a1.75 1.75 0 0 1-1.75 1.75H4.25a1.75 1.75 0 0 1-1.75-1.75V4.25Z"/></g></svg></a></li>
+<li>The Final Cut Pro Inspector should no longer hang for a long time when selecting a clip with Gyroflow Toolbox applied. Thanks <a href="https://github.com/JW144754" class="outbound" target="_blank"><span>@JW144754</span><svg xmlns="http://www.w3.org/2000/svg" class="docs-icon ml-1" viewBox="0 0 24 24" role="presentation"><g fill="currentColor"><path d="M15.5 2.25a.75.75 0 0 1 .75-.75h5.5a.75.75 0 0 1 .75.75v5.5a.75.75 0 0 1-1.5 0V4.06l-6.22 6.22a.75.75 0 1 1-1.06-1.06L19.94 3h-3.69a.75.75 0 0 1-.75-.75Z"/><path d="M2.5 4.25c0-.966.784-1.75 1.75-1.75h8.5a.75.75 0 0 1 0 1.5h-8.5a.25.25 0 0 0-.25.25v15.5c0 .138.112.25.25.25h15.5a.25.25 0 0 0 .25-.25v-8.5a.75.75 0 0 1 1.5 0v8.5a1.75 1.75 0 0 1-1.75 1.75H4.25a1.75 1.75 0 0 1-1.75-1.75V4.25Z"/></g></svg></a>! <a href="https://github.com/latenitefilms/GyroflowToolbox/issues/4">Issue #4</a></li>
 </ul>
 <hr>
 <doc-anchor-target id="100-beta1">
@@ -527,7 +666,12 @@
         <span>1.0.0-beta.1</span>
     </h3>
 </doc-anchor-target>
-<p><strong><span class="docs-emoji">&#x1F389;</span> Released:</strong></p>
+<doc-anchor-target id="released">
+    <h4>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#released">#</doc-anchor-trigger>
+        <span><span class="docs-emoji">&#x1F389;</span> Released:</span>
+    </h4>
+</doc-anchor-target>
 <ul>
 <li>21st December 2022</li>
 </ul>
