@@ -171,6 +171,78 @@ pub extern "C" fn getDefaultValues(
     }
 }
 
+/// Gets the lens identifier.
+///
+/// # Arguments
+///
+/// * `gyroflow_project_data` - A pointer to a C-style string containing the Gyroflow Project data.
+///
+/// # Returns
+///
+/// A pointer to a C-style string containing the lens identifier or "FAIL".
+///
+/// # Safety
+///
+/// This function is marked as unsafe because it accepts a raw pointer as an argument. It is the caller's responsibility to ensure that the pointer is valid and points to a null-terminated string.
+#[no_mangle]
+pub extern "C" fn getLensIdentifier(
+    gyroflow_project_data: *const c_char,
+) -> *const c_char {
+    //---------------------------------------------------------
+    // Convert the Gyroflow Project data to a `&str`:
+    //---------------------------------------------------------
+    let gyroflow_project_data_pointer = unsafe { CStr::from_ptr(gyroflow_project_data) };
+    let gyroflow_project_data_string = gyroflow_project_data_pointer.to_string_lossy();
+
+    let mut stab = StabilizationManager::default();
+    {
+        //---------------------------------------------------------
+        // Find first lens profile database with loaded profiles:
+        //---------------------------------------------------------
+        let lock = MANAGER_CACHE.lock().unwrap();
+        for (_, v) in lock.iter() {
+            if v.lens_profile_db.read().loaded {
+                stab.lens_profile_db = v.lens_profile_db.clone();
+                break;
+            }
+        }
+    }
+
+    //---------------------------------------------------------
+    // Import the `gyroflow_project_data_string`:
+    //---------------------------------------------------------
+    let blocking = true;    
+    let cancel_flag = Arc::new(AtomicBool::new(false));
+    let mut is_preset = false;
+    match stab.import_gyroflow_data(
+        gyroflow_project_data_string.as_bytes(), 
+        blocking, 
+        None, 
+        |_|(),
+        cancel_flag,
+        &mut is_preset
+    ) {
+        Ok(_) => {
+            //---------------------------------------------------------
+            // Get the Lens Identifier:
+            //---------------------------------------------------------
+            let identifier = stab.lens.read().identifier.to_string();
+            let result = CString::new(identifier).unwrap();            
+            return result.into_raw();       
+        },
+        Err(e) => {
+            //---------------------------------------------------------
+            // An error has occurred:
+            //---------------------------------------------------------
+            log::error!("[Gyroflow Toolbox Rust] Error importing gyroflow data: {:?}", e);
+            
+            let error_msg = format!("{}", e);
+            let result = CString::new(error_msg).unwrap();            
+            return result.into_raw()
+        },
+    }
+}
+
 /// Checks if the official lens is loaded.
 ///
 /// # Arguments

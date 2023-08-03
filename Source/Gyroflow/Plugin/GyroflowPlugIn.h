@@ -74,6 +74,11 @@
     NSView* exportGyroflowProjectView;
     NSView* openUserGuideView;
     NSView* settingsView;
+    
+    //---------------------------------------------------------
+    // Cached Lens Profile Lookup:
+    //---------------------------------------------------------
+    NSDictionary *lensProfilesLookup;
 }
 @property (assign) id<PROAPIAccessing> _Nonnull apiManager;
 @end

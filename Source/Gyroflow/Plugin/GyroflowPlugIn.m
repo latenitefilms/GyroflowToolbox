@@ -45,6 +45,19 @@
         NSLog(@"[Gyroflow Toolbox Renderer] applicationSupportDirectory: '%@'", applicationSupportDirectory);
         
         //---------------------------------------------------------
+        // Get the Lens Profiles path:
+        //---------------------------------------------------------
+        NSBundle *mainBundle = [NSBundle mainBundle];
+        NSString *lensProfilesPath = [mainBundle pathForResource:@"Lens Profiles" ofType:nil inDirectory:nil];
+        
+        //---------------------------------------------------------
+        // Build cache of all the Lens Profile Names:
+        //---------------------------------------------------------
+        lensProfilesLookup = [self getLensProfileIdentifiersFromDirectory:lensProfilesPath];
+        
+        NSLog(@"[Gyroflow Toolbox Renderer] lensProfilesLookup: %@", lensProfilesLookup);
+        
+        //---------------------------------------------------------
         // Cache the API Manager:
         //---------------------------------------------------------
         _apiManager = newApiManager;
@@ -167,7 +180,7 @@
         NSView* view = [[CustomButtonView alloc] initWithAPIManager:_apiManager
                                                        parentPlugin:self
                                                            buttonID:kCB_LaunchGyroflow
-                                                        buttonTitle:@"Open in Gyroflow"];
+                                                        buttonTitle:@"Launch Gyroflow"];
         launchGyroflowView = view;
         return view;
     } else if (parameterID == kCB_LoadLastGyroflowProject) {
@@ -1525,11 +1538,6 @@
         //---------------------------------------------------------
         // A filter that resizes and changes the aspect ratio of
         // an image:
-        //
-        // NOTE: In v1.0.0 we use MPSImageLanczosScale, however
-        //       I've changed to MPSImageBilinearScale as it's
-        //       faster, and we probably prefer speed over
-        //       quality for thumbnails.
         //---------------------------------------------------------
         MPSImageBilinearScale *filter = [[[MPSImageBilinearScale alloc] initWithDevice:commandQueue.device] autorelease];
         [filter setScaleTransform:&transform];
@@ -1549,11 +1557,11 @@
     
     MTLRenderPassColorAttachmentDescriptor* colorAttachmentDescriptor   = [[MTLRenderPassColorAttachmentDescriptor alloc] init];
     colorAttachmentDescriptor.texture = outputTexture;
-    colorAttachmentDescriptor.clearColor = MTLClearColorMake(0.0, 0.0, 1.0, 1.0);
+    colorAttachmentDescriptor.clearColor = MTLClearColorMake(1.0, 1.0, 1.0, 1.0); // Black
     colorAttachmentDescriptor.loadAction = MTLLoadActionClear;
-    MTLRenderPassDescriptor*    renderPassDescriptor    = [MTLRenderPassDescriptor renderPassDescriptor];
+    MTLRenderPassDescriptor* renderPassDescriptor = [MTLRenderPassDescriptor renderPassDescriptor];
     renderPassDescriptor.colorAttachments [ 0 ] = colorAttachmentDescriptor;
-    id<MTLRenderCommandEncoder>   commandEncoder  = [commandBuffer renderCommandEncoderWithDescriptor:renderPassDescriptor];
+    id<MTLRenderCommandEncoder> commandEncoder = [commandBuffer renderCommandEncoderWithDescriptor:renderPassDescriptor];
     
     //---------------------------------------------------------
     // Calculate the vertex coordinates and the texture
@@ -1977,37 +1985,9 @@
 
 //---------------------------------------------------------
 //
-#pragma mark - Buttons
+#pragma mark - Settings Menu
 //
 //---------------------------------------------------------
-
-//---------------------------------------------------------
-// Custom Button View Pressed:
-//---------------------------------------------------------
-- (void)customButtonViewPressed:(UInt32)buttonID
-{
-    if (buttonID == kCB_LaunchGyroflow) {
-        [self buttonLaunchGyroflow];
-    } else if (buttonID == kCB_LoadLastGyroflowProject) {
-        [self buttonLoadLastGyroflowProject];
-    } else if (buttonID == kCB_ImportGyroflowProject) {
-        [self buttonImportGyroflowProject];
-    } else if (buttonID == kCB_ReloadGyroflowProject) {
-        [self buttonReloadGyroflowProject];
-    } else if (buttonID == kCB_ExportGyroflowProject) {
-        [self buttonExportGyroflowProject];
-    } else if (buttonID == kCB_ImportMediaFile) {
-        [self buttonImportMediaFile];
-    } else if (buttonID == kCB_RevealInFinder) {
-        [self buttonRevealInFinder];
-    } else if (buttonID == kCB_LoadPresetLensProfile) {
-        [self buttonLoadPresetLensProfile];
-    } else if (buttonID == kCB_OpenUserGuide) {
-        [self buttonOpenUserGuide];
-    } else if (buttonID == kCB_Settings) {
-        [self buttonSettings];
-    }
-}
 
 //---------------------------------------------------------
 // BUTTON: 'Settings'
@@ -2034,15 +2014,15 @@
         //---------------------------------------------------------
         {
             //---------------------------------------------------------
-            // Request Sandbox Access:
+            // Load Preset/Lens Profile Success:
             //---------------------------------------------------------
-            NSMenuItem *suppressRequestSandboxAccessAlert   = [[[NSMenuItem alloc] initWithTitle:@"Request Sandbox Access" action:@selector(toggleMenuItem:) keyEquivalent:@""] autorelease];
-            suppressRequestSandboxAccessAlert.identifier    = @"suppressRequestSandboxAccessAlert";
-            suppressRequestSandboxAccessAlert.target        = self;
-            suppressRequestSandboxAccessAlert.enabled       = YES;
-            suppressRequestSandboxAccessAlert.state         = [self boolToControlState:[userDefaults boolForKey:@"suppressRequestSandboxAccessAlert"]];
-            [disableAlertSubMenu addItem:suppressRequestSandboxAccessAlert];
-                        
+            NSMenuItem *suppressLoadPresetLensProfileSuccess   = [[[NSMenuItem alloc] initWithTitle:@"Load Preset/Lens Profile Success" action:@selector(toggleMenuItem:) keyEquivalent:@""] autorelease];
+            suppressLoadPresetLensProfileSuccess.identifier    = @"suppressLoadPresetLensProfileSuccess";
+            suppressLoadPresetLensProfileSuccess.target        = self;
+            suppressLoadPresetLensProfileSuccess.enabled       = YES;
+            suppressLoadPresetLensProfileSuccess.state         = [self boolToControlState:[userDefaults boolForKey:@"suppressLoadPresetLensProfileSuccess"]];
+            [disableAlertSubMenu addItem:suppressLoadPresetLensProfileSuccess];
+            
             //---------------------------------------------------------
             // No Lens Profile Detected:
             //---------------------------------------------------------
@@ -2052,15 +2032,69 @@
             suppressNoLensProfileDetected.enabled       = YES;
             suppressNoLensProfileDetected.state         = [self boolToControlState:[userDefaults boolForKey:@"suppressNoLensProfileDetected"]];
             [disableAlertSubMenu addItem:suppressNoLensProfileDetected];
+            
+            //---------------------------------------------------------
+            // Request Sandbox Access:
+            //---------------------------------------------------------
+            NSMenuItem *suppressRequestSandboxAccessAlert   = [[[NSMenuItem alloc] initWithTitle:@"Request Sandbox Access" action:@selector(toggleMenuItem:) keyEquivalent:@""] autorelease];
+            suppressRequestSandboxAccessAlert.identifier    = @"suppressRequestSandboxAccessAlert";
+            suppressRequestSandboxAccessAlert.target        = self;
+            suppressRequestSandboxAccessAlert.enabled       = YES;
+            suppressRequestSandboxAccessAlert.state         = [self boolToControlState:[userDefaults boolForKey:@"suppressRequestSandboxAccessAlert"]];
+            [disableAlertSubMenu addItem:suppressRequestSandboxAccessAlert];
+            
+            //---------------------------------------------------------
+            // Successfully Imported:
+            //---------------------------------------------------------
+            NSMenuItem *suppressSuccessfullyImported   = [[[NSMenuItem alloc] initWithTitle:@"Successfully Imported" action:@selector(toggleMenuItem:) keyEquivalent:@""] autorelease];
+            suppressSuccessfullyImported.identifier    = @"suppressSuccessfullyImported";
+            suppressSuccessfullyImported.target        = self;
+            suppressSuccessfullyImported.enabled       = YES;
+            suppressSuccessfullyImported.state         = [self boolToControlState:[userDefaults boolForKey:@"suppressSuccessfullyImported"]];
+            [disableAlertSubMenu addItem:suppressSuccessfullyImported];
+                        
+            //---------------------------------------------------------
+            // Successfully Reloaded:
+            //---------------------------------------------------------
+            NSMenuItem *suppressSuccessfullyReloaded   = [[[NSMenuItem alloc] initWithTitle:@"Successfully Reloaded" action:@selector(toggleMenuItem:) keyEquivalent:@""] autorelease];
+            suppressSuccessfullyReloaded.identifier    = @"suppressSuccessfullyReloaded";
+            suppressSuccessfullyReloaded.target        = self;
+            suppressSuccessfullyReloaded.enabled       = YES;
+            suppressSuccessfullyReloaded.state         = [self boolToControlState:[userDefaults boolForKey:@"suppressSuccessfullyReloaded"]];
+            [disableAlertSubMenu addItem:suppressSuccessfullyReloaded];
         }
+        
         //---------------------------------------------------------
         // Add "Show Alerts" Sub Menu:
         //---------------------------------------------------------
-        NSMenuItem *disableAlertSubMenuItem  = [[[NSMenuItem alloc] initWithTitle:@"Disable Alerts" action:nil keyEquivalent:@""] autorelease];
+        NSMenuItem *disableAlertSubMenuItem = [[[NSMenuItem alloc] initWithTitle:@"Disabled Alerts" action:nil keyEquivalent:@""] autorelease];
         [disableAlertSubMenuItem setSubmenu:disableAlertSubMenu];
-        
         [settingsMenu addItem:disableAlertSubMenuItem];
         
+        //---------------------------------------------------------
+        // Add Separator:
+        //---------------------------------------------------------
+        NSMenuItem *separator   = [NSMenuItem separatorItem];
+        separator.target        = self;
+        separator.enabled       = YES;
+        [settingsMenu addItem:separator];
+        
+        //---------------------------------------------------------
+        // Show Log File in Finder:
+        //---------------------------------------------------------
+        NSMenuItem *showLogFileInFinder    = [[[NSMenuItem alloc] initWithTitle:@"Show Log Files in Finder" action:@selector(showLogFileInFinder:) keyEquivalent:@""] autorelease];
+        showLogFileInFinder.target         = self;
+        showLogFileInFinder.enabled        = YES;
+        [settingsMenu addItem:showLogFileInFinder];
+        
+        //---------------------------------------------------------
+        // Reset Settings:
+        //---------------------------------------------------------
+        NSMenuItem *resetSettings       = [[[NSMenuItem alloc] initWithTitle:@"Reset All Settings" action:@selector(resetSettings:) keyEquivalent:@""] autorelease];
+        resetSettings.target            = self;
+        resetSettings.enabled           = YES;
+        [settingsMenu addItem:resetSettings];
+
         //---------------------------------------------------------
         // Get the current mouse location:
         //---------------------------------------------------------
@@ -2074,6 +2108,36 @@
 }
 
 //---------------------------------------------------------
+// Show Log File in Finder:
+//---------------------------------------------------------
+- (void)showLogFileInFinder:(id)sender {
+    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES);
+    NSString *applicationSupportDirectory = [paths firstObject];
+    NSString* logPath = [applicationSupportDirectory stringByAppendingString:@"/FxPlug.log"];
+    [[NSWorkspace sharedWorkspace] selectFile:logPath inFileViewerRootedAtPath:@""];
+}
+
+//---------------------------------------------------------
+// Reset Settings:
+//---------------------------------------------------------
+- (void)resetSettings:(id)sender {
+    //---------------------------------------------------------
+    // Get User Defaults:
+    //---------------------------------------------------------
+    NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
+    
+    [userDefaults removeObjectForKey:@"suppressLoadPresetLensProfileSuccess"];
+    [userDefaults removeObjectForKey:@"suppressNoLensProfileDetected"];
+    [userDefaults removeObjectForKey:@"suppressRequestSandboxAccessAlert"];
+    [userDefaults removeObjectForKey:@"suppressSuccessfullyImported"];
+    [userDefaults removeObjectForKey:@"suppressSuccessfullyReloaded"];
+        
+    [userDefaults removeObjectForKey:@"gyroFlowPreferencesBookmarkData"];
+    [userDefaults removeObjectForKey:@"lastProject"];
+    [userDefaults removeObjectForKey:@"brawToolboxDocumentBookmarkData"];
+}
+
+//---------------------------------------------------------
 // Toggle Menu Item:
 //---------------------------------------------------------
 - (void)toggleMenuItem:(id)sender {
@@ -2081,6 +2145,40 @@
     BOOL state = menuItem.state == NSControlStateValueOff; // NOTE: We want the opposite for the toggle.
     NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
     [userDefaults setBool:state forKey:menuItem.identifier];
+}
+
+//---------------------------------------------------------
+//
+#pragma mark - Buttons
+//
+//---------------------------------------------------------
+
+//---------------------------------------------------------
+// Custom Button View Pressed:
+//---------------------------------------------------------
+- (void)customButtonViewPressed:(UInt32)buttonID
+{
+    if (buttonID == kCB_LaunchGyroflow) {
+        [self buttonLaunchGyroflow];
+    } else if (buttonID == kCB_LoadLastGyroflowProject) {
+        [self buttonLoadLastGyroflowProject];
+    } else if (buttonID == kCB_ImportGyroflowProject) {
+        [self buttonImportGyroflowProject];
+    } else if (buttonID == kCB_ReloadGyroflowProject) {
+        [self buttonReloadGyroflowProject];
+    } else if (buttonID == kCB_ExportGyroflowProject) {
+        [self buttonExportGyroflowProject];
+    } else if (buttonID == kCB_ImportMediaFile) {
+        [self buttonImportMediaFile];
+    } else if (buttonID == kCB_RevealInFinder) {
+        [self buttonRevealInFinder];
+    } else if (buttonID == kCB_LoadPresetLensProfile) {
+        [self buttonLoadPresetLensProfileIsImporting:NO];
+    } else if (buttonID == kCB_OpenUserGuide) {
+        [self buttonOpenUserGuide];
+    } else if (buttonID == kCB_Settings) {
+        [self buttonSettings];
+    }
 }
 
 //---------------------------------------------------------
@@ -2222,51 +2320,7 @@
 //---------------------------------------------------------
 // BUTTON: 'Load Preset/Lens Profile'
 //---------------------------------------------------------
-- (void)buttonLoadPresetLensProfile {
-    
-    //---------------------------------------------------------
-    // Get the Lens Profiles path:
-    //---------------------------------------------------------
-    NSBundle *mainBundle = [NSBundle mainBundle];
-    NSString *lensProfilesPath = [mainBundle pathForResource:@"Lens Profiles" ofType:nil inDirectory:nil];
-    NSURL *lensProfilesURL = [NSURL fileURLWithPath:lensProfilesPath];
-    
-    //---------------------------------------------------------
-    // Setup an NSOpenPanel:
-    //---------------------------------------------------------
-    NSOpenPanel* panel = [NSOpenPanel openPanel];
-    [panel setCanChooseDirectories:NO];
-    [panel setCanCreateDirectories:YES];
-    [panel setCanChooseFiles:YES];
-    [panel setAllowsMultipleSelection:NO];
-    [panel setDirectoryURL:lensProfilesURL];
-    
-    //---------------------------------------------------------
-    // Limit the file type to Gyroflow supported media files:
-    //---------------------------------------------------------
-    UTType *gyroflow                 = [UTType typeWithFilenameExtension:@"gyroflow"];
-    UTType *json                     = [UTType typeWithFilenameExtension:@"json"];
-    
-    NSArray *allowedContentTypes    = [NSArray arrayWithObjects:gyroflow, json, nil];
-    [panel setAllowedContentTypes:allowedContentTypes];
-    
-    //---------------------------------------------------------
-    // Open the panel:
-    //---------------------------------------------------------
-    NSModalResponse result = [panel runModal];
-    if (result != NSModalResponseOK) {
-        return;
-    }
-    
-    NSURL *url = [panel URL];
-    
-    //---------------------------------------------------------
-    // Start accessing security scoped resource:
-    //---------------------------------------------------------
-    if (![url startAccessingSecurityScopedResource]) {
-        [self showAlertWithMessage:@"An error has occurred." info:@"Failed to startAccessingSecurityScopedResource. This shouldn't happen."];
-        return;
-    }
+- (void)buttonLoadPresetLensProfileIsImporting:(BOOL)isImporting {
     
     //---------------------------------------------------------
     // Load the Custom Parameter Action API:
@@ -2323,12 +2377,78 @@
     }
     
     //---------------------------------------------------------
+    // Get the Lens Identifier from the Gyroflow Project:
+    //---------------------------------------------------------
+    const char* loadedLensIdentifierInGyroflowProject = getLensIdentifier([gyroflowProjectData UTF8String]);
+    NSString *loadedLensIdentifierInGyroflowProjectString = [NSString stringWithUTF8String:loadedLensIdentifierInGyroflowProject];
+    
+    //---------------------------------------------------------
+    // Get the Lens Profiles path:
+    //---------------------------------------------------------
+    NSBundle *mainBundle = [NSBundle mainBundle];
+    NSString *lensProfilesPath = [mainBundle pathForResource:@"Lens Profiles" ofType:nil inDirectory:nil];
+    NSURL *lensProfilesURL = [NSURL fileURLWithPath:lensProfilesPath];
+        
+    //---------------------------------------------------------
+    // Try match the Lens Identifier with a JSON file:
+    //---------------------------------------------------------
+    if (loadedLensIdentifierInGyroflowProjectString) {
+        NSString *path = lensProfilesLookup[loadedLensIdentifierInGyroflowProjectString];
+        //NSLog(@"[Gyroflow Toolbox Renderer] path: %@", path);
+        if (path) {
+            lensProfilesURL = [NSURL fileURLWithPath:path];
+        } else {
+            NSLog(@"[Gyroflow Toolbox Renderer] WARNING - Failed to find matching identifier: %@", loadedLensIdentifierInGyroflowProjectString);
+        }
+    }
+    
+    //---------------------------------------------------------
+    // Limit the file type to Gyroflow supported media files:
+    //---------------------------------------------------------
+    UTType *gyroflow                 = [UTType typeWithFilenameExtension:@"gyroflow"];
+    UTType *json                     = [UTType typeWithFilenameExtension:@"json"];
+    
+    NSArray *allowedContentTypes    = [NSArray arrayWithObjects:gyroflow, json, nil];
+    
+    //---------------------------------------------------------
+    // Setup an NSOpenPanel:
+    //---------------------------------------------------------
+    NSOpenPanel* panel = [NSOpenPanel openPanel];
+    [panel setCanChooseDirectories:NO];
+    [panel setCanCreateDirectories:YES];
+    [panel setCanChooseFiles:YES];
+    [panel setAllowsMultipleSelection:NO];
+    [panel setDirectoryURL:lensProfilesURL];
+    
+    
+    [panel setAllowedContentTypes:allowedContentTypes];
+    
+    //---------------------------------------------------------
+    // Open the panel:
+    //---------------------------------------------------------
+    NSModalResponse result = [panel runModal];
+    if (result != NSModalResponseOK) {
+        return;
+    }
+    
+    NSURL *url = [panel URL];
+    
+    //---------------------------------------------------------
+    // Start accessing security scoped resource:
+    //---------------------------------------------------------
+    if (![url startAccessingSecurityScopedResource]) {
+        [self showAlertWithMessage:@"An error has occurred." info:@"Failed to startAccessingSecurityScopedResource. This shouldn't happen."];
+        return;
+    }
+    
+    //---------------------------------------------------------
     // Process the file depending on the file type:
     //---------------------------------------------------------
     NSString *filePath              = [url path];
     NSString *extension             = [[url pathExtension] lowercaseString];
     NSString *loadResultString      = nil;
     
+    BOOL isJSON = NO;
     if ([extension isEqualToString:@"json"]) {
         //---------------------------------------------------------
         // Attempt to load the JSON Lens Profile:
@@ -2338,6 +2458,7 @@
                                                  [filePath UTF8String]
                                                  );
         loadResultString = [NSString stringWithUTF8String: loadResult];
+        isJSON = YES;
     } else {
         //---------------------------------------------------------
         // Attempt to load the Gyroflow Project Preset:
@@ -2376,8 +2497,41 @@
     //---------------------------------------------------------
     // Show success message:
     //---------------------------------------------------------
-    // TODO: Make lens profile complete alert optional
-    [self showAlertWithMessage:@"Import Complete!" info:@"Your Lens Profile has been correctly applied."];
+    NSString *message; //= @"The selected Lens Profile has been successfully applied.";
+            
+    if (isImporting) {
+        if (isJSON) {
+            message = @"The Gyroflow Project, and the selected Preset has been successfully imported into Final Cut Pro.\n\nYou can now adjust the parameters as required via the Video Inspector.";
+        } else {
+            message = @"The Gyroflow Project, and the selected Lens Profile has been successfully imported into Final Cut Pro.\n\nYou can now adjust the parameters as required via the Video Inspector.";
+        }
+    } else {
+        if (isJSON) {
+            message = @"The selected Preset has been successfully applied.";
+        } else {
+            message = @"The selected Lens Profile has been successfully applied.";
+        }
+    }
+        
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    if (![defaults boolForKey:@"suppressLoadPresetLensProfileSuccess"]) {
+        NSAlert *alert                  = [[[NSAlert alloc] init] autorelease];
+        alert.icon                      = [NSImage imageNamed:@"GyroflowToolbox"];
+        alert.alertStyle                = NSAlertStyleInformational;
+        alert.messageText               = @"Successfully Imported!";
+        alert.informativeText           = message;
+        alert.showsSuppressionButton    = YES;
+        [alert beginSheetModalForWindow:loadLastGyroflowProjectView.window completionHandler:^(NSModalResponse result) {
+            if ([alert suppressionButton].state == NSControlStateValueOn) {
+                [[NSUserDefaults standardUserDefaults] setBool:YES forKey:@"suppressLoadPresetLensProfileSuccess"];
+            }
+            
+            //---------------------------------------------------------
+            // Close the alert:
+            //---------------------------------------------------------
+            [alert.window orderOut:nil];
+        }];
+    }
     
     //---------------------------------------------------------
     // Stop Action API:
@@ -2989,8 +3143,7 @@
         //---------------------------------------------------------
         // Show success message:
         //---------------------------------------------------------
-        // TODO: Success message should be optional.
-        [self showAlertWithMessage:@"Success!" info:@"The Gyroflow Project has been successfully reloaded from disk."];
+        [self showSuccessfullyReloadedAlert];
         
         //---------------------------------------------------------
         // Stop Action API & Stop Accessing Resource:
@@ -3110,8 +3263,32 @@
     //---------------------------------------------------------
     // Show success message:
     //---------------------------------------------------------
-    // TODO: This reload success message should be optional.
-    [self showAlertWithMessage:@"Success!" info:@"The Gyroflow Project has been successfully reloaded from disk."];
+    [self showSuccessfullyReloadedAlert];
+}
+
+//---------------------------------------------------------
+// Show Successfully Reloaded Alert:
+//---------------------------------------------------------
+- (void)showSuccessfullyReloadedAlert {
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    if (![defaults boolForKey:@"suppressSuccessfullyReloaded"]) {
+        NSAlert *alert                  = [[[NSAlert alloc] init] autorelease];
+        alert.icon                      = [NSImage imageNamed:@"GyroflowToolbox"];
+        alert.alertStyle                = NSAlertStyleInformational;
+        alert.messageText               = @"Successfully Reloaded!";
+        alert.informativeText           = @"The Gyroflow Project has been successfully reloaded from disk.";
+        alert.showsSuppressionButton    = YES;
+        [alert beginSheetModalForWindow:loadLastGyroflowProjectView.window completionHandler:^(NSModalResponse result) {
+            if ([alert suppressionButton].state == NSControlStateValueOn) {
+                [[NSUserDefaults standardUserDefaults] setBool:YES forKey:@"suppressSuccessfullyReloaded"];
+            }
+            
+            //---------------------------------------------------------
+            // Close the alert:
+            //---------------------------------------------------------
+            [alert.window orderOut:nil];
+        }];
+    }
 }
 
 //---------------------------------------------------------
@@ -3499,6 +3676,31 @@
 //---------------------------------------------------------
 
 //---------------------------------------------------------
+// Show Successfully Imported Alert:
+//---------------------------------------------------------
+- (void)showSuccessfullyImportedAlert {
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    if (![defaults boolForKey:@"suppressSuccessfullyImported"]) {
+        NSAlert *alert                  = [[[NSAlert alloc] init] autorelease];
+        alert.icon                      = [NSImage imageNamed:@"GyroflowToolbox"];
+        alert.alertStyle                = NSAlertStyleInformational;
+        alert.messageText               = @"Successfully Imported!";
+        alert.informativeText           = @"The Gyroflow Project has been successfully imported into Final Cut Pro.\n\nYou can now adjust the parameters as required via the Video Inspector.";
+        alert.showsSuppressionButton    = YES;
+        [alert beginSheetModalForWindow:loadLastGyroflowProjectView.window completionHandler:^(NSModalResponse result) {
+            if ([alert suppressionButton].state == NSControlStateValueOn) {
+                [[NSUserDefaults standardUserDefaults] setBool:YES forKey:@"suppressSuccessfullyImported"];
+            }
+            
+            //---------------------------------------------------------
+            // Close the alert:
+            //---------------------------------------------------------
+            [alert.window orderOut:nil];
+        }];
+    }
+}
+
+//---------------------------------------------------------
 // Import Media with Optional URL:
 //---------------------------------------------------------
 - (BOOL)importMediaWithOptionalURL:(NSURL*)optionalURL {
@@ -3696,7 +3898,7 @@
     );
     
     NSString *getDefaultValuesResultString = [NSString stringWithUTF8String:getDefaultValuesResult];
-    NSLog(@"[Gyroflow Toolbox Renderer] getDefaultValuesResult: %@", getDefaultValuesResultString);
+    //NSLog(@"[Gyroflow Toolbox Renderer] getDefaultValuesResult: %@", getDefaultValuesResultString);
             
     //---------------------------------------------------------
     // Use the Action API to allow us to change the parameters:
@@ -3719,7 +3921,7 @@
     // Update 'Media Path':
     //---------------------------------------------------------
     [paramSetAPI setStringParameterValue:path toParameter:kCB_MediaPath];
-    NSLog(@"[Gyroflow Toolbox Renderer] mediaPath: %@", path);
+    //NSLog(@"[Gyroflow Toolbox Renderer] mediaPath: %@", path);
     
     //---------------------------------------------------------
     // Update 'Media Bookmark Data':
@@ -3837,11 +4039,13 @@
                 if ([alert suppressionButton].state == NSControlStateValueOn) {
                     [[NSUserDefaults standardUserDefaults] setBool:YES forKey:@"suppressNoLensProfileDetected"];
                 }
-                [self buttonLoadPresetLensProfile];
+                [self buttonLoadPresetLensProfileIsImporting:YES];
             }];
         } else {
-            [self buttonLoadPresetLensProfile];
+            [self buttonLoadPresetLensProfileIsImporting:YES];
         }
+    } else {
+        [self showSuccessfullyImportedAlert];
     }
     
     return YES;
@@ -4071,8 +4275,7 @@
     //---------------------------------------------------------
     // Show Victory Message:
     //---------------------------------------------------------
-    // TODO: This import success alert should be optional.
-    [self showAlertWithMessage:@"Success!" info:@"The Gyroflow Project has been successfully imported.\n\nYou can now adjust the parameters as required."];
+    [self showSuccessfullyImportedAlert];
 }
 
 //---------------------------------------------------------
@@ -4152,7 +4355,7 @@
         alert.icon              = [NSImage imageNamed:@"GyroflowToolbox"];
         alert.alertStyle        = NSAlertStyleInformational;
         alert.messageText       = @"Gyroflow Toolbox Requires Permission";
-        alert.informativeText   = @"To make it easier to import BRAW Toolbox clips into Gyroflow Toolbox, you'll need to grant Gyroflow Toolbox sandbox access to a BRAW Toolbox helper file.\n\nOn the next panel, please select 'Grant Sandbox Access' to continue.";
+        alert.informativeText   = @"To make it easier to import BRAW Toolbox clips into Gyroflow Toolbox, you'll need to grant Gyroflow Toolbox sandbox access to a BRAW Toolbox helper file.\n\nOn the next panel, please select 'Grant Access' to continue.";
         [alert beginSheetModalForWindow:importMediaFileView.window completionHandler:^(NSModalResponse result){
             
             //---------------------------------------------------------
@@ -4424,6 +4627,46 @@
 //---------------------------------------------------------
 
 //---------------------------------------------------------
+// Get Lens Profile Names from Directory:
+//---------------------------------------------------------
+- (NSDictionary *)getLensProfileIdentifiersFromDirectory:(NSString *)directoryPath {
+    NSFileManager *fileManager = [NSFileManager defaultManager];
+    NSMutableArray *jsonFilePaths = [NSMutableArray array];
+    NSDictionary *result = [NSMutableDictionary dictionary];
+    
+    //---------------------------------------------------------
+    // Enumerate all files in the directory and its
+    // sub-directories:
+    //---------------------------------------------------------
+    NSDirectoryEnumerator *enumerator = [fileManager enumeratorAtURL:[NSURL fileURLWithPath:directoryPath]
+                                          includingPropertiesForKeys:nil
+                                                             options:0
+                                                        errorHandler:nil];
+    
+    for (NSURL *fileURL in enumerator) {
+        if ([[fileURL pathExtension] isEqualToString:@"json"]) {
+            [jsonFilePaths addObject:fileURL.path];
+        }
+    }
+    
+    //---------------------------------------------------------
+    // Read each JSON file and extract the "identifier":
+    //---------------------------------------------------------
+    for (NSString *filePath in jsonFilePaths) {
+        NSData *data = [NSData dataWithContentsOfFile:filePath];
+        if (data) {
+            NSError *error = nil;
+            NSDictionary *jsonObject = [NSJSONSerialization JSONObjectWithData:data options:0 error:&error];
+            if (error == nil && jsonObject[@"identifier"]) {
+                [(NSMutableDictionary *)result setObject:filePath forKey:jsonObject[@"identifier"]];
+            }
+        }
+    }
+    
+    return [result copy];
+}
+
+//---------------------------------------------------------
 // Converts a NSNumber to a Control State:
 //---------------------------------------------------------
 - (NSInteger)boolToControlState:(BOOL)state {
@@ -4545,6 +4788,7 @@ void runOnMainQueueWithoutDeadlocking(void (^block)(void)) {
         alert.alertStyle        = NSAlertStyleInformational;
         alert.messageText       = message;
         alert.informativeText   = info;
+        alert.window.appearance = [NSAppearance appearanceNamed:NSAppearanceNameVibrantDark];
         [alert runModal];
     });
 }
@@ -4559,6 +4803,7 @@ void runOnMainQueueWithoutDeadlocking(void (^block)(void)) {
         alert.alertStyle        = NSAlertStyleInformational;
         alert.messageText       = message;
         alert.informativeText   = info;
+        alert.window.appearance = [NSAppearance appearanceNamed:NSAppearanceNameVibrantDark];
         [alert runModal];
     });
 }

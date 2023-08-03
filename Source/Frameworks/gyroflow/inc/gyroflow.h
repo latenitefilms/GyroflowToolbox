@@ -102,3 +102,12 @@ const char* loadPreset(
     const char*                 gyroflow_project_data,
     const char*                 lens_profile_path
 );
+
+//---------------------------------------------------------
+// Gets the Lens Identifier:
+//---------------------------------------------------------
+const char* getLensIdentifier(
+    const char*                 gyroflow_project_data
+);
+
+
