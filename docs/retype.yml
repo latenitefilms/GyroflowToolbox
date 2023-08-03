@@ -62,3 +62,7 @@ favicon: static/favicon.ico
 data:
   star: "<span class=\"fa fa-star checked\"></span>"
   unstar: "<span class=\"fa fa-star\">"
+
+outbound:
+  exclude:
+    - github.com/latenitefilms/gyroflowtoolbox/

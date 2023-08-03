@@ -2,24 +2,26 @@
 
 # Gyroflow Toolbox
 
-!!!danger
-**Gyroflow Toolbox** is not currently compatible with **Gyroflow v1.5.1** or later.<br />
-<br />
-We are actively working on a new version of Gyroflow Toolbox to add support for the latest Gyroflow improvements.<br />
-<br />
-In the meantime you can download and use **Gyroflow v1.5.0** [here](https://github.com/gyroflow/gyroflow/releases/tag/v1.5.0){target="_blank"}.
-!!!
+Allows you to import [Gyroflow](https://github.com/gyroflow/gyroflow) Projects into Apple's [Final Cut Pro](https://www.apple.com/final-cut-pro/).
 
-Allows you to import [Gyroflow](https://github.com/gyroflow/gyroflow){target="_blank"} Projects into Apple's [Final Cut Pro](https://www.apple.com/final-cut-pro/){target="_blank"}.
+_**Advanced gyro-based video stabilisation without the round-tripping!**_
 
 ![](static/interface.png)
+
+You can even use this in conjunction with [BRAW Toolbox](https://brawtoolbox.io) (also on the App Store), to stabilise **Blackmagic RAW files**!
+
+To get started, simply drop your video clip from the Final Cut Pro Browser or Finder to the drop zone in the Final Cut Pro Inspector. You can also drop a Gyroflow Project.
+
+**Sony**, **GoPro (Hero 8+)**, **DJI**, **Blackmagic RAW** and **Insta360** will be automatically synced when imported. Other cameras, such as **RED**, will require launching Gyroflow to synchronise.
+
+**GoPro**, **DJI** and **Insta360** will automatically select a Lens Profile. For all other cameras, you may need to manually select a Lens Profile, however, we'll try and GUESS a good match.
 
 ---
 
 ### What is Gyroflow?
 
-[Gyroflow](https://github.com/gyroflow/gyroflow){target="_blank"} is a free and open source application that can stabilize your video by using motion data from a gyroscope and optionally an accelerometer. Modern cameras record that data internally (GoPro, Sony, Insta360 etc), and Gyroflow stabilizes the captured footage precisely by using them. It can also use gyro data from an external source (eg. from Betaflight blackbox).
+[Gyroflow](https://github.com/gyroflow/gyroflow) is a free and open source third-party application that can stabilise your video by using motion data from a gyroscope and optionally an accelerometer. Modern cameras record that data internally (such as Blackmagic, GoPro, Sony, Insta360 etc), and Gyroflow stabilises the captured footage precisely by using that data. It can also use gyro data from an external source, such as Betaflight Blackbox.
 
-Gyroflow Toolbox allows you to take the stabilised data from Gyroflow and use it within Final Cut Pro as an effect.
+Gyroflow Toolbox allows you to take the stabilised data from Gyroflow and use it within Final Cut Pro as an effect, so you don't have to export a ProRes from Gyroflow!
 
-You can watch a great Gyroflow Tutorial [here](https://www.youtube.com/watch?v=QAds3x8UU1w){target="_blank"}.
+You can watch a great Gyroflow Tutorial [here](https://www.youtube.com/watch?v=QAds3x8UU1w).

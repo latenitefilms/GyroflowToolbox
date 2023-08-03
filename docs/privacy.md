@@ -12,8 +12,8 @@ Apple may collect and use certain usage and performance data from the apps that 
 
 This data collection is not specific to any individual user, and it is not possible for app developers to opt out of this data collection by Apple.
 
-You can read Apple's App Store Privacy Policy [here](https://www.apple.com/legal/privacy/data/en/app-store/){target="_blank"}.
+You can read Apple's App Store Privacy Policy [here](https://www.apple.com/legal/privacy/data/en/app-store/).
 
-We use this GitHub Repository for documentation hosting and technical support. You can read GitHub's Privacy Policy [here](https://docs.github.com/en/site-policy/privacy-policies/github-privacy-statement){target="_blank"}.
+We use this GitHub Repository for documentation hosting and technical support. You can read GitHub's Privacy Policy [here](https://docs.github.com/en/site-policy/privacy-policies/github-privacy-statement).
 
-If you have any questions or concerns, you can [submit an issue](https://github.com/latenitefilms/gyroflowtoolbox/issues){target="_blank"}, or email us: producers@latenitefilms.com
+If you have any questions or concerns, you can [submit an issue](https://github.com/latenitefilms/gyroflowtoolbox/issues), or email us: producers@latenitefilms.com

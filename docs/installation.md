@@ -1,20 +1,12 @@
 # Installation
 
-!!!danger
-**Gyroflow Toolbox** is not currently compatible with **Gyroflow v1.5.1** or later.<br />
-<br />
-We are actively working on a new version of Gyroflow Toolbox to add support for the latest Gyroflow improvements.<br />
-<br />
-In the meantime you can download and use **Gyroflow v1.5.0** [here](https://github.com/gyroflow/gyroflow/releases/tag/v1.5.0){target="_blank"}.
-!!!
-
 **Gyroflow Toolbox** allows you to take the stabilised data from **Gyroflow** and use it within **Final Cut Pro** as an effect.
 
-You can purchase the latest Gyroflow Toolbox release on the [Mac App Store](https://apps.apple.com/au/app/gyroflow-toolbox/id1667462993?mt=12){target="_blank"}.
+You can purchase the latest Gyroflow Toolbox release on the [Mac App Store](https://apps.apple.com/au/app/gyroflow-toolbox/id1667462993?mt=12).
 
-You can download the latest **Gyroflow** release for free from the [Gyroflow website](https://gyroflow.xyz/download){target="_blank"}.
+You can download the latest **Gyroflow** release for free from the [Gyroflow website](https://gyroflow.xyz/download).
 
-Please install the latest **Gyroflow** first. You can learn more about installing Gyroflow [here](https://docs.gyroflow.xyz/app/getting-started/installation){target="_blank"}.
+Please install the latest **Gyroflow** first. You can learn more about installing Gyroflow [here](https://docs.gyroflow.xyz/app/getting-started/installation).
 
 ---
 
