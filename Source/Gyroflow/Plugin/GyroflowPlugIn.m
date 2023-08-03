@@ -53,7 +53,7 @@
         //---------------------------------------------------------
         // Build cache of all the Lens Profile Names:
         //---------------------------------------------------------
-        lensProfilesLookup = [self getLensProfileIdentifiersFromDirectory:lensProfilesPath];
+        lensProfilesLookup = [self newLensProfileIdentifiersFromDirectory:lensProfilesPath];
         
         //NSLog(@"[Gyroflow Toolbox Renderer] lensProfilesLookup: %@", lensProfilesLookup);
         
@@ -2326,12 +2326,20 @@
 //---------------------------------------------------------
 - (void)buttonLoadPresetLensProfileIsImporting:(BOOL)isImporting {
     
+    //NSLog(@"[Gyroflow Toolbox Renderer] buttonLoadPresetLensProfileIsImporting Triggered!");
+    //NSLog(@"[Gyroflow Toolbox Renderer] isImporting: %@", [NSNumber numberWithBool:isImporting]);
+    
     //---------------------------------------------------------
     // Load the Custom Parameter Action API:
     //---------------------------------------------------------
     id<FxCustomParameterActionAPI_v4> actionAPI = [_apiManager apiForProtocol:@protocol(FxCustomParameterActionAPI_v4)];
     if (actionAPI == nil) {
-        [self showAlertWithMessage:@"An error has occurred." info:@"Unable to retrieve 'FxCustomParameterActionAPI_v4'. This shouldn't happen, so it's probably a bug."];
+        //---------------------------------------------------------
+        // Show Error Message:
+        //---------------------------------------------------------
+        NSString *errorMessage = @"Unable to retrieve 'FxCustomParameterActionAPI_v4'. This shouldn't happen, so it's probably a bug.";
+        NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
+        [self showAlertWithMessage:@"An error has occurred." info:errorMessage];
         return;
     }
     
@@ -2350,7 +2358,12 @@
         //---------------------------------------------------------
         [actionAPI endAction:self];
         
-        [self showAlertWithMessage:@"An error has occurred." info:@"Unable to retrieve 'FxParameterRetrievalAPI_v6'.\n\nThis shouldn't happen, so it's probably a bug."];
+        //---------------------------------------------------------
+        // Show Error Message:
+        //---------------------------------------------------------
+        NSString *errorMessage = @"Unable to retrieve 'FxParameterRetrievalAPI_v6'.\n\nThis shouldn't happen, so it's probably a bug.";
+        NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
+        [self showAlertWithMessage:@"An error has occurred." info:errorMessage];
         return;
     }
     
@@ -2360,6 +2373,11 @@
     id<FxParameterSettingAPI_v5> paramSetAPI = [_apiManager apiForProtocol:@protocol(FxParameterSettingAPI_v5)];
     if (paramSetAPI == nil)
     {
+        //---------------------------------------------------------
+        // Stop Action API:
+        //---------------------------------------------------------
+        [actionAPI endAction:self];
+        
         //---------------------------------------------------------
         // Show Error Message:
         //---------------------------------------------------------
@@ -2374,32 +2392,48 @@
     //---------------------------------------------------------
     NSString *gyroflowProjectData = nil;
     [paramGetAPI getStringParameterValue:&gyroflowProjectData fromParameter:kCB_GyroflowProjectData];
-    
+    //NSLog(@"[Gyroflow Toolbox Renderer] gyroflowProjectData: %@", gyroflowProjectData);
+          
     if (gyroflowProjectData == nil) {
-        [self showAlertWithMessage:@"Failed to get Gyroflow Project" info:@"Please ensure you have a Gyroflow Project already loaded."];
+        //---------------------------------------------------------
+        // Stop Action API:
+        //---------------------------------------------------------
+        [actionAPI endAction:self];
+        
+        //---------------------------------------------------------
+        // Show Error Message:
+        //---------------------------------------------------------
+        NSString *errorMessage = @"Please ensure you have a Gyroflow Project already loaded.";
+        NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
+        [self showAlertWithMessage:@"Failed to get Gyroflow Project" info:errorMessage];
         return;
     }
     
     //---------------------------------------------------------
     // Get the Lens Identifier from the Gyroflow Project:
     //---------------------------------------------------------
+    NSString *loadedLensIdentifierInGyroflowProjectString = nil;
     const char* loadedLensIdentifierInGyroflowProject = getLensIdentifier([gyroflowProjectData UTF8String]);
-    NSString *loadedLensIdentifierInGyroflowProjectString = [NSString stringWithUTF8String:loadedLensIdentifierInGyroflowProject];
+    loadedLensIdentifierInGyroflowProjectString = [NSString stringWithUTF8String:loadedLensIdentifierInGyroflowProject];
     
     //---------------------------------------------------------
     // Get the Lens Profiles path:
     //---------------------------------------------------------
-    NSBundle *mainBundle = [NSBundle mainBundle];
-    NSString *lensProfilesPath = [mainBundle pathForResource:@"Lens Profiles" ofType:nil inDirectory:nil];
-    NSURL *lensProfilesURL = [NSURL fileURLWithPath:lensProfilesPath];
+    NSBundle *mainBundle            = [NSBundle mainBundle];
+    NSString *lensProfilesPath      = [mainBundle pathForResource:@"Lens Profiles" ofType:nil inDirectory:nil];
+    NSURL *lensProfilesURL          = [NSURL fileURLWithPath:lensProfilesPath];
         
     //---------------------------------------------------------
     // Try match the Lens Identifier with a JSON file:
     //---------------------------------------------------------
-    if (loadedLensIdentifierInGyroflowProjectString) {
+    if (loadedLensIdentifierInGyroflowProjectString != nil) {
+        
+        //NSLog(@"[Gyroflow Toolbox Renderer] Try to match the Lens Identifier with a JSON file");
+              
         NSString *path = lensProfilesLookup[loadedLensIdentifierInGyroflowProjectString];
-        //NSLog(@"[Gyroflow Toolbox Renderer] path: %@", path);
-        if (path) {
+        //NSLog(@"[Gyroflow Toolbox Renderer] lensProfilesLookup path: %@", path);
+        
+        if (path != nil) {
             lensProfilesURL = [NSURL fileURLWithPath:path];
         } else {
             NSLog(@"[Gyroflow Toolbox Renderer] WARNING - Failed to find matching identifier: %@", loadedLensIdentifierInGyroflowProjectString);
@@ -2409,22 +2443,27 @@
     //---------------------------------------------------------
     // Limit the file type to Gyroflow supported media files:
     //---------------------------------------------------------
-    UTType *gyroflow                 = [UTType typeWithFilenameExtension:@"gyroflow"];
-    UTType *json                     = [UTType typeWithFilenameExtension:@"json"];
-    
+    UTType *gyroflow                = [UTType typeWithFilenameExtension:@"gyroflow"];
+    UTType *json                    = [UTType typeWithFilenameExtension:@"json"];
     NSArray *allowedContentTypes    = [NSArray arrayWithObjects:gyroflow, json, nil];
     
     //---------------------------------------------------------
     // Setup an NSOpenPanel:
     //---------------------------------------------------------
     NSOpenPanel* panel = [NSOpenPanel openPanel];
+    [panel setMessage:@"Please select the Preset or Lens Profile:"];
+    [panel setPrompt:@"Open File"];
     [panel setCanChooseDirectories:NO];
     [panel setCanCreateDirectories:YES];
     [panel setCanChooseFiles:YES];
     [panel setAllowsMultipleSelection:NO];
     [panel setDirectoryURL:lensProfilesURL];
-    [panel setAppearance:[NSAppearance appearanceNamed:NSAppearanceNameVibrantDark]];
     [panel setAllowedContentTypes:allowedContentTypes];
+    [panel setExtensionHidden:NO];
+    [panel setCanSelectHiddenExtension:YES];
+    [panel setAppearance:[NSAppearance appearanceNamed:NSAppearanceNameVibrantDark]];
+    
+    //NSLog(@"[Gyroflow Toolbox Renderer] Preparing to open panel!");
     
     //---------------------------------------------------------
     // Open the panel:
@@ -2440,7 +2479,17 @@
     // Start accessing security scoped resource:
     //---------------------------------------------------------
     if (![url startAccessingSecurityScopedResource]) {
-        [self showAlertWithMessage:@"An error has occurred." info:@"Failed to startAccessingSecurityScopedResource. This shouldn't happen."];
+        //---------------------------------------------------------
+        // Stop Action API:
+        //---------------------------------------------------------
+        [actionAPI endAction:self];
+        
+        //---------------------------------------------------------
+        // Show error message:
+        //---------------------------------------------------------
+        NSString *errorMessage = @"Failed to startAccessingSecurityScopedResource during Load Preset/Lens Profile. This shouldn't happen.";
+        NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
+        [self showAlertWithMessage:@"An error has occurred." info:errorMessage];
         return;
     }
     
@@ -2482,8 +2531,17 @@
     // Abort is failed:
     //---------------------------------------------------------
     if (loadResultString == nil || [loadResultString isEqualToString:@"FAIL"]) {
-        [self showAlertWithMessage:@"An error has occurred" info:@"Failed to load a Lens Profile or Preset."];
+        //---------------------------------------------------------
+        // Stop Action API:
+        //---------------------------------------------------------
         [actionAPI endAction:self];
+        
+        //---------------------------------------------------------
+        // Show error message:
+        //---------------------------------------------------------
+        NSString *errorMessage = @"Failed to load a Lens Profile or Preset.";
+        NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
+        [self showAlertWithMessage:@"An error has occurred" info:errorMessage];
         return;
     }
     
@@ -2500,8 +2558,8 @@
     //---------------------------------------------------------
     // Show success message:
     //---------------------------------------------------------
-    NSString *message; //= @"The selected Lens Profile has been successfully applied.";
-            
+    NSString *message = nil;
+    
     if (isImporting) {
         if (isJSON) {
             message = @"The Gyroflow Project, and the selected Preset has been successfully imported into Final Cut Pro.\n\nYou can now adjust the parameters as required via the Video Inspector.";
@@ -3119,10 +3177,12 @@
             //---------------------------------------------------------
             if (bookmarkError == nil) {
                 if ([decodedMediaBookmarkURL startAccessingSecurityScopedResource]) {
-                    NSLog(@"[Gyroflow Toolbox Renderer] Can access media: %@", [decodedMediaBookmarkURL path]);
-                } else {
-                    NSLog(@"[Gyroflow Toolbox Renderer] Cannot access media: %@", [decodedMediaBookmarkURL path]);
+                    //NSLog(@"[Gyroflow Toolbox Renderer] Can access media: %@", [decodedMediaBookmarkURL path]);
                 }
+                //else
+                //{
+                    //NSLog(@"[Gyroflow Toolbox Renderer] Cannot access media: %@", [decodedMediaBookmarkURL path]);
+                //}
             }
         }
         
@@ -3457,7 +3517,7 @@
         BRAWToolboxXMLReader *reader = [[[BRAWToolboxXMLReader alloc] init] autorelease];
         NSDictionary *result = [reader readXML:fcpxmlString];
         
-        if (!result) {
+        if (![result isKindOfClass:[NSDictionary class]]) {
             [self showAlertWithMessage:@"An error has occurred" info:@"Failed to get the media path from the BRAW Toolbox Clip."];
             return NO;
         }
@@ -3658,7 +3718,7 @@
     
     [url stopAccessingSecurityScopedResource];
     
-    if (preferences == nil) {
+    if (![preferences isKindOfClass:[NSDictionary class]]) {
         NSLog(@"[Gyroflow Toolbox Renderer] Gyroflow Preferences Dictionary is nil.");
         return NO;
     }
@@ -3716,7 +3776,7 @@
     
     [url stopAccessingSecurityScopedResource];
     
-    if (preferences == nil) {
+    if (![preferences isKindOfClass:[NSDictionary class]]) {
         NSString *errorMessage = @"Failed to read the Gyroflow's Preferences file.";
         NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
         [self showAlertWithMessage:@"An error has occurred" info:errorMessage];
@@ -4763,7 +4823,7 @@
 //---------------------------------------------------------
 // Get Lens Profile Names from Directory:
 //---------------------------------------------------------
-- (NSDictionary *)getLensProfileIdentifiersFromDirectory:(NSString *)directoryPath {
+- (NSDictionary *)newLensProfileIdentifiersFromDirectory:(NSString *)directoryPath {
     NSFileManager *fileManager = [NSFileManager defaultManager];
     NSMutableArray *jsonFilePaths = [NSMutableArray array];
     NSDictionary *result = [NSMutableDictionary dictionary];
@@ -4791,13 +4851,13 @@
         if (data) {
             NSError *error = nil;
             NSDictionary *jsonObject = [NSJSONSerialization JSONObjectWithData:data options:0 error:&error];
-            if (error == nil && jsonObject[@"identifier"]) {
+            if (error == nil && [jsonObject isKindOfClass:[NSDictionary class]] && jsonObject[@"identifier"]) {
                 [(NSMutableDictionary *)result setObject:filePath forKey:jsonObject[@"identifier"]];
             }
         }
     }
     
-    return result;
+    return [result copy];
 }
 
 //---------------------------------------------------------

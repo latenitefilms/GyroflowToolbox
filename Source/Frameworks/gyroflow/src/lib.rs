@@ -974,7 +974,7 @@ pub extern "C" fn processFrame(
         //---------------------------------------------------------
         let incoming_fov_overview = fov_overview != 0;
         if incoming_fov_overview != params.fov_overview {
-            log::error!("[Gyroflow Toolbox Rust] FOV Changed!");
+            //log::error!("[Gyroflow Toolbox Rust] FOV Changed!");
             params.fov_overview = incoming_fov_overview;
             params_changed = true;
         }
