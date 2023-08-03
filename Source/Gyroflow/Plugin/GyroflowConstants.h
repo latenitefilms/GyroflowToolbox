@@ -38,6 +38,7 @@ enum {
     kCB_TopSection                              = 1,
         kCB_Header                              = 2,
         kCB_OpenUserGuide                       = 3,
+        kCB_Settings                            = 4,
     
     //---------------------------------------------------------
     // Import Section:

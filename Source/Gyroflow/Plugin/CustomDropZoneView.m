@@ -92,9 +92,8 @@
             //---------------------------------------------------------
             // Trigger Dropped File Method:
             //---------------------------------------------------------
+            //NSLog(@"[Gyroflow Toolbox Renderer] Dropped file path: %@", [fileURL path]);
             
-            NSLog(@"[Gyroflow Toolbox Renderer] Dropped file path: %@", [fileURL path]);
-                          
             //---------------------------------------------------------
             // Create a new security-scoped bookmark:
             //---------------------------------------------------------
@@ -115,12 +114,17 @@
                 return NO;
             }
             
-            #pragma clang diagnostic push
-            #pragma clang diagnostic ignored "-Wobjc-method-access"
-            BOOL result = [_parentPlugin importDroppedMedia:bookmarkData];
-            #pragma clang diagnostic pop
-                        
-            return result;
+            dispatch_async(dispatch_get_main_queue(), ^{
+                #pragma clang diagnostic push
+                #pragma clang diagnostic ignored "-Wobjc-method-access"
+                [_parentPlugin importDroppedMedia:bookmarkData];
+                #pragma clang diagnostic pop
+            });
+            
+            _dragIsOver = false;
+            [self needsDisplay];
+            
+            return YES;
         }
         
     } else {
@@ -135,10 +139,12 @@
 
                 //NSLog(@"[Gyroflow Toolbox Renderer] Dropped Final Cut Pro data: %@", finalCutProData);
 
-                #pragma clang diagnostic push
-                #pragma clang diagnostic ignored "-Wobjc-method-access"
-                [_parentPlugin importDroppedClip:finalCutProData];
-                #pragma clang diagnostic pop
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    #pragma clang diagnostic push
+                    #pragma clang diagnostic ignored "-Wobjc-method-access"
+                    [_parentPlugin importDroppedClip:finalCutProData];
+                    #pragma clang diagnostic pop
+                });
 
                 _dragIsOver = false;
                 [self needsDisplay];

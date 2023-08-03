@@ -8,42 +8,7 @@
 //---------------------------------------------------------
 // Import Headers:
 //---------------------------------------------------------
-#include "gyroflow.h"
-
 #import "GyroflowPlugIn.h"
-#import "GyroflowParameters.h"
-#import "GyroflowConstants.h"
-
-#import "CustomButtonView.h"
-#import "CustomDropZoneView.h"
-
-#import "HeaderView.h"
-
-#import "TileableRemoteBRAWShaderTypes.h"
-#import "MetalDeviceCache.h"
-
-#import <IOSurface/IOSurfaceObjC.h>
-#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include <unistd.h>
-#include <sys/types.h>
-#include <pwd.h>
-#include <assert.h>
-
-#include <ImageIO/ImageIO.h>
-#import <Metal/Metal.h>
-#import <AVFoundation/AVFoundation.h>
-
-//---------------------------------------------------------
-// Metal Performance Shaders for scaling:
-//---------------------------------------------------------
-#import <simd/simd.h>
-#import <MetalKit/MetalKit.h>
-#import <MetalPerformanceShaders/MetalPerformanceShaders.h>
 
 //---------------------------------------------------------
 // Gyroflow FxPlug4 Implementation:
@@ -68,28 +33,20 @@
         //---------------------------------------------------------
         NSArray *paths = NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES);
         NSString *applicationSupportDirectory = [paths firstObject];
-        NSLog(@"applicationSupportDirectory: '%@'", applicationSupportDirectory);
         
         NSString* logPath = [applicationSupportDirectory stringByAppendingString:@"/FxPlug.log"];
         
         freopen([logPath fileSystemRepresentation],"a+",stderr);
-        NSLog(@"[Gyroflow Toolbox Renderer] --------------------------------- START OF NEW SESSION ---------------------------------");
         NSString *version = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleShortVersionString"];
         NSString *build = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleVersion"];
+        
+        NSLog(@"[Gyroflow Toolbox Renderer] --------------------------------- START OF NEW SESSION ---------------------------------");
         NSLog(@"[Gyroflow Toolbox Renderer] Version: %@ (%@)", version, build);
-                
-        //---------------------------------------------------------
-        // Test Rust Block:
-        //---------------------------------------------------------
-        /*
-        int32_t (^myBlock)(int32_t, int32_t) = ^int32_t(int32_t a, int32_t b) {
-            return a + b;
-        };
+        NSLog(@"[Gyroflow Toolbox Renderer] applicationSupportDirectory: '%@'", applicationSupportDirectory);
         
-        int32_t result = run_block(myBlock);
-        NSLog(@"[Gyroflow Toolbox Renderer] Result from Rust: %d", result);
-        */
-        
+        //---------------------------------------------------------
+        // Cache the API Manager:
+        //---------------------------------------------------------
         _apiManager = newApiManager;
     }
     return self;
@@ -105,65 +62,65 @@
              error:(NSError * _Nullable *)error
 {
     *properties = @{
-                    //---------------------------------------------------------
-                    // Deprecated, and no longer required in FxPlug 4:
-                    //
-                    // * kFxPropertyKey_IsThreadSafe
-                    // * kFxPropertyKey_MayRemapTime
-                    // * kFxPropertyKey_PixelIndependent
-                    // * kFxPropertyKey_PreservesAlpha
-                    // * kFxPropertyKey_UsesLumaChroma
-                    // * kFxPropertyKey_UsesNonmatchingTextureLayout
-                    // * kFxPropertyKey_UsesRationalTime
-                    //---------------------------------------------------------
+        //---------------------------------------------------------
+        // Deprecated, and no longer required in FxPlug 4:
+        //
+        // * kFxPropertyKey_IsThreadSafe
+        // * kFxPropertyKey_MayRemapTime
+        // * kFxPropertyKey_PixelIndependent
+        // * kFxPropertyKey_PreservesAlpha
+        // * kFxPropertyKey_UsesLumaChroma
+        // * kFxPropertyKey_UsesNonmatchingTextureLayout
+        // * kFxPropertyKey_UsesRationalTime
+        //---------------------------------------------------------
         
-                    //---------------------------------------------------------
-                    // @const      kFxPropertyKey_NeedsFullBuffer
-                    // @abstract   A key that determines whether the plug-in needs the entire image to do its
-                    //             processing, and can't tile its rendering.
-                    // @discussion This value of this key is a Boolean NSNumber indicating whether this plug-in
-                    //             needs the entire image to do its processing. Note that setting this value to
-                    //             YES incurs a significant performance penalty and makes your plug-in
-                    //             unable to render large input images. The default value is NO.
-                    //---------------------------------------------------------
-                    kFxPropertyKey_NeedsFullBuffer : [NSNumber numberWithBool:YES],
-                    
-                    //---------------------------------------------------------
-                    // @const      kFxPropertyKey_VariesWhenParamsAreStatic
-                    // @abstract   A key that determines whether your rendering varies even when
-                    //             the parameters remain the same.
-                    // @discussion The value for this key is a Boolean NSNumber indicating whether this effect
-                    //             changes its rendering even when the parameters don't change. This can happen if
-                    //             your rendering is based on timing in addition to parameters, for example. Note that
-                    //             this property is only checked once when the filter is applied, so it
-                    //             should go in static properties rather than dynamic properties.
-                    //---------------------------------------------------------
-                    kFxPropertyKey_VariesWhenParamsAreStatic : [NSNumber numberWithBool:YES],
+        //---------------------------------------------------------
+        // @const      kFxPropertyKey_NeedsFullBuffer
+        // @abstract   A key that determines whether the plug-in needs the entire image to do its
+        //             processing, and can't tile its rendering.
+        // @discussion This value of this key is a Boolean NSNumber indicating whether this plug-in
+        //             needs the entire image to do its processing. Note that setting this value to
+        //             YES incurs a significant performance penalty and makes your plug-in
+        //             unable to render large input images. The default value is NO.
+        //---------------------------------------------------------
+        kFxPropertyKey_NeedsFullBuffer : [NSNumber numberWithBool:YES],
         
-                    //---------------------------------------------------------
-                    // @const      kFxPropertyKey_ChangesOutputSize
-                    // @abstract   A key that determines whether your filter has the ability to change the size
-                    //             of its output to be different than the size of its input.
-                    // @discussion The value of this key is a Boolean NSNumber indicating whether your filter
-                    //             returns an output that has a different size than the input. If not, return "NO"
-                    //             and your filter's @c -destinationImageRect:sourceImages:pluginState:atTime:error:
-                    //             method will not be called.
-                    //---------------------------------------------------------
-                    kFxPropertyKey_ChangesOutputSize : [NSNumber numberWithBool:YES],
+        //---------------------------------------------------------
+        // @const      kFxPropertyKey_VariesWhenParamsAreStatic
+        // @abstract   A key that determines whether your rendering varies even when
+        //             the parameters remain the same.
+        // @discussion The value for this key is a Boolean NSNumber indicating whether this effect
+        //             changes its rendering even when the parameters don't change. This can happen if
+        //             your rendering is based on timing in addition to parameters, for example. Note that
+        //             this property is only checked once when the filter is applied, so it
+        //             should go in static properties rather than dynamic properties.
+        //---------------------------------------------------------
+        kFxPropertyKey_VariesWhenParamsAreStatic : [NSNumber numberWithBool:YES],
         
-                    //---------------------------------------------------------
-                    // @const      kFxPropertyKey_DesiredProcessingColorInfo
-                    // @abstract   Key for properties dictionary
-                    // @discussion The value for this key is an NSNumber indicating the colorspace
-                    //             that the plug-in would like to process in. This color space is
-                    //             expressed as an FxImageColorInfo enum. If a plug-in specifies this,
-                    //             and the host supports it, all inputs will be in this colorspace,
-                    //             and the output must also be in this colorspace. This may not
-                    //             be supported by all hosts, so the plug-in should still check
-                    //             the colorInfo of its input and output images.
-                    //---------------------------------------------------------
-                    kFxPropertyKey_DesiredProcessingColorInfo : [NSNumber numberWithInt:kFxImageColorInfo_RGB_LINEAR],
-                };
+        //---------------------------------------------------------
+        // @const      kFxPropertyKey_ChangesOutputSize
+        // @abstract   A key that determines whether your filter has the ability to change the size
+        //             of its output to be different than the size of its input.
+        // @discussion The value of this key is a Boolean NSNumber indicating whether your filter
+        //             returns an output that has a different size than the input. If not, return "NO"
+        //             and your filter's @c -destinationImageRect:sourceImages:pluginState:atTime:error:
+        //             method will not be called.
+        //---------------------------------------------------------
+        kFxPropertyKey_ChangesOutputSize : [NSNumber numberWithBool:YES],
+        
+        //---------------------------------------------------------
+        // @const      kFxPropertyKey_DesiredProcessingColorInfo
+        // @abstract   Key for properties dictionary
+        // @discussion The value for this key is an NSNumber indicating the colorspace
+        //             that the plug-in would like to process in. This color space is
+        //             expressed as an FxImageColorInfo enum. If a plug-in specifies this,
+        //             and the host supports it, all inputs will be in this colorspace,
+        //             and the output must also be in this colorspace. This may not
+        //             be supported by all hosts, so the plug-in should still check
+        //             the colorInfo of its input and output images.
+        //---------------------------------------------------------
+        kFxPropertyKey_DesiredProcessingColorInfo : [NSNumber numberWithInt:kFxImageColorInfo_RGB_LINEAR],
+    };
     return YES;
 }
 
@@ -223,8 +180,8 @@
     } else if (parameterID == kCB_DropZone) {
         NSView* view = [[CustomDropZoneView alloc] initWithAPIManager:_apiManager
                                                          parentPlugin:self
-                                                           buttonID:kCB_DropZone
-                                                        buttonTitle:@"Import Dropped Clip"];
+                                                             buttonID:kCB_DropZone
+                                                          buttonTitle:@"Import Dropped Clip"];
         dropZoneView = view;
         return view;
     } else if (parameterID == kCB_RevealInFinder) {
@@ -243,7 +200,7 @@
         return view;
     } else if (parameterID == kCB_Header) {
         
-        NSRect frameRect = NSMakeRect(0, 0, 200, 268); // x y w h
+        NSRect frameRect = NSMakeRect(0, 0, 200, 310); // x y w h
         NSView* view = [[HeaderView alloc] initWithFrame:frameRect];
         
         headerView = view;
@@ -253,27 +210,19 @@
                                                        parentPlugin:self
                                                            buttonID:kCB_OpenUserGuide
                                                         buttonTitle:@"Open User Guide"];
-        launchGyroflowView = view;
+        openUserGuideView = view;
+        return view;
+    } else if (parameterID == kCB_Settings) {
+        NSView* view = [[CustomButtonView alloc] initWithAPIManager:_apiManager
+                                                       parentPlugin:self
+                                                           buttonID:kCB_Settings
+                                                        buttonTitle:@"Settings"];
+        settingsView = view;
         return view;
     } else {
         NSLog(@"[Gyroflow Toolbox Renderer] BUG - createViewForParameterID requested a parameterID that we haven't allowed for: %u", (unsigned int)parameterID);
         return nil;
     }
-}
-
-//---------------------------------------------------------
-// Notifies your plug-in when it becomes part of user’s
-// document.
-//
-// Called when a new plug-in instance is created or a
-// document is loaded and an existing instance is
-// deserialised. When the host calls this method, the
-// plug-in is a part of the document and the various API
-// objects work as expected.
-//---------------------------------------------------------
-- (void)pluginInstanceAddedToDocument
-{
-    //NSLog(@"[Gyroflow Toolbox Renderer] pluginInstanceAddedToDocument!");
 }
 
 //---------------------------------------------------------
@@ -347,9 +296,9 @@
         // ADD PARAMETER: 'Open User Guide' Button
         //---------------------------------------------------------
         if (![paramAPI addCustomParameterWithName:@""
-                                 parameterID:kCB_OpenUserGuide
-                                defaultValue:@0
-                              parameterFlags:kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE])
+                                      parameterID:kCB_OpenUserGuide
+                                     defaultValue:@0
+                                   parameterFlags:kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE])
         {
             if (error != NULL) {
                 NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_OpenUserGuide"};
@@ -400,9 +349,9 @@
         // ADD PARAMETER: Drop Clip Here
         //---------------------------------------------------------
         if (![paramAPI addCustomParameterWithName:@"Drop Clip Here ➡"
-                                 parameterID:kCB_DropZone
-                                defaultValue:@0
-                              parameterFlags:kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE])
+                                      parameterID:kCB_DropZone
+                                     defaultValue:@0
+                                   parameterFlags:kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE])
         {
             if (error != NULL) {
                 NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_DropZone"};
@@ -417,9 +366,9 @@
         // ADD PARAMETER: 'Import Gyroflow Project' Button
         //---------------------------------------------------------
         if (![paramAPI addCustomParameterWithName:@""
-                                 parameterID:kCB_ImportGyroflowProject
-                                defaultValue:@0
-                              parameterFlags:kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE])
+                                      parameterID:kCB_ImportGyroflowProject
+                                     defaultValue:@0
+                                   parameterFlags:kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE])
         {
             if (error != NULL) {
                 NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_ImportGyroflowProject"};
@@ -434,9 +383,9 @@
         // ADD PARAMETER: 'Import Last Gyroflow Project' Button
         //---------------------------------------------------------
         if (![paramAPI addCustomParameterWithName:@""
-                                 parameterID:kCB_LoadLastGyroflowProject
-                                defaultValue:@0
-                              parameterFlags:kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE])
+                                      parameterID:kCB_LoadLastGyroflowProject
+                                     defaultValue:@0
+                                   parameterFlags:kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE])
         {
             if (error != NULL) {
                 NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_LoadLastGyroflowProject"};
@@ -451,9 +400,9 @@
         // ADD PARAMETER: 'Import Media File' Button
         //---------------------------------------------------------
         if (![paramAPI addCustomParameterWithName:@""
-                                 parameterID:kCB_ImportMediaFile
-                                defaultValue:@0
-                              parameterFlags:kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE])
+                                      parameterID:kCB_ImportMediaFile
+                                     defaultValue:@0
+                                   parameterFlags:kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE])
         {
             if (error != NULL) {
                 NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_ImportMediaFile"};
@@ -468,9 +417,9 @@
         // ADD PARAMETER: 'Load Preset/Lens Profile' Button
         //---------------------------------------------------------
         if (![paramAPI addCustomParameterWithName:@""
-                                 parameterID:kCB_LoadPresetLensProfile
-                                defaultValue:@0
-                              parameterFlags:kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE])
+                                      parameterID:kCB_LoadPresetLensProfile
+                                     defaultValue:@0
+                                   parameterFlags:kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE])
         {
             if (error != NULL) {
                 NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_LoadPresetLensProfile"};
@@ -501,7 +450,7 @@
     // GYROFLOW PARAMETERS:
     //
     //---------------------------------------------------------
-
+    
     //---------------------------------------------------------
     // START GROUP: 'Gyroflow Parameters'
     //---------------------------------------------------------
@@ -582,7 +531,7 @@
             }
             return NO;
         }
-
+        
         //---------------------------------------------------------
         // ADD PARAMETER: 'Lens Correction' Slider
         //
@@ -649,7 +598,7 @@
             }
             return NO;
         }
-
+        
         //---------------------------------------------------------
         // ADD PARAMETER: 'Horizon Roll' Slider
         //
@@ -897,7 +846,7 @@
             return NO;
         }
     }
-        
+    
     //---------------------------------------------------------
     //
     // FILE MANAGEMENT:
@@ -923,9 +872,9 @@
         // ADD PARAMETER: 'Reload Gyroflow Project' Button
         //---------------------------------------------------------
         if (![paramAPI addCustomParameterWithName:@""
-                                 parameterID:kCB_ReloadGyroflowProject
-                                defaultValue:@0
-                              parameterFlags:kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE])
+                                      parameterID:kCB_ReloadGyroflowProject
+                                     defaultValue:@0
+                                   parameterFlags:kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE])
         {
             if (error != NULL) {
                 NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_ReloadGyroflowProject"};
@@ -940,9 +889,9 @@
         // ADD PARAMETER: 'Open in Gyroflow' Button
         //---------------------------------------------------------
         if (![paramAPI addCustomParameterWithName:@""
-                                 parameterID:kCB_LaunchGyroflow
-                                defaultValue:@0
-                              parameterFlags:kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE])
+                                      parameterID:kCB_LaunchGyroflow
+                                     defaultValue:@0
+                                   parameterFlags:kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE])
         {
             if (error != NULL) {
                 NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_LaunchGyroflow"};
@@ -957,9 +906,9 @@
         // ADD PARAMETER: 'Export Gyroflow Project' Button
         //---------------------------------------------------------
         if (![paramAPI addCustomParameterWithName:@""
-                                 parameterID:kCB_ExportGyroflowProject
-                                defaultValue:@0
-                              parameterFlags:kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE])
+                                      parameterID:kCB_ExportGyroflowProject
+                                     defaultValue:@0
+                                   parameterFlags:kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE])
         {
             if (error != NULL) {
                 NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_ExportGyroflowProject"};
@@ -974,12 +923,29 @@
         // ADD PARAMETER: 'Reveal in Finder' Button
         //---------------------------------------------------------
         if (![paramAPI addCustomParameterWithName:@""
-                                 parameterID:kCB_RevealInFinder
-                                defaultValue:@0
-                              parameterFlags:kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE])
+                                      parameterID:kCB_RevealInFinder
+                                     defaultValue:@0
+                                   parameterFlags:kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE])
         {
             if (error != NULL) {
                 NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_RevealInFinder"};
+                *error = [NSError errorWithDomain:FxPlugErrorDomain
+                                             code:kFxError_InvalidParameter
+                                         userInfo:userInfo];
+            }
+            return NO;
+        }
+        
+        //---------------------------------------------------------
+        // ADD PARAMETER: 'Settings' Button
+        //---------------------------------------------------------
+        if (![paramAPI addCustomParameterWithName:@""
+                                      parameterID:kCB_Settings
+                                     defaultValue:@0
+                                   parameterFlags:kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE])
+        {
+            if (error != NULL) {
+                NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_Settings"};
                 *error = [NSError errorWithDomain:FxPlugErrorDomain
                                              code:kFxError_InvalidParameter
                                          userInfo:userInfo];
@@ -1092,7 +1058,7 @@
         }
         return NO;
     }
-        
+    
     //---------------------------------------------------------
     // ADD PARAMETER: 'Media Path' Text Box
     //---------------------------------------------------------
@@ -1140,7 +1106,7 @@
                    error:(NSError * _Nullable *)error
 {
     if (paramID == kCB_DisableGyroflowStretch) {
-        NSLog(@"[Gyroflow Toolbox Renderer] Disable Gyroflow Stretch Changed!");
+        //NSLog(@"[Gyroflow Toolbox Renderer] Disable Gyroflow Stretch Changed!");
         trashCache();
     }
     return YES;
@@ -1177,14 +1143,16 @@
     //---------------------------------------------------------
     id<FxTimingAPI_v4> timingAPI = [_apiManager apiForProtocol:@protocol(FxTimingAPI_v4)];
     if (timingAPI == nil) {
-        NSLog(@"[Gyroflow Toolbox Renderer] Unable to retrieve FxTimingAPI_v4 in pluginStateAtTime.");
+        //---------------------------------------------------------
+        // Show error message:
+        //---------------------------------------------------------
+        NSString *errorMessage = @"Unable to retrieve FxTimingAPI_v4 in pluginStateAtTime.";
+        NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
         if (error != NULL) {
             *error = [NSError errorWithDomain:FxPlugErrorDomain
                                          code:kFxError_FailedToLoadTimingAPI
                                      userInfo:@{
-                                                NSLocalizedDescriptionKey :
-                                                    @"Unable to retrieve FxTimingAPI_v4 in \
-                                                    [-pluginStateAtTime:]" }];
+                NSLocalizedDescriptionKey : errorMessage }];
         }
         return NO;
     }
@@ -1194,14 +1162,16 @@
     //---------------------------------------------------------
     id<FxParameterRetrievalAPI_v6> paramGetAPI = [_apiManager apiForProtocol:@protocol(FxParameterRetrievalAPI_v6)];
     if (paramGetAPI == nil) {
-        NSLog(@"[Gyroflow Toolbox Renderer] Unable to retrieve FxParameterRetrievalAPI_v6 in pluginStateAtTime.");
+        //---------------------------------------------------------
+        // Show error message:
+        //---------------------------------------------------------
+        NSString *errorMessage = @"Unable to retrieve FxParameterRetrievalAPI_v6 in pluginStateAtTime.";
+        NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
         if (error != NULL) {
             *error = [NSError errorWithDomain:FxPlugErrorDomain
                                          code:kFxError_FailedToLoadParameterGetAPI
                                      userInfo:@{
-                                                NSLocalizedDescriptionKey :
-                                                    @"Unable to retrieve FxParameterRetrievalAPI_v6 in \
-                                                [-pluginStateAtTime:]" }];
+                NSLocalizedDescriptionKey : errorMessage }];
         }
         return NO;
     }
@@ -1216,22 +1186,22 @@
     //---------------------------------------------------------
     CMTime timelineFrameDuration = kCMTimeZero;
     timelineFrameDuration = CMTimeMake( [timingAPI timelineFpsDenominatorForEffect:self],
-                                        (int)[timingAPI timelineFpsNumeratorForEffect:self] );
-
+                                       (int)[timingAPI timelineFpsNumeratorForEffect:self] );
+    
     CMTime timelineTime = kCMTimeZero;
     [timingAPI timelineTime:&timelineTime fromInputTime:renderTime];
-
+    
     CMTime startTimeOfInputToFilter = kCMTimeZero;
     [timingAPI startTimeForEffect:&startTimeOfInputToFilter];
-
+    
     CMTime startTimeOfInputToFilterInTimelineTime = kCMTimeZero;
     [timingAPI timelineTime:&startTimeOfInputToFilterInTimelineTime fromInputTime:startTimeOfInputToFilter];
-
+    
     Float64 timelineTimeMinusStartTimeOfInputToFilterNumerator = (Float64)timelineTime.value * (Float64)startTimeOfInputToFilterInTimelineTime.timescale - (Float64)startTimeOfInputToFilterInTimelineTime.value * (Float64)timelineTime.timescale;
     Float64 timelineTimeMinusStartTimeOfInputToFilterDenominator = (Float64)timelineTime.timescale * (Float64)startTimeOfInputToFilterInTimelineTime.timescale;
-        
+    
     Float64 frame = ( ((Float64)timelineTimeMinusStartTimeOfInputToFilterNumerator / (Float64)timelineTimeMinusStartTimeOfInputToFilterDenominator) / ((Float64)timelineFrameDuration.value / (Float64)timelineFrameDuration.timescale) );
-
+    
     //---------------------------------------------------------
     // Calculate the Timestamp:
     //---------------------------------------------------------
@@ -1242,20 +1212,20 @@
     params.timestamp                = [[[NSNumber alloc] initWithFloat:timestamp] autorelease];
     
     /*
-    NSLog(@"---------------------------------");
-    NSLog(@"timelineFrameDuration: %.2f seconds", CMTimeGetSeconds(timelineFrameDuration));
-    NSLog(@"timelineTime: %.2f seconds", CMTimeGetSeconds(timelineTime));
-    NSLog(@"startTimeOfInputToFilter: %.2f seconds", CMTimeGetSeconds(startTimeOfInputToFilter));
-    NSLog(@"startTimeOfInputToFilterInTimelineTime: %.2f seconds", CMTimeGetSeconds(startTimeOfInputToFilterInTimelineTime));
-    NSLog(@"timelineTimeMinusStartTimeOfInputToFilterNumerator: %f", timelineTimeMinusStartTimeOfInputToFilterNumerator);
-    NSLog(@"timelineTimeMinusStartTimeOfInputToFilterDenominator: %f", timelineTimeMinusStartTimeOfInputToFilterDenominator);
-    NSLog(@"frame: %f", frame);
-    NSLog(@"timelineFpsNumerator: %f", timelineFpsNumerator);
-    NSLog(@"timelineFpsDenominator: %f", timelineFpsDenominator);
-    NSLog(@"frameRate: %f", frameRate);
-    NSLog(@"timestamp: %f", timestamp);
-    NSLog(@"---------------------------------");
-    */
+     NSLog(@"---------------------------------");
+     NSLog(@"timelineFrameDuration: %.2f seconds", CMTimeGetSeconds(timelineFrameDuration));
+     NSLog(@"timelineTime: %.2f seconds", CMTimeGetSeconds(timelineTime));
+     NSLog(@"startTimeOfInputToFilter: %.2f seconds", CMTimeGetSeconds(startTimeOfInputToFilter));
+     NSLog(@"startTimeOfInputToFilterInTimelineTime: %.2f seconds", CMTimeGetSeconds(startTimeOfInputToFilterInTimelineTime));
+     NSLog(@"timelineTimeMinusStartTimeOfInputToFilterNumerator: %f", timelineTimeMinusStartTimeOfInputToFilterNumerator);
+     NSLog(@"timelineTimeMinusStartTimeOfInputToFilterDenominator: %f", timelineTimeMinusStartTimeOfInputToFilterDenominator);
+     NSLog(@"frame: %f", frame);
+     NSLog(@"timelineFpsNumerator: %f", timelineFpsNumerator);
+     NSLog(@"timelineFpsDenominator: %f", timelineFpsDenominator);
+     NSLog(@"frameRate: %f", frameRate);
+     NSLog(@"timestamp: %f", timestamp);
+     NSLog(@"---------------------------------");
+     */
     
     //---------------------------------------------------------
     // Unique Identifier:
@@ -1300,7 +1270,7 @@
     double lensCorrection;
     [paramGetAPI getFloatValue:&lensCorrection fromParameter:kCB_LensCorrection atTime:renderTime];
     params.lensCorrection = [NSNumber numberWithDouble:lensCorrection];
-        
+    
     //---------------------------------------------------------
     // Horizon Lock:
     //---------------------------------------------------------
@@ -1314,7 +1284,7 @@
     double horizonRoll;
     [paramGetAPI getFloatValue:&horizonRoll fromParameter:kCB_HorizonRoll atTime:renderTime];
     params.horizonRoll = [NSNumber numberWithDouble:horizonRoll];
-
+    
     //---------------------------------------------------------
     // Position Offset X:
     //---------------------------------------------------------
@@ -1328,7 +1298,7 @@
     double positionOffsetY;
     [paramGetAPI getFloatValue:&positionOffsetY fromParameter:kCB_PositionOffsetY atTime:renderTime];
     params.positionOffsetY = [NSNumber numberWithDouble:positionOffsetY];
-
+    
     //---------------------------------------------------------
     // Input Rotation:
     //---------------------------------------------------------
@@ -1363,8 +1333,12 @@
     NSError *newPluginStateError;
     NSData *newPluginState = [NSKeyedArchiver archivedDataWithRootObject:params requiringSecureCoding:YES error:&newPluginStateError];
     if (newPluginState == nil) {
+        //---------------------------------------------------------
+        // Show error message:
+        //---------------------------------------------------------
+        NSString* errorMessage = [NSString stringWithFormat:@"ERROR - Failed to create newPluginState due to '%@'", [newPluginStateError localizedDescription]];
+        NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
         if (error != NULL) {
-            NSString* errorMessage = [NSString stringWithFormat:@"[Gyroflow Toolbox Renderer] ERROR - Failed to create newPluginState due to '%@'", [newPluginStateError localizedDescription]];
             *error = [NSError errorWithDomain:FxPlugErrorDomain
                                          code:kFxError_FailedToCreatePluginState
                                      userInfo:@{ NSLocalizedDescriptionKey : errorMessage }];
@@ -1377,12 +1351,17 @@
     if (*pluginState != nil) {
         succeeded = YES;
     } else {
+        //---------------------------------------------------------
+        // Show error message:
+        //---------------------------------------------------------
+        NSString* errorMessage = @"ERROR - pluginState is nil in pluginState method.";
+        NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
         *error = [NSError errorWithDomain:FxPlugErrorDomain
                                      code:kFxError_PlugInStateIsNil
-                                 userInfo:@{ NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] pluginState is nil in -pluginState." }];
+                                 userInfo:@{ NSLocalizedDescriptionKey : errorMessage }];
         succeeded = NO;
     }
-          
+    
     return succeeded;
 }
 
@@ -1453,6 +1432,289 @@
 }
 
 //---------------------------------------------------------
+// Render an Error Message:
+//---------------------------------------------------------
+- (BOOL)renderErrorMessageWithID:(NSString*)errorMessageID correctedHeight:(float *)correctedHeight destinationImage:(FxImageTile * _Nonnull)destinationImage differenceBetweenHeights:(float *)differenceBetweenHeights fullHeight:(float)fullHeight fullWidth:(float)fullWidth outError:(NSError * _Nullable * _Nullable)outError outputHeight:(float)outputHeight outputWidth:(float)outputWidth sourceImages:(NSArray<FxImageTile *> * _Nonnull)sourceImages {
+    MetalDeviceCache* deviceCache       = [MetalDeviceCache deviceCache];
+    MTLPixelFormat pixelFormat          = [MetalDeviceCache MTLPixelFormatForImageTile:destinationImage];
+    id<MTLCommandQueue> commandQueue    = [deviceCache commandQueueWithRegistryID:destinationImage.deviceRegistryID
+                                                                      pixelFormat:pixelFormat];
+    if (commandQueue == nil)
+    {
+        NSString *errorMessage = @"FATAL ERROR: commandQueue was nil when attempting to show an error message.";
+        NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
+        if (outError != NULL) {
+            *outError = [NSError errorWithDomain:FxPlugErrorDomain
+                                            code:kFxError_CommandQueueWasNilDuringShowErrorMessage
+                                        userInfo:@{ NSLocalizedDescriptionKey : errorMessage }];
+        }
+        return NO;
+    }
+    
+    id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
+    commandBuffer.label = @"Gyroflow Toolbox Error Command Buffer";
+    [commandBuffer enqueue];
+    
+    //---------------------------------------------------------
+    // Load the texture from our "Assets":
+    //---------------------------------------------------------
+    MTKTextureLoader *loader = [[MTKTextureLoader alloc] initWithDevice:commandQueue.device];
+    
+    NSDictionary *options = [[NSDictionary alloc] initWithObjectsAndKeys:
+                             [NSNumber numberWithBool:YES], MTKTextureLoaderOptionSRGB,
+                             nil];
+    
+    id<MTLTexture> inputTexture         = [loader newTextureWithName:errorMessageID scaleFactor:1.0 bundle:[NSBundle mainBundle] options:options error:nil];
+    id<MTLTexture> outputTexture        = [destinationImage metalTextureForDevice:[deviceCache deviceWithRegistryID:destinationImage.deviceRegistryID]];
+    
+    //---------------------------------------------------------
+    // If square pixels, we'll manipulate the height and y
+    // axis manually:
+    //---------------------------------------------------------
+    if (fullHeight == outputHeight) {
+        *correctedHeight = ((float)inputTexture.height/(float)inputTexture.width) * outputWidth;
+        *differenceBetweenHeights = (outputHeight - *correctedHeight) / 2;
+    }
+    
+    //---------------------------------------------------------
+    // Use a "Metal Performance Shader" to scale the texture
+    // to the correct size. Note, we're using the full width
+    // and height, to compensate for non-square pixels:
+    //---------------------------------------------------------
+    id<MTLTexture> scaledInputTexture = nil;
+    if (fullHeight != outputHeight) {
+        
+        //---------------------------------------------------------
+        // Create a new Command Buffer for scale transform:
+        //---------------------------------------------------------
+        id<MTLCommandBuffer> scaleCommandBuffer = [commandQueue commandBuffer];
+        scaleCommandBuffer.label = @"Gyroflow Toolbox Scale Command Buffer";
+        [scaleCommandBuffer enqueue];
+        
+        //---------------------------------------------------------
+        // Create a new texture for the scaled image:
+        //---------------------------------------------------------
+        MTLTextureDescriptor *scaleTextureDescriptor = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:inputTexture.pixelFormat
+                                                                                                          width:fullWidth
+                                                                                                         height:fullHeight
+                                                                                                      mipmapped:NO];
+        
+        scaledInputTexture = [inputTexture.device newTextureWithDescriptor:scaleTextureDescriptor];
+        
+        //---------------------------------------------------------
+        // Work out how much to scale/re-position:
+        //---------------------------------------------------------
+        float scaleX        = (float)(fullWidth / inputTexture.width);
+        float scaleY        = (float)(fullHeight / inputTexture.height);
+        
+        if (scaleX > scaleY) {
+            scaleX = scaleY;
+        } else {
+            scaleY = scaleX;
+        }
+        
+        float translateX    = (float)((fullWidth - inputTexture.width * scaleX) / 2);
+        float translateY    = (float)((fullHeight - inputTexture.height * scaleY) / 2);
+        
+        MPSScaleTransform transform;
+        transform.scaleX        = scaleX;         // The horizontal scale factor.
+        transform.scaleY        = scaleY;         // The vertical scale factor.
+        transform.translateX    = translateX;     // The horizontal translation factor.
+        transform.translateY    = translateY;     // The vertical translation factor.
+        
+        //---------------------------------------------------------
+        // A filter that resizes and changes the aspect ratio of
+        // an image:
+        //
+        // NOTE: In v1.0.0 we use MPSImageLanczosScale, however
+        //       I've changed to MPSImageBilinearScale as it's
+        //       faster, and we probably prefer speed over
+        //       quality for thumbnails.
+        //---------------------------------------------------------
+        MPSImageBilinearScale *filter = [[[MPSImageBilinearScale alloc] initWithDevice:commandQueue.device] autorelease];
+        [filter setScaleTransform:&transform];
+        [filter encodeToCommandBuffer:scaleCommandBuffer sourceTexture:inputTexture destinationTexture:scaledInputTexture];
+        
+        //---------------------------------------------------------
+        // Commits the scale command buffer for execution:
+        //---------------------------------------------------------
+        [scaleCommandBuffer commit];
+    }
+    
+    //---------------------------------------------------------
+    // Release the texture loader:
+    //---------------------------------------------------------
+    [options release];
+    [loader release];
+    
+    MTLRenderPassColorAttachmentDescriptor* colorAttachmentDescriptor   = [[MTLRenderPassColorAttachmentDescriptor alloc] init];
+    colorAttachmentDescriptor.texture = outputTexture;
+    colorAttachmentDescriptor.clearColor = MTLClearColorMake(0.0, 0.0, 1.0, 1.0);
+    colorAttachmentDescriptor.loadAction = MTLLoadActionClear;
+    MTLRenderPassDescriptor*    renderPassDescriptor    = [MTLRenderPassDescriptor renderPassDescriptor];
+    renderPassDescriptor.colorAttachments [ 0 ] = colorAttachmentDescriptor;
+    id<MTLRenderCommandEncoder>   commandEncoder  = [commandBuffer renderCommandEncoderWithDescriptor:renderPassDescriptor];
+    
+    //---------------------------------------------------------
+    // Calculate the vertex coordinates and the texture
+    // coordinates:
+    //---------------------------------------------------------
+    float   textureLeft     = (destinationImage.tilePixelBounds.left - destinationImage.imagePixelBounds.left) / fullWidth;
+    float   textureRight    = (destinationImage.tilePixelBounds.right - destinationImage.imagePixelBounds.left) / fullWidth;
+    float   textureBottom   = (destinationImage.tilePixelBounds.bottom - destinationImage.imagePixelBounds.bottom) / fullHeight;
+    float   textureTop      = (destinationImage.tilePixelBounds.top - destinationImage.imagePixelBounds.bottom) / fullHeight;
+    
+    Vertex2D    vertices[]  = {
+        { {  outputWidth / 2.0f, -outputHeight / 2.0f }, { textureRight, textureTop } },
+        { { -outputWidth / 2.0f, -outputHeight / 2.0f }, { textureLeft, textureTop } },
+        { {  outputWidth / 2.0f,  outputHeight / 2.0f }, { textureRight, textureBottom } },
+        { { -outputWidth / 2.0f,  outputHeight / 2.0f }, { textureLeft, textureBottom } }
+    };
+    
+    //---------------------------------------------------------
+    // Setup our viewport:
+    //
+    // MTLViewport: A 3D rectangular region for the viewport
+    // clipping.
+    //---------------------------------------------------------
+    MTLViewport viewport = {
+        0, *differenceBetweenHeights, outputWidth, *correctedHeight, -1.0, 1.0
+    };
+    
+    //---------------------------------------------------------
+    // Sets the viewport used for transformations and clipping:
+    //---------------------------------------------------------
+    [commandEncoder setViewport:viewport];
+    
+    //---------------------------------------------------------
+    // Setup our Render Pipeline State.
+    //
+    // MTLRenderPipelineState: An object that contains graphics
+    // functions and configuration state to use in a render
+    // command.
+    //---------------------------------------------------------
+    id<MTLRenderPipelineState> pipelineState = [deviceCache pipelineStateWithRegistryID:sourceImages[0].deviceRegistryID
+                                                                            pixelFormat:pixelFormat];
+    
+    //---------------------------------------------------------
+    // Sets the current render pipeline state object:
+    //---------------------------------------------------------
+    [commandEncoder setRenderPipelineState:pipelineState];
+    
+    //---------------------------------------------------------
+    // Sets a block of data for the vertex shader:
+    //---------------------------------------------------------
+    [commandEncoder setVertexBytes:vertices
+                            length:sizeof(vertices)
+                           atIndex:BVI_Vertices];
+    
+    //---------------------------------------------------------
+    // Set the viewport size:
+    //---------------------------------------------------------
+    simd_uint2  viewportSize = {
+        (unsigned int)(outputWidth),
+        (unsigned int)(outputHeight)
+    };
+    
+    //---------------------------------------------------------
+    // Sets a block of data for the vertex shader:
+    //---------------------------------------------------------
+    [commandEncoder setVertexBytes:&viewportSize
+                            length:sizeof(viewportSize)
+                           atIndex:BVI_ViewportSize];
+    
+    //---------------------------------------------------------
+    // Sets a texture for the fragment function at an index
+    // in the texture argument table:
+    //---------------------------------------------------------
+    if (scaledInputTexture != nil) {
+        //---------------------------------------------------------
+        // Use our scaled input texture for non-square pixels:
+        //---------------------------------------------------------
+        [commandEncoder setFragmentTexture:scaledInputTexture
+                                   atIndex:BTI_InputImage];
+    } else {
+        //---------------------------------------------------------
+        // Use the data straight from the MTLBuffer for square
+        // pixels to avoid any extra processing:
+        //---------------------------------------------------------
+        [commandEncoder setFragmentTexture:inputTexture
+                                   atIndex:BTI_InputImage];
+    }
+    
+    //---------------------------------------------------------
+    // drawPrimitives: Encodes a command to render one instance
+    // of primitives using vertex data in contiguous array
+    // elements.
+    //
+    // MTLPrimitiveTypeTriangleStrip: For every three adjacent
+    // vertices, rasterize a triangle.
+    //---------------------------------------------------------
+    [commandEncoder drawPrimitives:MTLPrimitiveTypeTriangleStrip
+                       vertexStart:0
+                       vertexCount:4];
+    
+    //---------------------------------------------------------
+    // Declares that all command generation from the encoder
+    // is completed. After `endEncoding` is called, the
+    // command encoder has no further use. You cannot encode
+    // any other commands with this encoder.
+    //---------------------------------------------------------
+    [commandEncoder endEncoding];
+    
+    //---------------------------------------------------------
+    // Commits the command buffer for execution.
+    // After you call the commit method, the MTLDevice schedules
+    // and executes the commands in the command buffer. If you
+    // haven’t already enqueued the command buffer with a call
+    // to enqueue, calling this function also enqueues the
+    // command buffer. The GPU executes the command buffer
+    // after any command buffers enqueued before it on the same
+    // command queue.
+    //
+    // You can only commit a command buffer once. You can’t
+    // commit a command buffer if the command buffer has an
+    // active command encoder. Once you commit a command buffer,
+    // you may not encode additional commands into it, nor can
+    // you add a schedule or completion handler.
+    //---------------------------------------------------------
+    [commandBuffer commit];
+    
+    //---------------------------------------------------------
+    // Blocks execution of the current thread until execution
+    // of the command buffer is completed.
+    //---------------------------------------------------------
+    [commandBuffer waitUntilCompleted];
+    
+    //---------------------------------------------------------
+    // Release the `colorAttachmentDescriptor` we created
+    // earlier:
+    //---------------------------------------------------------
+    [colorAttachmentDescriptor release];
+    
+    //---------------------------------------------------------
+    // Release the Input Texture:
+    //---------------------------------------------------------
+    if (inputTexture != nil) {
+        [inputTexture setPurgeableState:MTLPurgeableStateEmpty];
+        [inputTexture release];
+        inputTexture = nil;
+    }
+    if (scaledInputTexture != nil) {
+        [scaledInputTexture setPurgeableState:MTLPurgeableStateEmpty];
+        [scaledInputTexture release];
+        scaledInputTexture = nil;
+    }
+    
+    //---------------------------------------------------------
+    // Return the Command Queue back to the cache:
+    //---------------------------------------------------------
+    [deviceCache returnCommandQueueToCache:commandQueue];
+    
+    return YES;
+}
+
+//---------------------------------------------------------
 // renderDestinationImage:sourceImages:pluginState:atTime:error:
 //
 // The host will call this method when it wants your plug-in to render an image
@@ -1477,9 +1739,11 @@
     if ((pluginState == nil) || (sourceImages [ 0 ].ioSurface == nil) || (destinationImage.ioSurface == nil))
     {
         if (outError != NULL) {
+            NSString *errorMessage = @"FATAL ERROR - Invalid plugin state received from host.";
+            NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
             *outError = [NSError errorWithDomain:FxPlugErrorDomain
                                             code:kFxError_InvalidParameter
-                                        userInfo:@{ NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] FATAL ERROR - Invalid plugin state received from host." }];
+                                        userInfo:@{ NSLocalizedDescriptionKey : errorMessage }];
         }
         return NO;
     }
@@ -1491,7 +1755,8 @@
     NSError *paramsError;
     GyroflowParameters *params = [NSKeyedUnarchiver unarchivedObjectOfClass:[GyroflowParameters class] fromData:pluginState error:&paramsError];
     if (params == nil) {
-        NSString *errorMessage = [NSString stringWithFormat:@"[Gyroflow Toolbox Renderer] FATAL ERROR - Parameters was nil in -renderDestinationImage due to '%@'.", [paramsError localizedDescription]];
+        NSString *errorMessage = [NSString stringWithFormat:@"FATAL ERROR - Parameters was nil in -renderDestinationImage due to '%@'.", [paramsError localizedDescription]];
+        NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
         if (outError != NULL) {
             *outError = [NSError errorWithDomain:FxPlugErrorDomain
                                             code:kFxError_InvalidParameter
@@ -1510,7 +1775,7 @@
     NSNumber *fov                       = params.fov;
     NSNumber *smoothness                = params.smoothness;
     NSNumber *lensCorrection            = params.lensCorrection;
-            
+    
     NSNumber *horizonLock               = params.horizonLock;
     NSNumber *horizonRoll               = params.horizonRoll;
     NSNumber *positionOffsetX           = params.positionOffsetX;
@@ -1522,7 +1787,7 @@
     NSNumber *disableGyroflowStretch    = params.disableGyroflowStretch;
     
     //NSLog(@"[Gyroflow Toolbox Renderer] uniqueIdentifier: '%@'", uniqueIdentifier);
-        
+    
     //---------------------------------------------------------
     // Calculate output width & height:
     //---------------------------------------------------------
@@ -1530,7 +1795,7 @@
     float outputHeight      = (destinationImage.tilePixelBounds.top - destinationImage.tilePixelBounds.bottom);
     float fullWidth         = (destinationImage.imagePixelBounds.right - destinationImage.imagePixelBounds.left);
     float fullHeight        = (destinationImage.imagePixelBounds.top - destinationImage.imagePixelBounds.bottom);
-        
+    
     //---------------------------------------------------------
     // Prepare our aspect ratio correction objects:
     //---------------------------------------------------------
@@ -1538,297 +1803,16 @@
     float differenceBetweenHeights      = 0;
     
     //---------------------------------------------------------
-    //
-    // HOUSTON WE HAVE A PROBLEM!
-    //
-    // There's no unique identifier, so let's abort:
-    //
+    // There's no unique identifier or Gyroflow Data,
+    // so let's abort:
     //---------------------------------------------------------
-    if (uniqueIdentifier == nil || [uniqueIdentifier isEqualToString:@""]) {
-        
-        NSLog(@"[Gyroflow Toolbox Renderer] Showing early error message!");
-        
-        MetalDeviceCache* deviceCache       = [MetalDeviceCache deviceCache];
-        MTLPixelFormat pixelFormat          = [MetalDeviceCache MTLPixelFormatForImageTile:destinationImage];
-        id<MTLCommandQueue> commandQueue    = [deviceCache commandQueueWithRegistryID:destinationImage.deviceRegistryID
-                                                                          pixelFormat:pixelFormat];
-        if (commandQueue == nil)
-        {
-            NSString *errorMessage = @"[Gyroflow Toolbox Renderer] FATAL ERROR: commandQueue was nil when attempting to show an error message.";
-            NSLog(@"%@", errorMessage);
-            if (outError != NULL) {
-                *outError = [NSError errorWithDomain:FxPlugErrorDomain
-                                                code:kFxError_CommandQueueWasNilDuringShowErrorMessage
-                                            userInfo:@{ NSLocalizedDescriptionKey : errorMessage }];
-            }
-            return NO;
-        }
-        
-        id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
-        commandBuffer.label = @"Gyroflow Toolbox Error Command Buffer";
-        [commandBuffer enqueue];
-                
-        //---------------------------------------------------------
-        // Load the texture from our "Assets":
-        //---------------------------------------------------------
-        MTKTextureLoader *loader = [[MTKTextureLoader alloc] initWithDevice:commandQueue.device];
-        
-        NSDictionary *options = [[NSDictionary alloc] initWithObjectsAndKeys:
-                                 [NSNumber numberWithBool:YES], MTKTextureLoaderOptionSRGB,
-                                 nil];
-                
-        id<MTLTexture> inputTexture         = [loader newTextureWithName:@"NoGyroflowProjectLoaded" scaleFactor:1.0 bundle:[NSBundle mainBundle] options:options error:nil];
-        id<MTLTexture> outputTexture        = [destinationImage metalTextureForDevice:[deviceCache deviceWithRegistryID:destinationImage.deviceRegistryID]];
-        
-        //---------------------------------------------------------
-        // If square pixels, we'll manipulate the height and y
-        // axis manually:
-        //---------------------------------------------------------
-        if (fullHeight == outputHeight) {
-            correctedHeight = ((float)inputTexture.height/(float)inputTexture.width) * outputWidth;
-            differenceBetweenHeights = (outputHeight - correctedHeight) / 2;
-        }
-        
-        //---------------------------------------------------------
-        // Use a "Metal Performance Shader" to scale the texture
-        // to the correct size. Note, we're using the full width
-        // and height, to compensate for non-square pixels:
-        //---------------------------------------------------------
-        id<MTLTexture> scaledInputTexture = nil;
-        if (fullHeight != outputHeight) {
-            
-            //---------------------------------------------------------
-            // Create a new Command Buffer for scale transform:
-            //---------------------------------------------------------
-            id<MTLCommandBuffer> scaleCommandBuffer = [commandQueue commandBuffer];
-            scaleCommandBuffer.label = @"Gyroflow Toolbox Scale Command Buffer";
-            [scaleCommandBuffer enqueue];
-            
-            //---------------------------------------------------------
-            // Create a new texture for the scaled image:
-            //---------------------------------------------------------
-            MTLTextureDescriptor *scaleTextureDescriptor = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:inputTexture.pixelFormat
-                                                                                                              width:fullWidth
-                                                                                                             height:fullHeight
-                                                                                                          mipmapped:NO];
-            
-            scaledInputTexture = [inputTexture.device newTextureWithDescriptor:scaleTextureDescriptor];
-            
-            //---------------------------------------------------------
-            // Work out how much to scale/re-position:
-            //---------------------------------------------------------
-            float scaleX        = (float)(fullWidth / inputTexture.width);
-            float scaleY        = (float)(fullHeight / inputTexture.height);
-                          
-            if (scaleX > scaleY) {
-                scaleX = scaleY;
-            } else {
-                scaleY = scaleX;
-            }
-
-            float translateX    = (float)((fullWidth - inputTexture.width * scaleX) / 2);
-            float translateY    = (float)((fullHeight - inputTexture.height * scaleY) / 2);
-                        
-            MPSScaleTransform transform;
-            transform.scaleX        = scaleX;         // The horizontal scale factor.
-            transform.scaleY        = scaleY;         // The vertical scale factor.
-            transform.translateX    = translateX;     // The horizontal translation factor.
-            transform.translateY    = translateY;     // The vertical translation factor.
-
-            //---------------------------------------------------------
-            // A filter that resizes and changes the aspect ratio of
-            // an image:
-            //
-            // NOTE: In v1.0.0 we use MPSImageLanczosScale, however
-            //       I've changed to MPSImageBilinearScale as it's
-            //       faster, and we probably prefer speed over
-            //       quality for thumbnails.
-            //---------------------------------------------------------
-            MPSImageBilinearScale *filter = [[[MPSImageBilinearScale alloc] initWithDevice:commandQueue.device] autorelease];
-            [filter setScaleTransform:&transform];
-            [filter encodeToCommandBuffer:scaleCommandBuffer sourceTexture:inputTexture destinationTexture:scaledInputTexture];
-            
-            //---------------------------------------------------------
-            // Commits the scale command buffer for execution:
-            //---------------------------------------------------------
-            [scaleCommandBuffer commit];
-        }
-        
-        //---------------------------------------------------------
-        // Release the texture loader:
-        //---------------------------------------------------------
-        [options release];
-        [loader release];
-        
-        MTLRenderPassColorAttachmentDescriptor* colorAttachmentDescriptor   = [[MTLRenderPassColorAttachmentDescriptor alloc] init];
-        colorAttachmentDescriptor.texture = outputTexture;
-        colorAttachmentDescriptor.clearColor = MTLClearColorMake(0.0, 0.0, 1.0, 1.0);
-        colorAttachmentDescriptor.loadAction = MTLLoadActionClear;
-        MTLRenderPassDescriptor*    renderPassDescriptor    = [MTLRenderPassDescriptor renderPassDescriptor];
-        renderPassDescriptor.colorAttachments [ 0 ] = colorAttachmentDescriptor;
-        id<MTLRenderCommandEncoder>   commandEncoder  = [commandBuffer renderCommandEncoderWithDescriptor:renderPassDescriptor];
-        
-        //---------------------------------------------------------
-        // Calculate the vertex coordinates and the texture
-        // coordinates:
-        //---------------------------------------------------------
-        float   textureLeft     = (destinationImage.tilePixelBounds.left - destinationImage.imagePixelBounds.left) / fullWidth;
-        float   textureRight    = (destinationImage.tilePixelBounds.right - destinationImage.imagePixelBounds.left) / fullWidth;
-        float   textureBottom   = (destinationImage.tilePixelBounds.bottom - destinationImage.imagePixelBounds.bottom) / fullHeight;
-        float   textureTop      = (destinationImage.tilePixelBounds.top - destinationImage.imagePixelBounds.bottom) / fullHeight;
-        
-        Vertex2D    vertices[]  = {
-            { {  outputWidth / 2.0f, -outputHeight / 2.0f }, { textureRight, textureTop } },
-            { { -outputWidth / 2.0f, -outputHeight / 2.0f }, { textureLeft, textureTop } },
-            { {  outputWidth / 2.0f,  outputHeight / 2.0f }, { textureRight, textureBottom } },
-            { { -outputWidth / 2.0f,  outputHeight / 2.0f }, { textureLeft, textureBottom } }
-        };
-        
-        //---------------------------------------------------------
-        // Setup our viewport:
-        //
-        // MTLViewport: A 3D rectangular region for the viewport
-        // clipping.
-        //---------------------------------------------------------
-        MTLViewport viewport = {
-            0, differenceBetweenHeights, outputWidth, correctedHeight, -1.0, 1.0
-        };
-        
-        //---------------------------------------------------------
-        // Sets the viewport used for transformations and clipping:
-        //---------------------------------------------------------
-        [commandEncoder setViewport:viewport];
-        
-        //---------------------------------------------------------
-        // Setup our Render Pipeline State.
-        //
-        // MTLRenderPipelineState: An object that contains graphics
-        // functions and configuration state to use in a render
-        // command.
-        //---------------------------------------------------------
-        id<MTLRenderPipelineState> pipelineState = [deviceCache pipelineStateWithRegistryID:sourceImages[0].deviceRegistryID
-                                                                                pixelFormat:pixelFormat];
-        
-        //---------------------------------------------------------
-        // Sets the current render pipeline state object:
-        //---------------------------------------------------------
-        [commandEncoder setRenderPipelineState:pipelineState];
-        
-        //---------------------------------------------------------
-        // Sets a block of data for the vertex shader:
-        //---------------------------------------------------------
-        [commandEncoder setVertexBytes:vertices
-                                length:sizeof(vertices)
-                               atIndex:BVI_Vertices];
-        
-        //---------------------------------------------------------
-        // Set the viewport size:
-        //---------------------------------------------------------
-        simd_uint2  viewportSize = {
-            (unsigned int)(outputWidth),
-            (unsigned int)(outputHeight)
-        };
-        
-        //---------------------------------------------------------
-        // Sets a block of data for the vertex shader:
-        //---------------------------------------------------------
-        [commandEncoder setVertexBytes:&viewportSize
-                                length:sizeof(viewportSize)
-                               atIndex:BVI_ViewportSize];
-        
-        //---------------------------------------------------------
-        // Sets a texture for the fragment function at an index
-        // in the texture argument table:
-        //---------------------------------------------------------
-        if (scaledInputTexture != nil) {
-            //---------------------------------------------------------
-            // Use our scaled input texture for non-square pixels:
-            //---------------------------------------------------------
-            [commandEncoder setFragmentTexture:scaledInputTexture
-                                       atIndex:BTI_InputImage];
-        } else {
-            //---------------------------------------------------------
-            // Use the data straight from the MTLBuffer for square
-            // pixels to avoid any extra processing:
-            //---------------------------------------------------------
-            [commandEncoder setFragmentTexture:inputTexture
-                                       atIndex:BTI_InputImage];
-        }
-        
-        //---------------------------------------------------------
-        // drawPrimitives: Encodes a command to render one instance
-        // of primitives using vertex data in contiguous array
-        // elements.
-        //
-        // MTLPrimitiveTypeTriangleStrip: For every three adjacent
-        // vertices, rasterize a triangle.
-        //---------------------------------------------------------
-        [commandEncoder drawPrimitives:MTLPrimitiveTypeTriangleStrip
-                           vertexStart:0
-                           vertexCount:4];
-        
-        //---------------------------------------------------------
-        // Declares that all command generation from the encoder
-        // is completed. After `endEncoding` is called, the
-        // command encoder has no further use. You cannot encode
-        // any other commands with this encoder.
-        //---------------------------------------------------------
-        [commandEncoder endEncoding];
-        
-        //---------------------------------------------------------
-        // Commits the command buffer for execution.
-        // After you call the commit method, the MTLDevice schedules
-        // and executes the commands in the command buffer. If you
-        // haven’t already enqueued the command buffer with a call
-        // to enqueue, calling this function also enqueues the
-        // command buffer. The GPU executes the command buffer
-        // after any command buffers enqueued before it on the same
-        // command queue.
-        //
-        // You can only commit a command buffer once. You can’t
-        // commit a command buffer if the command buffer has an
-        // active command encoder. Once you commit a command buffer,
-        // you may not encode additional commands into it, nor can
-        // you add a schedule or completion handler.
-        //---------------------------------------------------------
-        [commandBuffer commit];
-        
-        //---------------------------------------------------------
-        // Blocks execution of the current thread until execution
-        // of the command buffer is completed.
-        //---------------------------------------------------------
-        [commandBuffer waitUntilCompleted];
-        
-        //---------------------------------------------------------
-        // Release the `colorAttachmentDescriptor` we created
-        // earlier:
-        //---------------------------------------------------------
-        [colorAttachmentDescriptor release];
-        
-        //---------------------------------------------------------
-        // Release the Input Texture:
-        //---------------------------------------------------------
-        if (inputTexture != nil) {
-            [inputTexture setPurgeableState:MTLPurgeableStateEmpty];
-            [inputTexture release];
-            inputTexture = nil;
-        }
-        if (scaledInputTexture != nil) {
-            [scaledInputTexture setPurgeableState:MTLPurgeableStateEmpty];
-            [scaledInputTexture release];
-            scaledInputTexture = nil;
-        }
-        
-        //---------------------------------------------------------
-        // Return the Command Queue back to the cache:
-        //---------------------------------------------------------
-        [deviceCache returnCommandQueueToCache:commandQueue];
-        
-        return YES;
+    if (uniqueIdentifier == nil || [uniqueIdentifier isEqualToString:@""] || gyroflowData == nil || [gyroflowData isEqualToString:@""]) {
+        //NSLog(@"[Gyroflow Toolbox Renderer] Showing early error message!");
+        return [self renderErrorMessageWithID:@"NoGyroflowProjectLoaded" correctedHeight:&correctedHeight destinationImage:destinationImage differenceBetweenHeights:&differenceBetweenHeights fullHeight:fullHeight fullWidth:fullWidth outError:outError outputHeight:outputHeight outputWidth:outputWidth sourceImages:sourceImages];
     }
     
     //NSLog(@"[Gyroflow Toolbox Renderer] uniqueIdentifier during render: %@", uniqueIdentifier);
-        
+    
     //---------------------------------------------------------
     // Set up the renderer, in this case we are using Metal.
     //---------------------------------------------------------
@@ -1844,16 +1828,21 @@
     //---------------------------------------------------------
     id<MTLCommandQueue> commandQueue = [deviceCache commandQueueWithRegistryID:sourceImages[0].deviceRegistryID
                                                                    pixelFormat:pixelFormat];
-
+    
     //---------------------------------------------------------
     // If the Command Queue wasn't created, abort:
     //---------------------------------------------------------
     if (commandQueue == nil)
     {
+        //---------------------------------------------------------
+        // Output error message to Console:
+        //---------------------------------------------------------
+        NSString *errorMessage = @"FATAL ERROR - Unable to get command queue. May need to increase cache size.";
+        NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
         if (outError != NULL) {
             *outError = [NSError errorWithDomain:FxPlugErrorDomain
                                             code:kFxError_InvalidParameter
-                                        userInfo:@{ NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] FATAL ERROR - Unable to get command queue. May need to increase cache size." }];
+                                        userInfo:@{ NSLocalizedDescriptionKey : errorMessage }];
         }
         return NO;
     }
@@ -1884,7 +1873,11 @@
         inputPixelFormat = @"RGBAf";
         numberOfBytes = 4;
     } else {
-        NSString *errorMessage = [NSString stringWithFormat:@"[Gyroflow Toolbox Renderer] BUG - Unsupported pixelFormat for inputTexture: %lu", (unsigned long)inputTexture.pixelFormat];
+        //---------------------------------------------------------
+        // Output error message to Console:
+        //---------------------------------------------------------
+        NSString *errorMessage = [NSString stringWithFormat:@"BUG - Unsupported pixelFormat for inputTexture: %lu", (unsigned long)inputTexture.pixelFormat];
+        NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
         if (outError != NULL) {
             *outError = [NSError errorWithDomain:FxPlugErrorDomain
                                             code:kFxError_UnsupportedPixelFormat
@@ -1916,342 +1909,60 @@
     uint8_t         xDisableGyroflowStretch    = [disableGyroflowStretch unsignedCharValue];
     
     //---------------------------------------------------------
-    // Only trigger the Rust function if we have Gyroflow Data:
+    // Trigger the Gyroflow Rust Function:
     //---------------------------------------------------------
-    if (![gyroflowData isEqualToString:@""]) {
-        //---------------------------------------------------------
-        // Trigger the Gyroflow Rust Function:
-        //---------------------------------------------------------
-        const char* result = processFrame(
-                              xUniqueIdentifier,        // const char*
-                              xWidth,                   // uint32_t
-                              xHeight,                  // uint32_t
-                              xPixelFormat,             // const char*
-                              numberOfBytes,            // int
-                              xPath,                    // const char*
-                              xData,                    // const char*
-                              xTimestamp,               // int64_t
-                              xFOV,                     // double
-                              xSmoothness,              // double
-                              xLensCorrection,          // double
-                              xHorizonLock,             // double
-                              xHorizonRoll,             // double
-                              xPositionOffsetX,         // double
-                              xPositionOffsetY,         // double
-                              xInputRotation,           // double
-                              xVideoRotation,           // double
-                              xFOVOverview,             // uint8_t
-                              xDisableGyroflowStretch,  // uint8_t
-                              inputTexture,             // MTLTexture
-                              outputTexture,            // MTLTexture
-                              commandQueue              // MTLCommandQueue
-                              );
-        
-        NSString *resultString = [NSString stringWithUTF8String: result];
-        //NSLog(@"[Gyroflow Toolbox Renderer] resultString: %@", resultString);
-        
-        if ([resultString isEqualToString:@"FAIL"]) {
-            
-            NSLog(@"[Gyroflow Toolbox Renderer] Showing fail error message!");
-            
-            MetalDeviceCache* deviceCache       = [MetalDeviceCache deviceCache];
-            MTLPixelFormat pixelFormat          = [MetalDeviceCache MTLPixelFormatForImageTile:destinationImage];
-            id<MTLCommandQueue> commandQueue    = [deviceCache commandQueueWithRegistryID:destinationImage.deviceRegistryID
-                                                                              pixelFormat:pixelFormat];
-            if (commandQueue == nil)
-            {
-                NSString *errorMessage = @"[Gyroflow Toolbox Renderer] FATAL ERROR: commandQueue was nil when attempting to show an error message.";
-                NSLog(@"%@", errorMessage);
-                if (outError != NULL) {
-                    *outError = [NSError errorWithDomain:FxPlugErrorDomain
-                                                    code:kFxError_CommandQueueWasNilDuringShowErrorMessage
-                                                userInfo:@{ NSLocalizedDescriptionKey : errorMessage }];
-                }
-                return NO;
-            }
-            
-            id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
-            commandBuffer.label = @"Gyroflow Toolbox Error Command Buffer";
-            [commandBuffer enqueue];
-                    
-            //---------------------------------------------------------
-            // Load the texture from our "Assets":
-            //---------------------------------------------------------
-            MTKTextureLoader *loader = [[MTKTextureLoader alloc] initWithDevice:commandQueue.device];
-            
-            NSDictionary *options = [[NSDictionary alloc] initWithObjectsAndKeys:
-                                     [NSNumber numberWithBool:YES], MTKTextureLoaderOptionSRGB,
-                                     nil];
-                    
-            id<MTLTexture> inputTexture         = [loader newTextureWithName:@"GyroflowCoreRenderError" scaleFactor:1.0 bundle:[NSBundle mainBundle] options:options error:nil];
-            id<MTLTexture> outputTexture        = [destinationImage metalTextureForDevice:[deviceCache deviceWithRegistryID:destinationImage.deviceRegistryID]];
-            
-            //---------------------------------------------------------
-            // If square pixels, we'll manipulate the height and y
-            // axis manually:
-            //---------------------------------------------------------
-            if (fullHeight == outputHeight) {
-                correctedHeight = ((float)inputTexture.height/(float)inputTexture.width) * outputWidth;
-                differenceBetweenHeights = (outputHeight - correctedHeight) / 2;
-            }
-            
-            //---------------------------------------------------------
-            // Use a "Metal Performance Shader" to scale the texture
-            // to the correct size. Note, we're using the full width
-            // and height, to compensate for non-square pixels:
-            //---------------------------------------------------------
-            id<MTLTexture> scaledInputTexture = nil;
-            if (fullHeight != outputHeight) {
-                
-                //---------------------------------------------------------
-                // Create a new Command Buffer for scale transform:
-                //---------------------------------------------------------
-                id<MTLCommandBuffer> scaleCommandBuffer = [commandQueue commandBuffer];
-                scaleCommandBuffer.label = @"Gyroflow Toolbox Scale Command Buffer";
-                [scaleCommandBuffer enqueue];
-                
-                //---------------------------------------------------------
-                // Create a new texture for the scaled image:
-                //---------------------------------------------------------
-                MTLTextureDescriptor *scaleTextureDescriptor = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:inputTexture.pixelFormat
-                                                                                                                  width:fullWidth
-                                                                                                                 height:fullHeight
-                                                                                                              mipmapped:NO];
-                
-                scaledInputTexture = [inputTexture.device newTextureWithDescriptor:scaleTextureDescriptor];
-                
-                //---------------------------------------------------------
-                // Work out how much to scale/re-position:
-                //---------------------------------------------------------
-                float scaleX        = (float)(fullWidth / inputTexture.width);
-                float scaleY        = (float)(fullHeight / inputTexture.height);
-                              
-                if (scaleX > scaleY) {
-                    scaleX = scaleY;
-                } else {
-                    scaleY = scaleX;
-                }
-
-                float translateX    = (float)((fullWidth - inputTexture.width * scaleX) / 2);
-                float translateY    = (float)((fullHeight - inputTexture.height * scaleY) / 2);
-                            
-                MPSScaleTransform transform;
-                transform.scaleX        = scaleX;         // The horizontal scale factor.
-                transform.scaleY        = scaleY;         // The vertical scale factor.
-                transform.translateX    = translateX;     // The horizontal translation factor.
-                transform.translateY    = translateY;     // The vertical translation factor.
-
-                //---------------------------------------------------------
-                // A filter that resizes and changes the aspect ratio of
-                // an image:
-                //
-                // NOTE: In v1.0.0 we use MPSImageLanczosScale, however
-                //       I've changed to MPSImageBilinearScale as it's
-                //       faster, and we probably prefer speed over
-                //       quality for thumbnails.
-                //---------------------------------------------------------
-                MPSImageBilinearScale *filter = [[[MPSImageBilinearScale alloc] initWithDevice:commandQueue.device] autorelease];
-                [filter setScaleTransform:&transform];
-                [filter encodeToCommandBuffer:scaleCommandBuffer sourceTexture:inputTexture destinationTexture:scaledInputTexture];
-                
-                //---------------------------------------------------------
-                // Commits the scale command buffer for execution:
-                //---------------------------------------------------------
-                [scaleCommandBuffer commit];
-            }
-            
-            //---------------------------------------------------------
-            // Release the texture loader:
-            //---------------------------------------------------------
-            [options release];
-            [loader release];
-            
-            MTLRenderPassColorAttachmentDescriptor* colorAttachmentDescriptor   = [[MTLRenderPassColorAttachmentDescriptor alloc] init];
-            colorAttachmentDescriptor.texture = outputTexture;
-            colorAttachmentDescriptor.clearColor = MTLClearColorMake(1.0, 0.5, 0.0, 1.0);
-            colorAttachmentDescriptor.loadAction = MTLLoadActionClear;
-            MTLRenderPassDescriptor*    renderPassDescriptor    = [MTLRenderPassDescriptor renderPassDescriptor];
-            renderPassDescriptor.colorAttachments [ 0 ] = colorAttachmentDescriptor;
-            id<MTLRenderCommandEncoder>   commandEncoder  = [commandBuffer renderCommandEncoderWithDescriptor:renderPassDescriptor];
-            
-            //---------------------------------------------------------
-            // Calculate the vertex coordinates and the texture
-            // coordinates:
-            //---------------------------------------------------------
-            float   textureLeft     = (destinationImage.tilePixelBounds.left - destinationImage.imagePixelBounds.left) / fullWidth;
-            float   textureRight    = (destinationImage.tilePixelBounds.right - destinationImage.imagePixelBounds.left) / fullWidth;
-            float   textureBottom   = (destinationImage.tilePixelBounds.bottom - destinationImage.imagePixelBounds.bottom) / fullHeight;
-            float   textureTop      = (destinationImage.tilePixelBounds.top - destinationImage.imagePixelBounds.bottom) / fullHeight;
-            
-            Vertex2D    vertices[]  = {
-                { {  outputWidth / 2.0f, -outputHeight / 2.0f }, { textureRight, textureTop } },
-                { { -outputWidth / 2.0f, -outputHeight / 2.0f }, { textureLeft, textureTop } },
-                { {  outputWidth / 2.0f,  outputHeight / 2.0f }, { textureRight, textureBottom } },
-                { { -outputWidth / 2.0f,  outputHeight / 2.0f }, { textureLeft, textureBottom } }
-            };
-            
-            //---------------------------------------------------------
-            // Setup our viewport:
-            //
-            // MTLViewport: A 3D rectangular region for the viewport
-            // clipping.
-            //---------------------------------------------------------
-            MTLViewport viewport = {
-                0, differenceBetweenHeights, outputWidth, correctedHeight, -1.0, 1.0
-            };
-            
-            //---------------------------------------------------------
-            // Sets the viewport used for transformations and clipping:
-            //---------------------------------------------------------
-            [commandEncoder setViewport:viewport];
-            
-            //---------------------------------------------------------
-            // Setup our Render Pipeline State.
-            //
-            // MTLRenderPipelineState: An object that contains graphics
-            // functions and configuration state to use in a render
-            // command.
-            //---------------------------------------------------------
-            id<MTLRenderPipelineState> pipelineState = [deviceCache pipelineStateWithRegistryID:sourceImages[0].deviceRegistryID
-                                                                                    pixelFormat:pixelFormat];
-            
-            //---------------------------------------------------------
-            // Sets the current render pipeline state object:
-            //---------------------------------------------------------
-            [commandEncoder setRenderPipelineState:pipelineState];
-            
-            //---------------------------------------------------------
-            // Sets a block of data for the vertex shader:
-            //---------------------------------------------------------
-            [commandEncoder setVertexBytes:vertices
-                                    length:sizeof(vertices)
-                                   atIndex:BVI_Vertices];
-            
-            //---------------------------------------------------------
-            // Set the viewport size:
-            //---------------------------------------------------------
-            simd_uint2  viewportSize = {
-                (unsigned int)(outputWidth),
-                (unsigned int)(outputHeight)
-            };
-            
-            //---------------------------------------------------------
-            // Sets a block of data for the vertex shader:
-            //---------------------------------------------------------
-            [commandEncoder setVertexBytes:&viewportSize
-                                    length:sizeof(viewportSize)
-                                   atIndex:BVI_ViewportSize];
-            
-            //---------------------------------------------------------
-            // Sets a texture for the fragment function at an index
-            // in the texture argument table:
-            //---------------------------------------------------------
-            if (scaledInputTexture != nil) {
-                //---------------------------------------------------------
-                // Use our scaled input texture for non-square pixels:
-                //---------------------------------------------------------
-                [commandEncoder setFragmentTexture:scaledInputTexture
-                                           atIndex:BTI_InputImage];
-            } else {
-                //---------------------------------------------------------
-                // Use the data straight from the MTLBuffer for square
-                // pixels to avoid any extra processing:
-                //---------------------------------------------------------
-                [commandEncoder setFragmentTexture:inputTexture
-                                           atIndex:BTI_InputImage];
-            }
-            
-            //---------------------------------------------------------
-            // drawPrimitives: Encodes a command to render one instance
-            // of primitives using vertex data in contiguous array
-            // elements.
-            //
-            // MTLPrimitiveTypeTriangleStrip: For every three adjacent
-            // vertices, rasterize a triangle.
-            //---------------------------------------------------------
-            [commandEncoder drawPrimitives:MTLPrimitiveTypeTriangleStrip
-                               vertexStart:0
-                               vertexCount:4];
-            
-            //---------------------------------------------------------
-            // Declares that all command generation from the encoder
-            // is completed. After `endEncoding` is called, the
-            // command encoder has no further use. You cannot encode
-            // any other commands with this encoder.
-            //---------------------------------------------------------
-            [commandEncoder endEncoding];
-            
-            //---------------------------------------------------------
-            // Commits the command buffer for execution.
-            // After you call the commit method, the MTLDevice schedules
-            // and executes the commands in the command buffer. If you
-            // haven’t already enqueued the command buffer with a call
-            // to enqueue, calling this function also enqueues the
-            // command buffer. The GPU executes the command buffer
-            // after any command buffers enqueued before it on the same
-            // command queue.
-            //
-            // You can only commit a command buffer once. You can’t
-            // commit a command buffer if the command buffer has an
-            // active command encoder. Once you commit a command buffer,
-            // you may not encode additional commands into it, nor can
-            // you add a schedule or completion handler.
-            //---------------------------------------------------------
-            [commandBuffer commit];
-            
-            //---------------------------------------------------------
-            // Blocks execution of the current thread until execution
-            // of the command buffer is completed.
-            //---------------------------------------------------------
-            [commandBuffer waitUntilCompleted];
-            
-            //---------------------------------------------------------
-            // Release the `colorAttachmentDescriptor` we created
-            // earlier:
-            //---------------------------------------------------------
-            [colorAttachmentDescriptor release];
-            
-            //---------------------------------------------------------
-            // Release the Input Texture:
-            //---------------------------------------------------------
-            if (inputTexture != nil) {
-                [inputTexture setPurgeableState:MTLPurgeableStateEmpty];
-                [inputTexture release];
-                inputTexture = nil;
-            }
-            if (scaledInputTexture != nil) {
-                [scaledInputTexture setPurgeableState:MTLPurgeableStateEmpty];
-                [scaledInputTexture release];
-                scaledInputTexture = nil;
-            }
-            
-            //---------------------------------------------------------
-            // Return the Command Queue back to the cache:
-            //---------------------------------------------------------
-            [deviceCache returnCommandQueueToCache:commandQueue];
-            
-            return YES;
-            
-        }        
+    const char* result = processFrame(
+                                      xUniqueIdentifier,        // const char*
+                                      xWidth,                   // uint32_t
+                                      xHeight,                  // uint32_t
+                                      xPixelFormat,             // const char*
+                                      numberOfBytes,            // int
+                                      xPath,                    // const char*
+                                      xData,                    // const char*
+                                      xTimestamp,               // int64_t
+                                      xFOV,                     // double
+                                      xSmoothness,              // double
+                                      xLensCorrection,          // double
+                                      xHorizonLock,             // double
+                                      xHorizonRoll,             // double
+                                      xPositionOffsetX,         // double
+                                      xPositionOffsetY,         // double
+                                      xInputRotation,           // double
+                                      xVideoRotation,           // double
+                                      xFOVOverview,             // uint8_t
+                                      xDisableGyroflowStretch,  // uint8_t
+                                      inputTexture,             // MTLTexture
+                                      outputTexture,            // MTLTexture
+                                      commandQueue              // MTLCommandQueue
+                                      );
+    
+    NSString *resultString = [NSString stringWithUTF8String: result];
+    //NSLog(@"[Gyroflow Toolbox Renderer] resultString: %@", resultString);
+    
+    //---------------------------------------------------------
+    // Gyroflow Core had an error, so abort:
+    //---------------------------------------------------------
+    if (![resultString isEqualToString:@"DONE"]) {
+        return [self renderErrorMessageWithID:@"GyroflowCoreRenderError" correctedHeight:&correctedHeight destinationImage:destinationImage differenceBetweenHeights:&differenceBetweenHeights fullHeight:fullHeight fullWidth:fullWidth outError:outError outputHeight:outputHeight outputWidth:outputWidth sourceImages:sourceImages];
     }
-  
+    
     //---------------------------------------------------------
     // Debugging:
     //---------------------------------------------------------
     /*
-    NSString *debugMessage = [NSString stringWithFormat:@"[Gyroflow Toolbox Renderer] RENDERING A FRAME:\n"];
-    debugMessage = [debugMessage stringByAppendingFormat:@"processFrame result: %@\n", resultString];
-    debugMessage = [debugMessage stringByAppendingFormat:@"inputTexture.width: %lu\n", (unsigned long)inputTexture.width];
-    debugMessage = [debugMessage stringByAppendingFormat:@"inputTexture.height: %lu\n", (unsigned long)inputTexture.height];
-    debugMessage = [debugMessage stringByAppendingFormat:@"outputWidth: %f\n", outputWidth];
-    debugMessage = [debugMessage stringByAppendingFormat:@"outputHeight: %f\n", outputHeight];
-    debugMessage = [debugMessage stringByAppendingFormat:@"gyroflowPath: %@\n", gyroflowPath];
-    debugMessage = [debugMessage stringByAppendingFormat:@"timestamp: %@\n", timestamp];
-    debugMessage = [debugMessage stringByAppendingFormat:@"fov: %f\n", sourceFOV];
-    debugMessage = [debugMessage stringByAppendingFormat:@"smoothness: %f\n", sourceSmoothness];
-    debugMessage = [debugMessage stringByAppendingFormat:@"lensCorrection: %f\n", sourceLensCorrection];
-    NSLog(@"%@", debugMessage);
-    */
+     NSString *debugMessage = [NSString stringWithFormat:@"[Gyroflow Toolbox Renderer] RENDERING A FRAME:\n"];
+     debugMessage = [debugMessage stringByAppendingFormat:@"processFrame result: %@\n", resultString];
+     debugMessage = [debugMessage stringByAppendingFormat:@"inputTexture.width: %lu\n", (unsigned long)inputTexture.width];
+     debugMessage = [debugMessage stringByAppendingFormat:@"inputTexture.height: %lu\n", (unsigned long)inputTexture.height];
+     debugMessage = [debugMessage stringByAppendingFormat:@"outputWidth: %f\n", outputWidth];
+     debugMessage = [debugMessage stringByAppendingFormat:@"outputHeight: %f\n", outputHeight];
+     debugMessage = [debugMessage stringByAppendingFormat:@"gyroflowPath: %@\n", gyroflowPath];
+     debugMessage = [debugMessage stringByAppendingFormat:@"timestamp: %@\n", timestamp];
+     debugMessage = [debugMessage stringByAppendingFormat:@"fov: %f\n", sourceFOV];
+     debugMessage = [debugMessage stringByAppendingFormat:@"smoothness: %f\n", sourceSmoothness];
+     debugMessage = [debugMessage stringByAppendingFormat:@"lensCorrection: %f\n", sourceLensCorrection];
+     NSLog(@"%@", debugMessage);
+     */
     
     //NSLog(@"[Gyroflow Toolbox Renderer] inputTexture.debugDescription: %@", inputTexture.debugDescription);
     
@@ -2260,11 +1971,6 @@
     // so we can re-use it again:
     //---------------------------------------------------------
     [deviceCache returnCommandQueueToCache:commandQueue];
-
-    //---------------------------------------------------------
-    // Release the Input Textures:
-    //---------------------------------------------------------
-    //[inputTexture setPurgeableState:MTLPurgeableStateEmpty];
     
     return YES;
 }
@@ -2298,7 +2004,83 @@
         [self buttonLoadPresetLensProfile];
     } else if (buttonID == kCB_OpenUserGuide) {
         [self buttonOpenUserGuide];
+    } else if (buttonID == kCB_Settings) {
+        [self buttonSettings];
     }
+}
+
+//---------------------------------------------------------
+// BUTTON: 'Settings'
+//---------------------------------------------------------
+-(void)buttonSettings {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        //---------------------------------------------------------
+        // Get User Defaults:
+        //---------------------------------------------------------
+        NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
+        
+        //---------------------------------------------------------
+        // Create the menu:
+        //---------------------------------------------------------
+        NSMenu *settingsMenu = [[[NSMenu alloc] initWithTitle:@"Settings"] autorelease];
+        
+        //---------------------------------------------------------
+        // Create the "Show Alerts" sub-menu:
+        //---------------------------------------------------------
+        NSMenu *disableAlertSubMenu = [[[NSMenu alloc] initWithTitle:@"Disable Alerts"] autorelease];
+        
+        //---------------------------------------------------------
+        // "Show Alerts" Sub Menu Items:
+        //---------------------------------------------------------
+        {
+            //---------------------------------------------------------
+            // Request Sandbox Access:
+            //---------------------------------------------------------
+            NSMenuItem *suppressRequestSandboxAccessAlert   = [[[NSMenuItem alloc] initWithTitle:@"Request Sandbox Access" action:@selector(toggleMenuItem:) keyEquivalent:@""] autorelease];
+            suppressRequestSandboxAccessAlert.identifier    = @"suppressRequestSandboxAccessAlert";
+            suppressRequestSandboxAccessAlert.target        = self;
+            suppressRequestSandboxAccessAlert.enabled       = YES;
+            suppressRequestSandboxAccessAlert.state         = [self boolToControlState:[userDefaults boolForKey:@"suppressRequestSandboxAccessAlert"]];
+            [disableAlertSubMenu addItem:suppressRequestSandboxAccessAlert];
+                        
+            //---------------------------------------------------------
+            // No Lens Profile Detected:
+            //---------------------------------------------------------
+            NSMenuItem *suppressNoLensProfileDetected   = [[[NSMenuItem alloc] initWithTitle:@"No Lens Profile Detected" action:@selector(toggleMenuItem:) keyEquivalent:@""] autorelease];
+            suppressNoLensProfileDetected.identifier    = @"suppressNoLensProfileDetected";
+            suppressNoLensProfileDetected.target        = self;
+            suppressNoLensProfileDetected.enabled       = YES;
+            suppressNoLensProfileDetected.state         = [self boolToControlState:[userDefaults boolForKey:@"suppressNoLensProfileDetected"]];
+            [disableAlertSubMenu addItem:suppressNoLensProfileDetected];
+        }
+        //---------------------------------------------------------
+        // Add "Show Alerts" Sub Menu:
+        //---------------------------------------------------------
+        NSMenuItem *disableAlertSubMenuItem  = [[[NSMenuItem alloc] initWithTitle:@"Disable Alerts" action:nil keyEquivalent:@""] autorelease];
+        [disableAlertSubMenuItem setSubmenu:disableAlertSubMenu];
+        
+        [settingsMenu addItem:disableAlertSubMenuItem];
+        
+        //---------------------------------------------------------
+        // Get the current mouse location:
+        //---------------------------------------------------------
+        NSPoint mouseLocation = [NSEvent mouseLocation];
+        
+        //---------------------------------------------------------
+        // Show the menu at the current mouse location:
+        //---------------------------------------------------------
+        [settingsMenu popUpMenuPositioningItem:nil atLocation:mouseLocation inView:nil appearance:[NSAppearance appearanceNamed:NSAppearanceNameVibrantDark]];
+    });
+}
+
+//---------------------------------------------------------
+// Toggle Menu Item:
+//---------------------------------------------------------
+- (void)toggleMenuItem:(id)sender {
+    NSMenuItem *menuItem = (NSMenuItem *)sender;
+    BOOL state = menuItem.state == NSControlStateValueOff; // NOTE: We want the opposite for the toggle.
+    NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
+    [userDefaults setBool:state forKey:menuItem.identifier];
 }
 
 //---------------------------------------------------------
@@ -2310,10 +2092,15 @@
     //---------------------------------------------------------
     id<FxCustomParameterActionAPI_v4> actionAPI = [_apiManager apiForProtocol:@protocol(FxCustomParameterActionAPI_v4)];
     if (actionAPI == nil) {
-        [self showAlertWithMessage:@"An error has occurred." info:@"Unable to retrieve 'FxCustomParameterActionAPI_v4'. This shouldn't happen, so it's probably a bug."];
+        //---------------------------------------------------------
+        // Show Error Message:
+        //---------------------------------------------------------
+        NSString *errorMessage = @"Unable to retrieve 'FxCustomParameterActionAPI_v4'. This shouldn't happen, so it's probably a bug.";
+        NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
+        [self showAlertWithMessage:@"An error has occurred." info:errorMessage];
         return;
     }
-        
+    
     //---------------------------------------------------------
     // Use the Action API to allow us to change the parameters:
     //---------------------------------------------------------
@@ -2329,7 +2116,12 @@
         //---------------------------------------------------------
         [actionAPI endAction:self];
         
-        [self showAlertWithMessage:@"An error has occurred." info:@"Unable to retrieve 'FxParameterRetrievalAPI_v6'.\n\nThis shouldn't happen, so it's probably a bug."];
+        //---------------------------------------------------------
+        // Show Error Message:
+        //---------------------------------------------------------
+        NSString *errorMessage = @"Unable to retrieve 'FxParameterRetrievalAPI_v6'.\n\nThis shouldn't happen, so it's probably a bug.";
+        NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
+        [self showAlertWithMessage:@"An error has occurred." info:errorMessage];
         return;
     }
     
@@ -2364,6 +2156,8 @@
     
     if (gyroflowProjectName != nil || [gyroflowProjectName isEqualToString:@""]) {
         gyroflowProjectName = [gyroflowProjectName stringByAppendingString:@".gyroflow"];
+    } else {
+        gyroflowProjectName = @"Untitled.gyroflow";
     }
     
     //---------------------------------------------------------
@@ -2372,30 +2166,29 @@
     [actionAPI endAction:self];
     
     //---------------------------------------------------------
+    // Limit the file type to Gyroflow supported media files:
+    //---------------------------------------------------------
+    UTType *gyroflow                 = [UTType typeWithFilenameExtension:@"gyroflow"];
+    NSArray *allowedContentTypes    = [NSArray arrayWithObjects:gyroflow, nil];
+    
+    //---------------------------------------------------------
     // Display Save Panel:
     //---------------------------------------------------------
     NSSavePanel *savePanel = [NSSavePanel savePanel];
-
+    
     [savePanel setTitle:@"Choose a Location to Save Your Gyroflow Project"];
     [savePanel setPrompt:@"Save"];
     [savePanel setNameFieldStringValue:gyroflowProjectName];
     [savePanel setDirectoryURL:[NSURL fileURLWithPath:gyroflowProjectPath]];
-    
-    //---------------------------------------------------------
-    // Limit the file type to Gyroflow supported media files:
-    //---------------------------------------------------------
-    UTType *gyroflow                 = [UTType typeWithFilenameExtension:@"gyroflow"];
-    
-    NSArray *allowedContentTypes    = [NSArray arrayWithObjects:gyroflow, nil];
     [savePanel setAllowedContentTypes:allowedContentTypes];
-
+    
     //---------------------------------------------------------
     // Show the Save Panel:
     //---------------------------------------------------------
     [savePanel beginWithCompletionHandler:^(NSInteger result){
         if (result == NSModalResponseOK) {
             NSURL *fileURL = [savePanel URL];
-                        
+            
             NSError *error = nil;
             BOOL succeeded = [gyroflowProjectData writeToURL:fileURL
                                                   atomically:YES
@@ -2475,14 +2268,6 @@
         return;
     }
     
-    /*
-     const char* loadLensProfile(
-         const char*                 gyroflow_project_data,
-         const char*                 lens_profile_path
-     );
-     */
-    
-    
     //---------------------------------------------------------
     // Load the Custom Parameter Action API:
     //---------------------------------------------------------
@@ -2491,7 +2276,7 @@
         [self showAlertWithMessage:@"An error has occurred." info:@"Unable to retrieve 'FxCustomParameterActionAPI_v4'. This shouldn't happen, so it's probably a bug."];
         return;
     }
-        
+    
     //---------------------------------------------------------
     // Use the Action API to allow us to change the parameters:
     //---------------------------------------------------------
@@ -2517,6 +2302,9 @@
     id<FxParameterSettingAPI_v5> paramSetAPI = [_apiManager apiForProtocol:@protocol(FxParameterSettingAPI_v5)];
     if (paramSetAPI == nil)
     {
+        //---------------------------------------------------------
+        // Show Error Message:
+        //---------------------------------------------------------
         NSString *errorMessage = @"Unable to retrieve FxParameterSettingAPI_v5 in 'selectFileButtonPressed'. This shouldn't happen.";
         NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
         [self showAlertWithMessage:@"An error has occurred." info:errorMessage];
@@ -2533,32 +2321,63 @@
         [self showAlertWithMessage:@"Failed to get Gyroflow Project" info:@"Please ensure you have a Gyroflow Project already loaded."];
         return;
     }
-        
-    NSString *lensProfilePath = [url path];
     
-    const char* loadResult = loadLensProfile(
-                                             [gyroflowProjectData UTF8String],
-                                             [lensProfilePath UTF8String]
-                                             );
+    //---------------------------------------------------------
+    // Process the file depending on the file type:
+    //---------------------------------------------------------
+    NSString *filePath              = [url path];
+    NSString *extension             = [[url pathExtension] lowercaseString];
+    NSString *loadResultString      = nil;
     
+    if ([extension isEqualToString:@"json"]) {
+        //---------------------------------------------------------
+        // Attempt to load the JSON Lens Profile:
+        //---------------------------------------------------------
+        const char* loadResult = loadLensProfile(
+                                                 [gyroflowProjectData UTF8String],
+                                                 [filePath UTF8String]
+                                                 );
+        loadResultString = [NSString stringWithUTF8String: loadResult];
+    } else {
+        //---------------------------------------------------------
+        // Attempt to load the Gyroflow Project Preset:
+        //---------------------------------------------------------
+        const char* loadResult = loadPreset(
+                                            [gyroflowProjectData UTF8String],
+                                            [filePath UTF8String]
+                                            );
+        loadResultString = [NSString stringWithUTF8String: loadResult];
+    }
+    
+    //---------------------------------------------------------
+    // Stop Accessing File:
+    //---------------------------------------------------------
     [url stopAccessingSecurityScopedResource];
-    
-    NSString *loadResultString = [NSString stringWithUTF8String: loadResult];
-    
+        
+    //---------------------------------------------------------
+    // Abort is failed:
+    //---------------------------------------------------------
     if (loadResultString == nil || [loadResultString isEqualToString:@"FAIL"]) {
         [self showAlertWithMessage:@"An error has occurred" info:@"Failed to load a Lens Profile or Preset."];
         [actionAPI endAction:self];
         return;
     }
     
+    //---------------------------------------------------------
+    // Save the data to FxPlug:
+    //---------------------------------------------------------
     [paramSetAPI setStringParameterValue:loadResultString toParameter:kCB_GyroflowProjectData];
     
     //---------------------------------------------------------
     // Trash the cache!
     //---------------------------------------------------------
     trashCache();
-    
-    [self showAlertWithMessage:@"VICTORY!" info:@""];
+        
+    //---------------------------------------------------------
+    // Show success message:
+    //---------------------------------------------------------
+    // TODO: Make lens profile complete alert optional
+    [self showAlertWithMessage:@"Import Complete!" info:@"Your Lens Profile has been correctly applied."];
     
     //---------------------------------------------------------
     // Stop Action API:
@@ -2575,10 +2394,15 @@
     //---------------------------------------------------------
     id<FxCustomParameterActionAPI_v4> actionAPI = [_apiManager apiForProtocol:@protocol(FxCustomParameterActionAPI_v4)];
     if (actionAPI == nil) {
-        [self showAlertWithMessage:@"An error has occurred." info:@"Unable to retrieve 'FxCustomParameterActionAPI_v4'. This shouldn't happen, so it's probably a bug."];
+        //---------------------------------------------------------
+        // Show Error Message:
+        //---------------------------------------------------------
+        NSString *errorMessage = @"Unable to retrieve 'FxCustomParameterActionAPI_v4'. This shouldn't happen, so it's probably a bug.";
+        NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
+        [self showAlertWithMessage:@"An error has occurred." info:errorMessage];
         return;
     }
-        
+    
     //---------------------------------------------------------
     // Use the Action API to allow us to change the parameters:
     //---------------------------------------------------------
@@ -2594,7 +2418,12 @@
         //---------------------------------------------------------
         [actionAPI endAction:self];
         
-        [self showAlertWithMessage:@"An error has occurred." info:@"Unable to retrieve 'FxParameterRetrievalAPI_v6'.\n\nThis shouldn't happen, so it's probably a bug."];
+        //---------------------------------------------------------
+        // Show Error Message:
+        //---------------------------------------------------------
+        NSString *errorMessage = @"Unable to retrieve 'FxParameterRetrievalAPI_v6'.\n\nThis shouldn't happen, so it's probably a bug.";
+        NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
+        [self showAlertWithMessage:@"An error has occurred." info:errorMessage];
         return;
     }
     
@@ -2634,7 +2463,12 @@
     //---------------------------------------------------------
     id<FxCustomParameterActionAPI_v4> actionAPI = [_apiManager apiForProtocol:@protocol(FxCustomParameterActionAPI_v4)];
     if (actionAPI == nil) {
-        [self showAlertWithMessage:@"An error has occurred." info:@"Unable to retrieve 'FxCustomParameterActionAPI_v4'. This shouldn't happen, so it's probably a bug."];
+        //---------------------------------------------------------
+        // Show Error Message:
+        //---------------------------------------------------------
+        NSString *errorMessage = @"Unable to retrieve 'FxCustomParameterActionAPI_v4'. This shouldn't happen, so it's probably a bug.";
+        NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
+        [self showAlertWithMessage:@"An error has occurred." info:errorMessage];
         return;
     }
     
@@ -2653,7 +2487,12 @@
         //---------------------------------------------------------
         [actionAPI endAction:self];
         
-        [self showAlertWithMessage:@"An error has occurred." info:@"Unable to retrieve 'FxParameterRetrievalAPI_v6'.\n\nThis shouldn't happen, so it's probably a bug."];
+        //---------------------------------------------------------
+        // Show Error Message:
+        //---------------------------------------------------------
+        NSString *errorMessage = @"Unable to retrieve 'FxParameterRetrievalAPI_v6'.\n\nThis shouldn't happen, so it's probably a bug.";
+        NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
+        [self showAlertWithMessage:@"An error has occurred." info:errorMessage];
         return;
     }
     
@@ -2700,12 +2539,13 @@
         //---------------------------------------------------------
         NSLog(@"[Gyroflow Toolbox Renderer] WARNING - No existing media or Gyroflow project was found so loading blank Gyroflow.");
         [[NSWorkspace sharedWorkspace] openURL:appURL];
+        
     } else {
         //---------------------------------------------------------
         // Get the encoded bookmark string:
         //---------------------------------------------------------
         NSString *encodedBookmark;
-                
+        
         if (isMediaFile) {
             [paramGetAPI getStringParameterValue:&encodedBookmark fromParameter:kCB_MediaBookmarkData];
         } else {
@@ -2759,17 +2599,18 @@
         }
         
         //---------------------------------------------------------
-        // There is an existing project path, so load Gyroflow
-        // with that path:
+        // This is depreciated, but there's no better way to do
+        // it in a sandbox sadly without prompting for access
+        // to the Gyroflow Application:
         //---------------------------------------------------------
-        //NSURL *appURL = [[NSWorkspace sharedWorkspace] URLForApplicationWithBundleIdentifier:bundleIdentifier];
-        //NSWorkspaceOpenConfiguration *config = [[[NSWorkspaceOpenConfiguration alloc] init] autorelease];
-        //[[NSWorkspace sharedWorkspace] openURLs:@[url] withApplicationAtURL:appURL configuration:config completionHandler:nil];
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+        [[NSWorkspace sharedWorkspace] openFile:[url path] withApplication:@"Gyroflow"];
+        #pragma GCC diagnostic pop
         
-        // NOTE TO SELF: For some dumb reason the above fails with a sandboxing error, but the below works:
-        
-        [[NSWorkspace sharedWorkspace] openURL:url];
-        
+        //---------------------------------------------------------
+        // Stop Accessing Security Scoped Resource:
+        //---------------------------------------------------------
         [url stopAccessingSecurityScopedResource];
     }
     
@@ -2790,22 +2631,22 @@
 // BUTTON: 'Load Last Gyroflow Project'
 //---------------------------------------------------------
 - (void)buttonLoadLastGyroflowProject {
-    NSLog(@"[Gyroflow Toolbox Renderer] Load Last Gyroflow Project Pressed!");
+    //NSLog(@"[Gyroflow Toolbox Renderer] Load Last Gyroflow Project Pressed!");
     
     if ([self canReadGyroflowPreferencesFile]) {
         //---------------------------------------------------------
         // We can read the Gyroflow Preferences file:
         //---------------------------------------------------------
-        NSLog(@"[Gyroflow Toolbox Renderer] We can read the preferences file.");
+        //NSLog(@"[Gyroflow Toolbox Renderer] We can read the preferences file.");
         [self readLastProjectFromGyroflowPreferencesFile];
     } else {
         //---------------------------------------------------------
         // We can't read the Gyroflow Preferences file, so lets
         // try get sandbox access:
         //---------------------------------------------------------
-        NSLog(@"[Gyroflow Toolbox Renderer] We can't read the preferences file.");
+        //NSLog(@"[Gyroflow Toolbox Renderer] We can't read the preferences file.");
         NSURL* gyroflowPlistURL = [self getGyroflowPreferencesFileURL];
-        [self requestSandboxAccessWithURL:gyroflowPlistURL];
+        [self requestSandboxAccessAlertWithURL:gyroflowPlistURL];
     }
 }
 
@@ -2814,23 +2655,29 @@
 //---------------------------------------------------------
 - (void)buttonReloadGyroflowProject {
     
-    NSLog(@"[Gyroflow Toolbox Renderer] BUTTON PRESSED: Reload Gyroflow Project");
+    //NSLog(@"[Gyroflow Toolbox Renderer] BUTTON PRESSED: Reload Gyroflow Project");
     
     //---------------------------------------------------------
     // Trash all the caches in Rust land:
     //---------------------------------------------------------
-    uint32_t cacheSize = trashCache();
-    NSLog(@"[Gyroflow Toolbox Renderer] Rust MANAGER_CACHE size after trashing (should be zero): %u", cacheSize);
+    trashCache();
+    //uint32_t cacheSize = trashCache();
+    //NSLog(@"[Gyroflow Toolbox Renderer] Rust MANAGER_CACHE size after trashing (should be zero): %u", cacheSize);
     
     //---------------------------------------------------------
     // Load the Custom Parameter Action API:
     //---------------------------------------------------------
     id<FxCustomParameterActionAPI_v4> actionAPI = [_apiManager apiForProtocol:@protocol(FxCustomParameterActionAPI_v4)];
     if (actionAPI == nil) {
-        [self showAlertWithMessage:@"An error has occurred." info:@"Unable to retrieve 'FxCustomParameterActionAPI_v4'. This shouldn't happen, so it's probably a bug."];
+        //---------------------------------------------------------
+        // Show error message:
+        //---------------------------------------------------------
+        NSString *errorMessage = @"Unable to retrieve 'FxCustomParameterActionAPI_v4'. This shouldn't happen, so it's probably a bug.";
+        NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
+        [self showAlertWithMessage:@"An error has occurred." info:errorMessage];
         return;
     }
-        
+    
     //---------------------------------------------------------
     // Use the Action API to allow us to change the parameters:
     //---------------------------------------------------------
@@ -2841,7 +2688,12 @@
     //---------------------------------------------------------
     id<FxParameterRetrievalAPI_v6> paramGetAPI = [_apiManager apiForProtocol:@protocol(FxParameterRetrievalAPI_v6)];
     if (paramGetAPI == nil) {
-        [self showAlertWithMessage:@"An error has occurred." info:@"Unable to retrieve 'FxParameterRetrievalAPI_v6'.\n\nThis shouldn't happen, so it's probably a bug."];
+        //---------------------------------------------------------
+        // Show error message:
+        //---------------------------------------------------------
+        NSString *errorMessage = @"Unable to retrieve 'FxParameterRetrievalAPI_v6'.\n\nThis shouldn't happen, so it's probably a bug.";
+        NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
+        [self showAlertWithMessage:@"An error has occurred." info:errorMessage];
         return;
     }
     
@@ -2850,21 +2702,21 @@
     //---------------------------------------------------------
     NSString *encodedBookmark;
     [paramGetAPI getStringParameterValue:&encodedBookmark fromParameter:kCB_GyroflowProjectBookmarkData];
-    NSLog(@"[Gyroflow Toolbox Renderer] encodedBookmark: %@", encodedBookmark);
-          
+    //NSLog(@"[Gyroflow Toolbox Renderer] encodedBookmark: %@", encodedBookmark);
+    
     //---------------------------------------------------------
     // Make sure there's actually encoded bookmark data. If
     // there's no bookmark, lets try the file path instead:
     //---------------------------------------------------------
     if ([encodedBookmark isEqualToString:@""]) {
-        NSLog(@"[Gyroflow Toolbox Renderer] encodedBookmark is empty, so lets try file path instead...");
+        //NSLog(@"[Gyroflow Toolbox Renderer] encodedBookmark is empty, so lets try file path instead...");
         
         //---------------------------------------------------------
         // Get the File Path:
         //---------------------------------------------------------
         NSString *gyroflowProjectPath;
         [paramGetAPI getStringParameterValue:&gyroflowProjectPath fromParameter:kCB_GyroflowProjectPath];
-        NSLog(@"[Gyroflow Toolbox Renderer] gyroflowProjectPath: %@", gyroflowProjectPath);
+        //NSLog(@"[Gyroflow Toolbox Renderer] gyroflowProjectPath: %@", gyroflowProjectPath);
         
         //---------------------------------------------------------
         // If there's no path, then abort:
@@ -2881,8 +2733,8 @@
         NSURL *gyroflowProjectURL           = [NSURL fileURLWithPath:gyroflowProjectPath];
         NSString *gyroflowProjectFilename   = [gyroflowProjectURL lastPathComponent];
         
-        NSLog(@"[Gyroflow Toolbox Renderer] gyroflowProjectURL: %@", gyroflowProjectURL);
-        NSLog(@"[Gyroflow Toolbox Renderer] gyroflowProjectFilename: %@", gyroflowProjectFilename);
+        //NSLog(@"[Gyroflow Toolbox Renderer] gyroflowProjectURL: %@", gyroflowProjectURL);
+        //NSLog(@"[Gyroflow Toolbox Renderer] gyroflowProjectFilename: %@", gyroflowProjectFilename);
         
         NSOpenPanel* panel = [NSOpenPanel openPanel];
         [panel setCanChooseDirectories:NO];
@@ -2898,7 +2750,7 @@
         UTType *gyroflowExtension       = [UTType typeWithFilenameExtension:@"gyroflow"];
         NSArray *allowedContentTypes    = [NSArray arrayWithObject:gyroflowExtension];
         [panel setAllowedContentTypes:allowedContentTypes];
-
+        
         //---------------------------------------------------------
         // Open the panel:
         //---------------------------------------------------------
@@ -2907,7 +2759,7 @@
             //---------------------------------------------------------
             // Open panel cancelled:
             //---------------------------------------------------------
-            NSLog(@"[Gyroflow Toolbox Renderer] Open Panel Cancelled");
+            //NSLog(@"[Gyroflow Toolbox Renderer] Open Panel Cancelled");
             
             //---------------------------------------------------------
             // Stop Action API:
@@ -2915,12 +2767,12 @@
             [actionAPI endAction:self];
             return;
         }
-
+        
         //---------------------------------------------------------
         // Start accessing security scoped resource:
         //---------------------------------------------------------
         NSURL *openPanelURL = [panel URL];
-        NSLog(@"[Gyroflow Toolbox Renderer] openPanelURL: %@", openPanelURL);
+        //NSLog(@"[Gyroflow Toolbox Renderer] openPanelURL: %@", openPanelURL);
         
         BOOL startedOK = [openPanelURL startAccessingSecurityScopedResource];
         if (startedOK == NO) {
@@ -2937,7 +2789,7 @@
             [actionAPI endAction:self];
             return;
         }
-
+        
         //---------------------------------------------------------
         // Create a Security Scope Bookmark, so we can reload
         // later:
@@ -2989,16 +2841,16 @@
         NSString *selectedGyroflowProjectPath            = [openPanelURL path];
         NSString *selectedGyroflowProjectBookmarkData    = [bookmark base64EncodedStringWithOptions:0];
         
-        NSLog(@"[Gyroflow Toolbox Renderer] selectedGyroflowProjectFile: %@", selectedGyroflowProjectFile);
-        NSLog(@"[Gyroflow Toolbox Renderer] selectedGyroflowProjectPath: %@", selectedGyroflowProjectPath);
-        NSLog(@"[Gyroflow Toolbox Renderer] selectedGyroflowProjectBookmarkData: %@", selectedGyroflowProjectBookmarkData);
+        //NSLog(@"[Gyroflow Toolbox Renderer] selectedGyroflowProjectFile: %@", selectedGyroflowProjectFile);
+        //NSLog(@"[Gyroflow Toolbox Renderer] selectedGyroflowProjectPath: %@", selectedGyroflowProjectPath);
+        //NSLog(@"[Gyroflow Toolbox Renderer] selectedGyroflowProjectBookmarkData: %@", selectedGyroflowProjectBookmarkData);
         
         //---------------------------------------------------------
         // Read the Gyroflow Project Data from File:
         //---------------------------------------------------------
         NSError *readError = nil;
         NSString *selectedGyroflowProjectData = [NSString stringWithContentsOfURL:openPanelURL encoding:NSUTF8StringEncoding error:&readError];
-        NSLog(@"[Gyroflow Toolbox Renderer] selectedGyroflowProjectData: %@", selectedGyroflowProjectData);
+        //NSLog(@"[Gyroflow Toolbox Renderer] selectedGyroflowProjectData: %@", selectedGyroflowProjectData);
         
         //---------------------------------------------------------
         // There was an error reading the Gyroflow Project file:
@@ -3022,7 +2874,7 @@
         //---------------------------------------------------------
         NSString *mediaBookmarkDataString = nil;
         [paramGetAPI getStringParameterValue:&mediaBookmarkDataString fromParameter:kCB_MediaBookmarkData];
-        NSLog(@"[Gyroflow Toolbox Renderer] mediaBookmarkDataString: %@", mediaBookmarkDataString);
+        //NSLog(@"[Gyroflow Toolbox Renderer] mediaBookmarkDataString: %@", mediaBookmarkDataString);
         
         //---------------------------------------------------------
         // If there's a bookmark for the media, lets try load it:
@@ -3033,8 +2885,8 @@
             // Decode the Base64 bookmark data:
             //---------------------------------------------------------
             NSData *decodedBookmark = [[[NSData alloc] initWithBase64EncodedString:mediaBookmarkDataString
-                                                                      options:0] autorelease];
-
+                                                                           options:0] autorelease];
+            
             //---------------------------------------------------------
             // Resolve the decoded bookmark data into a
             // security-scoped URL:
@@ -3065,7 +2917,7 @@
         //---------------------------------------------------------
         const char* hasData = doesGyroflowProjectContainStabilisationData([selectedGyroflowProjectData UTF8String]);
         NSString *hasDataResult = [NSString stringWithUTF8String: hasData];
-        NSLog(@"[Gyroflow Toolbox Renderer] doesGyroflowProjectContainStabilisationData: %@", hasDataResult);
+        //NSLog(@"[Gyroflow Toolbox Renderer] doesGyroflowProjectContainStabilisationData: %@", hasDataResult);
         if (hasDataResult == nil || ![hasDataResult isEqualToString:@"YES"]) {
             NSString *errorMessage = @"The Gyroflow file you imported doesn't seem to contain any gyro data.\n\nPlease try exporting from Gyroflow again using the 'Export project file (including gyro data)' option.";
             NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
@@ -3092,7 +2944,9 @@
         id<FxParameterSettingAPI_v5> paramSetAPI = [_apiManager apiForProtocol:@protocol(FxParameterSettingAPI_v5)];
         if (paramSetAPI == nil)
         {
-            [self showAlertWithMessage:@"An error has occurred." info:@"Unable to retrieve 'FxParameterSettingAPI_v5'.\n\nThis shouldn't happen, so it's probably a bug."];
+            NSString *errorMessage = @"Unable to retrieve 'FxParameterSettingAPI_v5'.\n\nThis shouldn't happen, so it's probably a bug.";
+            NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
+            [self showAlertWithMessage:@"An error has occurred." info:errorMessage];
             
             //---------------------------------------------------------
             // Stop Action API & Stop Accessing Resource:
@@ -3113,13 +2967,13 @@
         // Update 'Gyroflow Project Path':
         //---------------------------------------------------------
         [paramSetAPI setStringParameterValue:selectedGyroflowProjectPath toParameter:kCB_GyroflowProjectPath];
-        NSLog(@"[Gyroflow Toolbox Renderer] selectedGyroflowProjectPath: %@", selectedGyroflowProjectPath);
+        //NSLog(@"[Gyroflow Toolbox Renderer] selectedGyroflowProjectPath: %@", selectedGyroflowProjectPath);
         
         //---------------------------------------------------------
         // Update 'Gyroflow Project Bookmark Data':
         //---------------------------------------------------------
         [paramSetAPI setStringParameterValue:selectedGyroflowProjectBookmarkData toParameter:kCB_GyroflowProjectBookmarkData];
-        NSLog(@"[Gyroflow Toolbox Renderer] selectedGyroflowProjectBookmarkData: %@", selectedGyroflowProjectBookmarkData);
+        //NSLog(@"[Gyroflow Toolbox Renderer] selectedGyroflowProjectBookmarkData: %@", selectedGyroflowProjectBookmarkData);
         
         //---------------------------------------------------------
         // Update 'Gyroflow Project Data':
@@ -3130,11 +2984,12 @@
         // Update 'Loaded Gyroflow Project' Text Box:
         //---------------------------------------------------------
         [paramSetAPI setStringParameterValue:selectedGyroflowProjectFile toParameter:kCB_LoadedGyroflowProject];
-        NSLog(@"[Gyroflow Toolbox Renderer] selectedGyroflowProjectFile: %@", selectedGyroflowProjectFile);
+        //NSLog(@"[Gyroflow Toolbox Renderer] selectedGyroflowProjectFile: %@", selectedGyroflowProjectFile);
         
         //---------------------------------------------------------
         // Show success message:
         //---------------------------------------------------------
+        // TODO: Success message should be optional.
         [self showAlertWithMessage:@"Success!" info:@"The Gyroflow Project has been successfully reloaded from disk."];
         
         //---------------------------------------------------------
@@ -3149,8 +3004,8 @@
     // Decode the Base64 bookmark data:
     //---------------------------------------------------------
     NSData *decodedBookmark = [[[NSData alloc] initWithBase64EncodedString:encodedBookmark
-                                                              options:0] autorelease];
-
+                                                                   options:0] autorelease];
+    
     //---------------------------------------------------------
     // Resolve the decoded bookmark data into a
     // security-scoped URL:
@@ -3173,6 +3028,7 @@
         //---------------------------------------------------------
         NSString *message   = @"An error has occurred.";
         NSString *info      = [NSString stringWithFormat:@"Failed to resolve bookmark due to:\n\n%@", [bookmarkError localizedDescription]];
+        NSLog(@"[Gyroflow Toolbox Renderer] %@", info);
         [self showAlertWithMessage:message info:info];
         
         //---------------------------------------------------------
@@ -3192,6 +3048,7 @@
         //---------------------------------------------------------
         NSString *message   = @"An error has occurred.";
         NSString *info      = @"Unable to retrieve 'FxParameterSettingAPI_v5'.\n\nThis shouldn't happen, so it's probably a bug.";
+        NSLog(@"[Gyroflow Toolbox Renderer] %@", info);
         [self showAlertWithMessage:message info:info];
         
         //---------------------------------------------------------
@@ -3200,7 +3057,7 @@
         [actionAPI endAction:self];
         return;
     }
-
+    
     //---------------------------------------------------------
     // Read the Gyroflow Project Data from File:
     //---------------------------------------------------------
@@ -3223,6 +3080,7 @@
         //---------------------------------------------------------
         NSString *message   = @"An error has occurred.";
         NSString *info      = [NSString stringWithFormat:@"Failed to read Gyroflow Project file due to:\n\n%@", [readError localizedDescription]];
+        NSLog(@"[Gyroflow Toolbox Renderer] %@", info);
         [self showAlertWithMessage:message info:info];
         
         //---------------------------------------------------------
@@ -3236,7 +3094,7 @@
     // Update 'Gyroflow Project Data':
     //---------------------------------------------------------
     [paramSetAPI setStringParameterValue:selectedGyroflowProjectData toParameter:kCB_GyroflowProjectData];
-        
+    
     //---------------------------------------------------------
     // Generate a new unique identifier:
     //---------------------------------------------------------
@@ -3252,6 +3110,7 @@
     //---------------------------------------------------------
     // Show success message:
     //---------------------------------------------------------
+    // TODO: This reload success message should be optional.
     [self showAlertWithMessage:@"Success!" info:@"The Gyroflow Project has been successfully reloaded from disk."];
 }
 
@@ -3267,12 +3126,12 @@
 - (BOOL)importDroppedMedia:(NSData*)bookmarkData {
     
     /*
-    if ([[NSFileManager defaultManager] isReadableFileAtPath:[fileURL path]]) {
-        NSLog(@"[Gyroflow Toolbox Renderer] Can read file: %@", [fileURL path]);
-    } else {
-        NSLog(@"[Gyroflow Toolbox Renderer] Failed to read file: %@", [fileURL path]);
-    }
-    */
+     if ([[NSFileManager defaultManager] isReadableFileAtPath:[fileURL path]]) {
+     NSLog(@"[Gyroflow Toolbox Renderer] Can read file: %@", [fileURL path]);
+     } else {
+     NSLog(@"[Gyroflow Toolbox Renderer] Failed to read file: %@", [fileURL path]);
+     }
+     */
     
     //---------------------------------------------------------
     // Resolve the security-scope bookmark:
@@ -3292,38 +3151,38 @@
     }
     
     if (isStale) {
-        NSLog(@"[Gyroflow Toolbox Renderer] WARNING - Bookmark is stale!");
+        NSLog(@"[Gyroflow Toolbox Renderer] WARNING - Bookmark is stale: %@", [url path]);
     }
     
     if (![url startAccessingSecurityScopedResource]) {
         NSLog(@"[Gyroflow Toolbox Renderer] ERROR - Could not start accessing the security-scoped bookmark.");
         return NO;
     }
-            
-    NSLog(@"[Gyroflow Toolbox Renderer] importDroppedMedia URL: %@", [url path]);
+    
+    //NSLog(@"[Gyroflow Toolbox Renderer] importDroppedMedia URL: %@", [url path]);
     
     NSString *extension = [[url pathExtension] lowercaseString];
     NSFileManager *fileManager = [NSFileManager defaultManager];
-
+    
     if ([extension isEqualToString:@"gyroflow"]) {
         //---------------------------------------------------------
         // If the dragged file is a Gyroflow file, try load it:
         //---------------------------------------------------------
-        NSLog(@"[Gyroflow Toolbox Renderer] It's a Gyroflow Project!");
+        //NSLog(@"[Gyroflow Toolbox Renderer] It's a Gyroflow Project!");
         [self importGyroflowProjectWithOptionalURL:url];
     } else {
         //---------------------------------------------------------
         // If the dragged file is a Media file, check if there's
         // a Gyroflow Project next to it first:
         //---------------------------------------------------------
-        NSLog(@"[Gyroflow Toolbox Renderer] It's a Media File!");
+        //NSLog(@"[Gyroflow Toolbox Renderer] It's a Media File!");
         NSURL *gyroflowUrl = [[url URLByDeletingPathExtension] URLByAppendingPathExtension:@"gyroflow"];
-        NSLog(@"[Gyroflow Toolbox Renderer] importDroppedMedia Gyroflow URL: %@", [gyroflowUrl path]);
+        //NSLog(@"[Gyroflow Toolbox Renderer] importDroppedMedia Gyroflow URL: %@", [gyroflowUrl path]);
         if ([fileManager fileExistsAtPath:[gyroflowUrl path]]) {
-            NSLog(@"[Gyroflow Toolbox Renderer] It's a Media File, with a Gyroflow Project next to it!");
+            //NSLog(@"[Gyroflow Toolbox Renderer] It's a Media File, with a Gyroflow Project next to it!");
             [self importGyroflowProjectWithOptionalURL:gyroflowUrl];
         } else {
-            NSLog(@"[Gyroflow Toolbox Renderer] It's a Media File, with no Gyroflow Project next to it!");
+            //NSLog(@"[Gyroflow Toolbox Renderer] It's a Media File, with no Gyroflow Project next to it!");
             [self importMediaWithOptionalURL:url];
         }
     }
@@ -3339,48 +3198,79 @@
 //---------------------------------------------------------
 // Import Dropped Clip:
 //---------------------------------------------------------
-- (void)importDroppedClip:(NSString*)fcpxmlString {
-        
+- (BOOL)importDroppedClip:(NSString*)fcpxmlString {
+    
     NSURL *url = nil;
-
+    
     NSError *error;
-    NSXMLDocument *xmlDoc = [[NSXMLDocument alloc] initWithXMLString:fcpxmlString options:0 error:&error];
-   
+    NSXMLDocument *xmlDoc = [[[NSXMLDocument alloc] initWithXMLString:fcpxmlString options:0 error:&error] autorelease];
+    
     if (error) {
         NSString *errorMessage = [NSString stringWithFormat:@"Failed to parse the FCPXML due to:\n\n%@", error.localizedDescription];
-        [self showAlertWithMessage:@"An error has occurred" info:errorMessage];
-        return;
+        [self showAsyncAlertWithMessage:@"An error has occurred" info:errorMessage];
+        return NO;
     }
     
-    NSArray *mediaRepNodes = [xmlDoc nodesForXPath:@"//media-rep" error:&error];
-    
-    if (error) {
-        NSString *errorMessage = [NSString stringWithFormat:@"Error extracting media-rep nodes:\n\n%@", error.localizedDescription];
-        [self showAlertWithMessage:@"An error has occurred" info:errorMessage];
-        return;
-    }
-    
-    for (NSXMLElement *node in mediaRepNodes) {
-        NSString *src = [[node attributeForName:@"src"] stringValue];
-        if (src) {
-            url = [NSURL URLWithString:src];
+    if ([self isValidBRAWToolboxString:fcpxmlString]) {
+        //---------------------------------------------------------
+        // It's a BRAW Toolbox Clip:
+        //---------------------------------------------------------
+        //NSLog(@"[Gyroflow Toolbox Renderer] It's a BRAW clip!");
+        
+        BRAWToolboxXMLReader *reader = [[[BRAWToolboxXMLReader alloc] init] autorelease];
+        NSDictionary *result = [reader readXML:fcpxmlString];
+        
+        if (!result) {
+            [self showAlertWithMessage:@"An error has occurred" info:@"Failed to get the media path from the BRAW Toolbox Clip."];
+            return NO;
+        }
+                
+        //NSLog(@"[Gyroflow Toolbox Renderer] result: %@", result);
+        
+        NSString *filePath = result[@"File Path"];
+        NSString *bookmarkData = result[@"Bookmark Data"];
+        [self importBRAWToolboxClipWithPath:filePath bookmarkDataString:bookmarkData];
+        
+        return NO;
+    } else {
+        //---------------------------------------------------------
+        // It's not a BRAW Toolbox Clip:
+        //---------------------------------------------------------
+        //NSLog(@"[Gyroflow Toolbox Renderer] It's NOT a BRAW clip!");
+        
+        NSArray *mediaRepNodes = [xmlDoc nodesForXPath:@"//media-rep" error:&error];
+        
+        if (error) {
+            NSString *errorMessage = [NSString stringWithFormat:@"Error extracting media-rep nodes:\n\n%@", error.localizedDescription];
+            NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
+            [self showAsyncAlertWithMessage:@"An error has occurred" info:errorMessage];
+            return NO;
+        }
+        
+        for (NSXMLElement *node in mediaRepNodes) {
+            NSString *src = [[node attributeForName:@"src"] stringValue];
+            if (src) {
+                url = [NSURL URLWithString:src];
+            }
+        }
+        
+        if (url == nil) {
+            [self showAsyncAlertWithMessage:@"An error has occurred" info:@"Failed to get the media path from the FCPXML."];
+            return NO;
+        }
+        
+        NSURL *gyroflowUrl = [[url URLByDeletingPathExtension] URLByAppendingPathExtension:@"gyroflow"];
+        
+        NSFileManager *fileManager = [NSFileManager defaultManager];
+        
+        if ([fileManager fileExistsAtPath:[gyroflowUrl path]]) {
+            [self importGyroflowProjectWithOptionalURL:gyroflowUrl];
+        } else {
+            [self importMediaWithOptionalURL:url];
         }
     }
     
-    if (url == nil) {
-        [self showAlertWithMessage:@"An error has occurred" info:@"Failed to get the media path from the FCPXML."];
-        return;
-    }
-        
-    NSURL *gyroflowUrl = [[url URLByDeletingPathExtension] URLByAppendingPathExtension:@"gyroflow"];
-
-    NSFileManager *fileManager = [NSFileManager defaultManager];
-
-    if ([fileManager fileExistsAtPath:[gyroflowUrl path]]) {
-        [self importGyroflowProjectWithOptionalURL:gyroflowUrl];
-    } else {
-        [self importMediaWithOptionalURL:url];
-    }
+    return YES;
 }
 
 //---------------------------------------------------------
@@ -3390,77 +3280,99 @@
 //---------------------------------------------------------
 
 //---------------------------------------------------------
+// Request Sandbox access alert:
+//---------------------------------------------------------
+- (void)requestSandboxAccessAlertWithURL:(NSURL*)gyroflowPlistURL {
+    //---------------------------------------------------------
+    // Show popup with instructions:
+    //---------------------------------------------------------
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    if (![defaults boolForKey:@"suppressRequestSandboxAccessAlert"]) {
+        NSAlert *alert                  = [[[NSAlert alloc] init] autorelease];
+        alert.icon                      = [NSImage imageNamed:@"GyroflowToolbox"];
+        alert.alertStyle                = NSAlertStyleInformational;
+        alert.messageText               = @"Permission Required";
+        alert.informativeText           = @"Gyroflow Toolbox requires explicit permission to access your Gyroflow Preferences, so that it can determine the last opened project.\n\nPlease click 'Grant Access' on the next Open Folder window to continue.";
+        alert.showsSuppressionButton    = YES;
+        [alert beginSheetModalForWindow:loadLastGyroflowProjectView.window completionHandler:^(NSModalResponse result) {
+            
+            //---------------------------------------------------------
+            // Close the alert:
+            //---------------------------------------------------------
+            [alert.window orderOut:nil];
+            
+            if ([alert suppressionButton].state == NSControlStateValueOn) {
+                [[NSUserDefaults standardUserDefaults] setBool:YES forKey:@"suppressRequestSandboxAccessAlert"];
+            }
+            [self requestSandboxAccessWithURL:gyroflowPlistURL];
+        }];
+    } else {
+        [self requestSandboxAccessWithURL:gyroflowPlistURL];
+    }
+}
+
+//---------------------------------------------------------
 // Request Sandbox access to the Gyroflow Preferences file:
 //---------------------------------------------------------
 - (void)requestSandboxAccessWithURL:(NSURL*)gyroflowPlistURL {
     //---------------------------------------------------------
-    // Show popup with instructions:
+    // Display an open panel:
     //---------------------------------------------------------
-    NSAlert *alert = [[[NSAlert alloc] init] autorelease];
-    alert.icon              = [NSImage imageNamed:@"GyroflowToolbox"];
-    alert.alertStyle        = NSAlertStyleInformational;
-    alert.messageText       = @"Permission Required";
-    alert.informativeText   = @"Gyroflow Toolbox requires explicit permission to access your Gyroflow Preferences, so that it can determine the last opened project.\n\nPlease click 'Grant Access' on the next Open Folder window to continue.";
-    [alert beginSheetModalForWindow:loadLastGyroflowProjectView.window completionHandler:^(NSModalResponse result){
-        //---------------------------------------------------------
-        // Display an open panel:
-        //---------------------------------------------------------
-        UTType *plistType               = [UTType typeWithIdentifier:@"com.apple.property-list"];
-        NSArray *allowedContentTypes    = [NSArray arrayWithObject:plistType];
-                
-        NSOpenPanel* panel = [NSOpenPanel openPanel];
-        [panel setCanChooseDirectories:NO];
-        [panel setCanCreateDirectories:NO];
-        [panel setCanChooseFiles:YES];
-        [panel setAllowsMultipleSelection:NO];
-        [panel setDirectoryURL:gyroflowPlistURL];
-        [panel setAllowedContentTypes:allowedContentTypes];
-        [panel setPrompt:@"Grant Access"];
-        [panel setMessage:@"Please click 'Grant Access' to allow access to the Gyroflow Preferences file:"];
+    UTType *plistType               = [UTType typeWithIdentifier:@"com.apple.property-list"];
+    NSArray *allowedContentTypes    = [NSArray arrayWithObject:plistType];
+    
+    NSOpenPanel* panel = [NSOpenPanel openPanel];
+    [panel setCanChooseDirectories:NO];
+    [panel setCanCreateDirectories:NO];
+    [panel setCanChooseFiles:YES];
+    [panel setAllowsMultipleSelection:NO];
+    [panel setDirectoryURL:gyroflowPlistURL];
+    [panel setAllowedContentTypes:allowedContentTypes];
+    [panel setPrompt:@"Grant Access"];
+    [panel setMessage:@"Please click 'Grant Access' to allow access to the Gyroflow Preferences file:"];
+    
+    [panel beginSheetModalForWindow:loadLastGyroflowProjectView.window completionHandler:^(NSModalResponse result){
+        if (result != NSModalResponseOK) {
+            return;
+        }
         
-        [panel beginSheetModalForWindow:loadLastGyroflowProjectView.window completionHandler:^(NSModalResponse result){
-            if (result != NSModalResponseOK) {
-                return;
-            }
-            
-            NSURL *url = [panel URL];
-            [url startAccessingSecurityScopedResource];
-            
-            //---------------------------------------------------------
-            // Create a new app-scope security-scoped bookmark for
-            // future sessions:
-            //---------------------------------------------------------
-            NSError *bookmarkError = nil;
-            NSURLBookmarkCreationOptions bookmarkOptions = NSURLBookmarkCreationWithSecurityScope;
-            NSData *bookmark = [url bookmarkDataWithOptions:bookmarkOptions
-                             includingResourceValuesForKeys:nil
-                                              relativeToURL:nil
-                                                      error:&bookmarkError];
-            
-            if (bookmarkError != nil) {
-                NSString *errorMessage = [NSString stringWithFormat:@"Failed to create a security-scoped bookmark due to the following error:\n\n %@", [bookmarkError localizedDescription]];
-                NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
-                [self showAlertWithMessage:@"An error has occurred" info:errorMessage];
-                [url stopAccessingSecurityScopedResource];
-                return;
-            }
-            
-            if (bookmark == nil) {
-                [self showAlertWithMessage:@"An error has occurred" info:@"Failed to create a security-scoped bookmark due to the Bookmark being 'nil' and the error message is also being 'nil'"];
-                [url stopAccessingSecurityScopedResource];
-                return;
-            }
-                
-            //NSLog(@"[Gyroflow Toolbox Renderer] Bookmark created successfully for: %@", [url path]);
-            
-            NSUserDefaults *userDefaults = [[NSUserDefaults alloc] init];
-            [userDefaults setObject:bookmark forKey:@"gyroFlowPreferencesBookmarkData"];
-            [userDefaults release];
-                
+        NSURL *url = [panel URL];
+        [url startAccessingSecurityScopedResource];
+        
+        //---------------------------------------------------------
+        // Create a new app-scope security-scoped bookmark for
+        // future sessions:
+        //---------------------------------------------------------
+        NSError *bookmarkError = nil;
+        NSURLBookmarkCreationOptions bookmarkOptions = NSURLBookmarkCreationWithSecurityScope;
+        NSData *bookmark = [url bookmarkDataWithOptions:bookmarkOptions
+                         includingResourceValuesForKeys:nil
+                                          relativeToURL:nil
+                                                  error:&bookmarkError];
+        
+        if (bookmarkError != nil) {
+            NSString *errorMessage = [NSString stringWithFormat:@"Failed to create a security-scoped bookmark due to the following error:\n\n %@", [bookmarkError localizedDescription]];
+            NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
+            [self showAlertWithMessage:@"An error has occurred" info:errorMessage];
             [url stopAccessingSecurityScopedResource];
-            
-            [self readLastProjectFromGyroflowPreferencesFile];
-        }];
+            return;
+        }
+        
+        if (bookmark == nil) {
+            [self showAlertWithMessage:@"An error has occurred" info:@"Failed to create a security-scoped bookmark due to the Bookmark being 'nil' and the error message is also being 'nil'"];
+            [url stopAccessingSecurityScopedResource];
+            return;
+        }
+        
+        //NSLog(@"[Gyroflow Toolbox Renderer] Bookmark created successfully for: %@", [url path]);
+        
+        NSUserDefaults *userDefaults = [[NSUserDefaults alloc] init];
+        [userDefaults setObject:bookmark forKey:@"gyroFlowPreferencesBookmarkData"];
+        [userDefaults release];
+        
+        [url stopAccessingSecurityScopedResource];
+        
+        [self readLastProjectFromGyroflowPreferencesFile];
     }];
 }
 
@@ -3591,13 +3503,17 @@
 //---------------------------------------------------------
 - (BOOL)importMediaWithOptionalURL:(NSURL*)optionalURL {
     
-    NSLog(@"[Gyroflow Toolbox Renderer] FUNCTION: Import Media File with optional URL: %@", optionalURL);
+    //NSLog(@"[Gyroflow Toolbox Renderer] FUNCTION: Import Media File with optional URL: %@", optionalURL);
     
     NSURL *url = nil;
-    BOOL isAccessible = [[NSFileManager defaultManager] isReadableFileAtPath:[optionalURL path]];
+    BOOL isAccessible = NO;
+    
+    if (optionalURL) {
+        isAccessible = [[NSFileManager defaultManager] isReadableFileAtPath:[optionalURL path]];
+    }
     
     if (isAccessible) {
-        NSLog(@"[Gyroflow Toolbox Renderer] importMediaWithOptionalURL has an accessible NSURL!");
+        //NSLog(@"[Gyroflow Toolbox Renderer] importMediaWithOptionalURL has an accessible NSURL!");
         url = optionalURL;
     } else {
         //---------------------------------------------------------
@@ -3638,15 +3554,20 @@
         //---------------------------------------------------------
         BOOL startedOK = [url startAccessingSecurityScopedResource];
         if (startedOK == NO) {
-            [self showAlertWithMessage:@"An error has occurred." info:@"Failed to startAccessingSecurityScopedResource. This shouldn't happen."];
+            NSString *errorMessage = @"Failed to startAccessingSecurityScopedResource. This shouldn't happen.";
+            NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
+            [self showAlertWithMessage:@"An error has occurred." info:errorMessage];
             return NO;
         }
     }
         
     NSString *path = [url path];
     
-    NSLog(@"[Gyroflow Toolbox Renderer] Import Media File Path: %@", path);
+    //NSLog(@"[Gyroflow Toolbox Renderer] Import Media File Path: %@", path);
     
+    //---------------------------------------------------------
+    // Use gyroflow_core to import the media file:
+    //---------------------------------------------------------
     const char* importResult = importMediaFile(
                                                [path UTF8String]        // const char*
                                                );
@@ -3707,90 +3628,6 @@
         NSString *info = @"The imported media file needs to be synchronized in Gyroflow before it can be used by Gyroflow Toolbox in Final Cut Pro.\n\nYou will be prompted to save the Gyroflow Project, and then we'll launch Gyroflow to open it.\n\nWhen you have finished synchronizing in Gyroflow, press COMMAND+S to save the project. Then back in Final Cut Pro press the 'Reload Gyroflow Project' button in the Inspector of the Gyroflow Toolbox effect.";
         [self showAlertWithMessage:message info:info];
         requiresGyroflowLaunch = YES;
-        
-        /*
-        //---------------------------------------------------------
-        // This is depreciated, but there's no better way to do
-        // it in a sandbox sadly:
-        //---------------------------------------------------------
-        #pragma GCC diagnostic push
-        #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-        [[NSWorkspace sharedWorkspace] openFile:[url path] withApplication:@"Gyroflow"];
-        #pragma GCC diagnostic pop
-        
-        return YES;
-        
-        //---------------------------------------------------------
-        // Display Save Panel:
-        //---------------------------------------------------------
-        NSSavePanel *savePanel = [NSSavePanel savePanel];
-
-        [savePanel setTitle:@"Choose a Location to Save Your Gyroflow Project"];
-        [savePanel setPrompt:@"Save"];
-        [savePanel setNameFieldStringValue:selectedGyroflowProjectFile];
-        [savePanel setDirectoryURL:[NSURL fileURLWithPath:selectedGyroflowProjectPath]];
-        [savePanel setExtensionHidden:NO];
-        [savePanel setCanSelectHiddenExtension:YES];
-        
-        //---------------------------------------------------------
-        // Limit the file type to Gyroflow supported media files:
-        //---------------------------------------------------------
-        UTType *gyroflow                 = [UTType typeWithFilenameExtension:@"gyroflow"];
-        
-        NSArray *allowedContentTypes    = [NSArray arrayWithObjects:gyroflow, nil];
-        [savePanel setAllowedContentTypes:allowedContentTypes];
-
-        NSModalResponse result = [savePanel runModal];
-                
-        if (result == NSModalResponseOK) {
-            savePanelURL = [savePanel URL];
-                        
-            NSError *error = nil;
-            BOOL succeeded = [gyroflowProject writeToURL:savePanelURL
-                                                  atomically:YES
-                                                    encoding:NSUTF8StringEncoding
-                                                       error:&error];
-            if (!succeeded) {
-                //---------------------------------------------------------
-                // Failed to save:
-                //---------------------------------------------------------
-                [actionAPI endAction:self];
-                NSString *errorMessage = [NSString stringWithFormat:@"Failed to write the Gyroflow Project to '%@', due to:\n\n%@", [savePanelURL path], error.localizedDescription];
-                NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
-                [self showAlertWithMessage:@"An error has occurred" info:errorMessage];
-                return NO;
-            }
-            
-            //---------------------------------------------------------
-            // Create a new security-scoped bookmark:
-            //---------------------------------------------------------
-            NSError *bookmarkError = nil;
-            NSURLBookmarkCreationOptions bookmarkOptions = NSURLBookmarkCreationWithSecurityScope | NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess;
-            NSData *bookmarkData = [savePanelURL bookmarkDataWithOptions:bookmarkOptions
-                                          includingResourceValuesForKeys:nil
-                                                           relativeToURL:nil
-                                                                   error:&bookmarkError];
-            
-            if (bookmarkError != nil) {
-                NSString *errorMessage = [NSString stringWithFormat:@"Unable to create security-scoped bookmark in importMediaWithOptionalURL ('%@') due to: %@", savePanelURL, bookmarkError];
-                NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
-                [self showAlertWithMessage:@"An error has occurred" info:errorMessage];
-                return NO;
-            }
-            
-            if (bookmarkData == nil) {
-                NSString *errorMessage = [NSString stringWithFormat:@"Unable to create security-scoped bookmark in importMediaWithOptionalURL ('%@') due to: Bookmark is nil.", savePanelURL];
-                NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
-                [self showAlertWithMessage:@"An error has occurred" info:errorMessage];
-                return NO;
-            }
-            
-            selectedGyroflowProjectPath = [savePanelURL path];
-            selectedGyroflowProjectBookmarkData = [bookmarkData base64EncodedStringWithOptions:0];
-            
-            requiresGyroflowLaunch = YES;
-        }
-        */
     }
     
     //---------------------------------------------------------
@@ -3896,19 +3733,19 @@
     NSUUID *uuid = [NSUUID UUID];
     NSString *uniqueIdentifier = uuid.UUIDString;
     [paramSetAPI setStringParameterValue:uniqueIdentifier toParameter:kCB_UniqueIdentifier];
-    NSLog(@"[Gyroflow Toolbox Renderer] uniqueIdentifier: %@", uniqueIdentifier);
+    //NSLog(@"[Gyroflow Toolbox Renderer] uniqueIdentifier: %@", uniqueIdentifier);
           
     //---------------------------------------------------------
     // Update 'Gyroflow Project Path':
     //---------------------------------------------------------
     [paramSetAPI setStringParameterValue:selectedGyroflowProjectPath toParameter:kCB_GyroflowProjectPath];
-    NSLog(@"[Gyroflow Toolbox Renderer] selectedGyroflowProjectPath: %@", selectedGyroflowProjectPath);
+    //NSLog(@"[Gyroflow Toolbox Renderer] selectedGyroflowProjectPath: %@", selectedGyroflowProjectPath);
     
     //---------------------------------------------------------
     // Update 'Gyroflow Project Bookmark Data':
     //---------------------------------------------------------
     [paramSetAPI setStringParameterValue:selectedGyroflowProjectBookmarkData toParameter:kCB_GyroflowProjectBookmarkData];
-    NSLog(@"[Gyroflow Toolbox Renderer] selectedGyroflowProjectBookmarkData: %@", selectedGyroflowProjectBookmarkData);
+    //NSLog(@"[Gyroflow Toolbox Renderer] selectedGyroflowProjectBookmarkData: %@", selectedGyroflowProjectBookmarkData);
     
     //---------------------------------------------------------
     // Update 'Gyroflow Project Data':
@@ -3919,20 +3756,20 @@
     // Update 'Loaded Gyroflow Project' Text Box:
     //---------------------------------------------------------
     [paramSetAPI setStringParameterValue:selectedGyroflowProjectFile toParameter:kCB_LoadedGyroflowProject];
-    NSLog(@"[Gyroflow Toolbox Renderer] selectedGyroflowProjectFile: %@", selectedGyroflowProjectFile);
+    //NSLog(@"[Gyroflow Toolbox Renderer] selectedGyroflowProjectFile: %@", selectedGyroflowProjectFile);
     
     //---------------------------------------------------------
     // Set parameters from Gyroflow Project file:
     //---------------------------------------------------------
     if ([getDefaultValuesResultString isEqualToString:@"OK"]) {
-        NSLog(@"[Gyroflow Toolbox Renderer] defaultFOV: %f", defaultFOV);
-        NSLog(@"[Gyroflow Toolbox Renderer] defaultSmoothness: %f", defaultSmoothness);
-        NSLog(@"[Gyroflow Toolbox Renderer] defaultLensCorrection: %f", defaultLensCorrection);
-        NSLog(@"[Gyroflow Toolbox Renderer] defaultHorizonLock: %f", defaultHorizonLock);
-        NSLog(@"[Gyroflow Toolbox Renderer] defaultHorizonRoll: %f", defaultHorizonRoll);
-        NSLog(@"[Gyroflow Toolbox Renderer] defaultPositionOffsetX: %f", defaultPositionOffsetX);
-        NSLog(@"[Gyroflow Toolbox Renderer] defaultPositionOffsetY: %f", defaultPositionOffsetY);
-        NSLog(@"[Gyroflow Toolbox Renderer] defaultVideoRotation: %f", defaultVideoRotation);
+        //NSLog(@"[Gyroflow Toolbox Renderer] defaultFOV: %f", defaultFOV);
+        //NSLog(@"[Gyroflow Toolbox Renderer] defaultSmoothness: %f", defaultSmoothness);
+        //NSLog(@"[Gyroflow Toolbox Renderer] defaultLensCorrection: %f", defaultLensCorrection);
+        //NSLog(@"[Gyroflow Toolbox Renderer] defaultHorizonLock: %f", defaultHorizonLock);
+        //NSLog(@"[Gyroflow Toolbox Renderer] defaultHorizonRoll: %f", defaultHorizonRoll);
+        //NSLog(@"[Gyroflow Toolbox Renderer] defaultPositionOffsetX: %f", defaultPositionOffsetX);
+        //NSLog(@"[Gyroflow Toolbox Renderer] defaultPositionOffsetY: %f", defaultPositionOffsetY);
+        //NSLog(@"[Gyroflow Toolbox Renderer] defaultVideoRotation: %f", defaultVideoRotation);
         
         [paramSetAPI setFloatValue:defaultFOV toParameter:kCB_FOV atTime:kCMTimeZero];
         [paramSetAPI setFloatValue:defaultSmoothness toParameter:kCB_Smoothness atTime:kCMTimeZero];
@@ -3977,31 +3814,35 @@
     //---------------------------------------------------------
     const char* officialLensLoaded = isOfficialLensLoaded([gyroflowProject UTF8String]);
     NSString *isOfficialLensLoaded = [NSString stringWithUTF8String:officialLensLoaded];
-    NSLog(@"[Gyroflow Toolbox Renderer] isOfficialLensLoaded: %@", isOfficialLensLoaded);
+    //NSLog(@"[Gyroflow Toolbox Renderer] isOfficialLensLoaded: %@", isOfficialLensLoaded);
     if (isOfficialLensLoaded == nil || ![isOfficialLensLoaded isEqualToString:@"YES"]) {
-        NSString *message = @"No Lens Profile Detected";
-        NSString *info = @"A lens profile could not be automatically detected from the supplied video file.\n\nYou will be prompted to select an appropriate Lens Profile in the next panel.";
-        [self showAlertWithMessage:message info:info];
-        [self buttonLoadPresetLensProfile];
-    }
-        
-    //---------------------------------------------------------
-    // Check to see if it has accurate timestamps:
-    //---------------------------------------------------------
-    /*
-    const char* doesHaveAccurateTimestamps = hasAccurateTimestamps([gyroflowProject UTF8String]);
-    NSString *doesHaveAccurateTimestampsString = [NSString stringWithUTF8String:doesHaveAccurateTimestamps];
-    NSLog(@"[Gyroflow Toolbox Renderer] doesHaveAccurateTimestamps: %@", doesHaveAccurateTimestampsString);
-    
-    if (doesHaveAccurateTimestampsString == nil || ![doesHaveAccurateTimestampsString isEqualToString:@"YES"]) {
-        [self showAlertWithMessage:@"Doesn't have accurate timestamps" info:@"need to load gyroflow"];
-    } else {
         //---------------------------------------------------------
-        // Show Victory Message:
+        // Show popup with instructions:
         //---------------------------------------------------------
-        [self showAlertWithMessage:@"Success!" info:@"The Gyroflow Project has been successfully imported.\n\nYou can now adjust the parameters as required."];
+        NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+        if (![defaults boolForKey:@"suppressNoLensProfileDetected"]) {
+            NSAlert *alert                  = [[[NSAlert alloc] init] autorelease];
+            alert.icon                      = [NSImage imageNamed:@"GyroflowToolbox"];
+            alert.alertStyle                = NSAlertStyleInformational;
+            alert.messageText               = @"No Lens Profile Detected";
+            alert.informativeText           = @"A lens profile could not be automatically detected from the supplied video file.\n\nYou will be prompted to select an appropriate Lens Profile in the next panel.";
+            alert.showsSuppressionButton    = YES;
+            [alert beginSheetModalForWindow:loadLastGyroflowProjectView.window completionHandler:^(NSModalResponse result) {
+                
+                //---------------------------------------------------------
+                // Close the alert:
+                //---------------------------------------------------------
+                [alert.window orderOut:nil];
+                
+                if ([alert suppressionButton].state == NSControlStateValueOn) {
+                    [[NSUserDefaults standardUserDefaults] setBool:YES forKey:@"suppressNoLensProfileDetected"];
+                }
+                [self buttonLoadPresetLensProfile];
+            }];
+        } else {
+            [self buttonLoadPresetLensProfile];
+        }
     }
-    */
     
     return YES;
 }
@@ -4011,14 +3852,19 @@
 //---------------------------------------------------------
 - (void)importGyroflowProjectWithOptionalURL:(NSURL*)optionalURL {
     
-    NSLog(@"[Gyroflow Toolbox Renderer] Import Gyroflow Project with Optional URL Triggered: %@", optionalURL);
+    //NSLog(@"[Gyroflow Toolbox Renderer] Import Gyroflow Project with Optional URL Triggered: %@", optionalURL);
     
     //---------------------------------------------------------
     // Load the Custom Parameter Action API:
     //---------------------------------------------------------
     id<FxCustomParameterActionAPI_v4> actionAPI = [_apiManager apiForProtocol:@protocol(FxCustomParameterActionAPI_v4)];
     if (actionAPI == nil) {
-        [self showAlertWithMessage:@"An error has occurred." info:@"Unable to retrieve 'FxCustomParameterActionAPI_v4' in ImportGyroflowProjectView's 'buttonPressed'. This shouldn't happen."];
+        //---------------------------------------------------------
+        // Show error message:
+        //---------------------------------------------------------
+        NSString *errorMessage = @"Unable to retrieve 'FxCustomParameterActionAPI_v4' in ImportGyroflowProjectView's 'buttonPressed'. This shouldn't happen.";
+        NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
+        [self showAlertWithMessage:@"An error has occurred." info:errorMessage];
         return;
     }
      
@@ -4053,7 +3899,12 @@
     NSURL *url = [panel URL];
     BOOL startedOK = [url startAccessingSecurityScopedResource];
     if (startedOK == NO) {
-        [self showAlertWithMessage:@"An error has occurred." info:@"Failed to startAccessingSecurityScopedResource. This shouldn't happen."];
+        //---------------------------------------------------------
+        // Show error message:
+        //---------------------------------------------------------
+        NSString *errorMessage = @"Failed to startAccessingSecurityScopedResource. This shouldn't happen.";
+        NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
+        [self showAlertWithMessage:@"An error has occurred." info:errorMessage];
         return;
     }
 
@@ -4103,7 +3954,7 @@
     //---------------------------------------------------------
     const char* hasData = doesGyroflowProjectContainStabilisationData([selectedGyroflowProjectData UTF8String]);
     NSString *hasDataResult = [NSString stringWithUTF8String: hasData];
-    NSLog(@"[Gyroflow Toolbox Renderer] hasDataResult: %@", hasDataResult);
+    //NSLog(@"[Gyroflow Toolbox Renderer] hasDataResult: %@", hasDataResult);
     if (hasDataResult == nil || ![hasDataResult isEqualToString:@"YES"]) {
         NSString *errorMessage = @"The Gyroflow file you imported doesn't seem to contain any gyro data.\n\nPlease try exporting from Gyroflow again using the 'Export project file (including gyro data)' option.";
         NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
@@ -4136,7 +3987,7 @@
     );
     
     NSString *getDefaultValuesResultString = [NSString stringWithUTF8String:getDefaultValuesResult];
-    NSLog(@"[Gyroflow Toolbox Renderer] getDefaultValuesResult: %@", getDefaultValuesResultString);
+    //NSLog(@"[Gyroflow Toolbox Renderer] getDefaultValuesResult: %@", getDefaultValuesResultString);
             
     //---------------------------------------------------------
     // Use the Action API to allow us to change the parameters:
@@ -4186,14 +4037,14 @@
     // Set parameters from Gyroflow Project file:
     //---------------------------------------------------------
     if ([getDefaultValuesResultString isEqualToString:@"OK"]) {
-        NSLog(@"[Gyroflow Toolbox Renderer] defaultFOV: %f", defaultFOV);
-        NSLog(@"[Gyroflow Toolbox Renderer] defaultSmoothness: %f", defaultSmoothness);
-        NSLog(@"[Gyroflow Toolbox Renderer] defaultLensCorrection: %f", defaultLensCorrection);
-        NSLog(@"[Gyroflow Toolbox Renderer] defaultHorizonLock: %f", defaultHorizonLock);
-        NSLog(@"[Gyroflow Toolbox Renderer] defaultHorizonRoll: %f", defaultHorizonRoll);
-        NSLog(@"[Gyroflow Toolbox Renderer] defaultPositionOffsetX: %f", defaultPositionOffsetX);
-        NSLog(@"[Gyroflow Toolbox Renderer] defaultPositionOffsetY: %f", defaultPositionOffsetY);
-        NSLog(@"[Gyroflow Toolbox Renderer] defaultVideoRotation: %f", defaultVideoRotation);
+        //NSLog(@"[Gyroflow Toolbox Renderer] defaultFOV: %f", defaultFOV);
+        //NSLog(@"[Gyroflow Toolbox Renderer] defaultSmoothness: %f", defaultSmoothness);
+        //NSLog(@"[Gyroflow Toolbox Renderer] defaultLensCorrection: %f", defaultLensCorrection);
+        //NSLog(@"[Gyroflow Toolbox Renderer] defaultHorizonLock: %f", defaultHorizonLock);
+        //NSLog(@"[Gyroflow Toolbox Renderer] defaultHorizonRoll: %f", defaultHorizonRoll);
+        //NSLog(@"[Gyroflow Toolbox Renderer] defaultPositionOffsetX: %f", defaultPositionOffsetX);
+        //NSLog(@"[Gyroflow Toolbox Renderer] defaultPositionOffsetY: %f", defaultPositionOffsetY);
+        //NSLog(@"[Gyroflow Toolbox Renderer] defaultVideoRotation: %f", defaultVideoRotation);
         
         [paramSetAPI setFloatValue:defaultFOV toParameter:kCB_FOV atTime:kCMTimeZero];
         [paramSetAPI setFloatValue:defaultSmoothness toParameter:kCB_Smoothness atTime:kCMTimeZero];
@@ -4220,7 +4071,350 @@
     //---------------------------------------------------------
     // Show Victory Message:
     //---------------------------------------------------------
+    // TODO: This import success alert should be optional.
     [self showAlertWithMessage:@"Success!" info:@"The Gyroflow Project has been successfully imported.\n\nYou can now adjust the parameters as required."];
+}
+
+//---------------------------------------------------------
+// Import BRAW Toolbox Clip with Path:
+//---------------------------------------------------------
+- (void)importBRAWToolboxClipWithPath:(NSString*)path bookmarkDataString:(NSString*)bookmarkDataString {
+    
+    //NSLog(@"[Gyroflow Toolbox Renderer] importBRAWToolboxClipWithPath Triggered!");
+    //NSLog(@"[Gyroflow Toolbox Renderer] path: %@", path);
+    //NSLog(@"[Gyroflow Toolbox Renderer] bookmarkDataString: %@", bookmarkDataString);
+    
+    NSUserDefaults *userDefaults = [[[NSUserDefaults alloc] init] autorelease];
+    NSString *brawToolboxDocumentBookmarkData = [userDefaults stringForKey:@"brawToolboxDocumentBookmarkData"];
+    
+    //NSLog(@"[Gyroflow Toolbox Renderer] brawToolboxDocumentBookmarkData: %@", brawToolboxDocumentBookmarkData);
+    
+    NSURL *urlToBRAWToolboxDocument = nil;
+    
+    BOOL needToRequestAccessToBRAWToolboxDocument = YES;
+    
+    //---------------------------------------------------------
+    // Check if there's previously saved bookmark data:
+    //---------------------------------------------------------
+    if (brawToolboxDocumentBookmarkData != nil && ![brawToolboxDocumentBookmarkData isEqualToString:@""]) {
+        
+        //NSLog(@"[Gyroflow Toolbox Renderer] brawToolboxDocumentBookmarkData is valid!");
+        
+        //---------------------------------------------------------
+        // Decode the Base64 bookmark data:
+        //---------------------------------------------------------
+        NSData *decodedBookmark = [[[NSData alloc] initWithBase64EncodedString:brawToolboxDocumentBookmarkData
+                                                                  options:0] autorelease];
+
+        //---------------------------------------------------------
+        // Resolve the decoded bookmark data into a
+        // security-scoped URL:
+        //---------------------------------------------------------
+        NSError *bookmarkError  = nil;
+        BOOL isStale            = NO;
+        
+        urlToBRAWToolboxDocument = [NSURL URLByResolvingBookmarkData:decodedBookmark
+                                                             options:NSURLBookmarkResolutionWithSecurityScope
+                                                       relativeToURL:nil
+                                                 bookmarkDataIsStale:&isStale
+                                                               error:&bookmarkError];
+        
+        //---------------------------------------------------------
+        // Continue if there's no error...
+        //---------------------------------------------------------
+        if (bookmarkError == nil || isStale == NO) {
+            if ([urlToBRAWToolboxDocument startAccessingSecurityScopedResource]) {
+                if ([[NSFileManager defaultManager] isReadableFileAtPath:[urlToBRAWToolboxDocument path]]) {
+                    //NSLog(@"[Gyroflow Toolbox Renderer] We have access to the BRAW Toolbox Document. Yay!");
+                    needToRequestAccessToBRAWToolboxDocument = NO;
+                } else {
+                    //NSLog(@"[Gyroflow Toolbox Renderer] We don't have access to the BRAW Toolbox Document. Yay!");
+                    [urlToBRAWToolboxDocument stopAccessingSecurityScopedResource];
+                }
+            }
+        }
+    }
+    
+    //---------------------------------------------------------
+    // If we need to request access to BRAW Toolbox document:
+    //---------------------------------------------------------
+    if (needToRequestAccessToBRAWToolboxDocument) {
+        
+        //NSLog(@"[Gyroflow Toolbox Renderer] needToRequestAccessToBRAWToolboxDocument triggered!");
+        
+        //NSLog(@"[Gyroflow Toolbox Renderer] importMediaFileView: %@", importMediaFileView);
+        //NSLog(@"[Gyroflow Toolbox Renderer] importMediaFileView.window: %@", importMediaFileView.window);
+                
+        //---------------------------------------------------------
+        // Show an alert:
+        //---------------------------------------------------------
+        NSAlert *alert          = [[[NSAlert alloc] init] autorelease];
+        alert.icon              = [NSImage imageNamed:@"GyroflowToolbox"];
+        alert.alertStyle        = NSAlertStyleInformational;
+        alert.messageText       = @"Gyroflow Toolbox Requires Permission";
+        alert.informativeText   = @"To make it easier to import BRAW Toolbox clips into Gyroflow Toolbox, you'll need to grant Gyroflow Toolbox sandbox access to a BRAW Toolbox helper file.\n\nOn the next panel, please select 'Grant Sandbox Access' to continue.";
+        [alert beginSheetModalForWindow:importMediaFileView.window completionHandler:^(NSModalResponse result){
+            
+            //---------------------------------------------------------
+            // Close the alert:
+            //---------------------------------------------------------
+            [alert.window orderOut:nil];
+            
+            //NSLog(@"[Gyroflow Toolbox Renderer] NSModalResponse result: %ld", (long)result);
+            
+            //---------------------------------------------------------
+            // Attempt to get access to the BRAW Toolbox document:
+            //---------------------------------------------------------
+            NSString *userHomePath = [self getUserHomeDirectoryPath];
+            //NSLog(@"[Gyroflow Toolbox Renderer] userHomePath: %@", userHomePath);
+            
+            NSString *documentFilePath = [userHomePath stringByAppendingString:@"/Library/Group Containers/A5HDJTY9X5.com.latenitefilms.BRAWToolbox/Library/Application Support/BRAWToolbox.document"];
+            //NSLog(@"[Gyroflow Toolbox Renderer] documentFilePath: %@", documentFilePath);
+            
+            NSURL *documentFileURL = [NSURL fileURLWithPath:documentFilePath];
+            //NSLog(@"[Gyroflow Toolbox Renderer] documentFileURL: %@", documentFileURL);
+                        
+            //---------------------------------------------------------
+            // Limit the file type to a ".document":
+            //---------------------------------------------------------
+            UTType *documentType = [UTType typeWithFilenameExtension:@"document"];
+            NSArray *allowedContentTypes = [NSArray arrayWithObjects:documentType, nil];
+            
+            //---------------------------------------------------------
+            // Setup an NSOpenPanel:
+            //---------------------------------------------------------
+            NSOpenPanel* panel = [NSOpenPanel openPanel];
+            [panel setMessage:@"Please select the BRAW Toolbox.document file:"];
+            [panel setPrompt:@"Grant Access"];
+            [panel setCanChooseDirectories:NO];
+            [panel setCanCreateDirectories:NO];
+            [panel setCanChooseFiles:YES];
+            [panel setAllowsMultipleSelection:NO];
+            [panel setDirectoryURL:documentFileURL];
+            [panel setAllowedContentTypes:allowedContentTypes];
+            [panel setExtensionHidden:NO];
+            [panel setCanSelectHiddenExtension:YES];
+            
+            //---------------------------------------------------------
+            // Open the panel:
+            //---------------------------------------------------------
+            NSModalResponse openPanelResult = [panel runModal];
+            if (openPanelResult != NSModalResponseOK) {
+                return;
+            }
+            
+            NSURL *openPanelURL = [panel URL];
+            //NSLog(@"[Gyroflow Toolbox Renderer] openPanelURL: %@", [openPanelURL path]);
+            
+            //---------------------------------------------------------
+            // Start accessing security scoped resource:
+            //---------------------------------------------------------
+            if (![openPanelURL startAccessingSecurityScopedResource]) {
+                NSString *errorMessage = @"Failed to startAccessingSecurityScopedResource when attempting to access the BRAW Toolbox document.\n\nThis shouldn't happen and is most likely a bug.";
+                NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
+                [self showAsyncAlertWithMessage:@"An error has occurred." info:errorMessage];
+                return;
+            } else {
+                NSLog(@"[Gyroflow Toolbox Renderer] We have sandbox access to: %@", [openPanelURL path]);
+            }
+            
+            //---------------------------------------------------------
+            // Create a Security Scope Bookmark, so we can reload
+            // later:
+            //---------------------------------------------------------
+            NSError *bookmarkError = nil;
+            NSURLBookmarkCreationOptions bookmarkOptions = NSURLBookmarkCreationWithSecurityScope | NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess;
+            NSData *bookmark = [openPanelURL bookmarkDataWithOptions:bookmarkOptions
+                                      includingResourceValuesForKeys:nil
+                                                       relativeToURL:nil
+                                                               error:&bookmarkError];
+            
+            //---------------------------------------------------------
+            // There was an error creating the bookmark:
+            //---------------------------------------------------------
+            if (bookmarkError != nil) {
+                NSString *errorMessage = [NSString stringWithFormat:@"Failed to create bookmark of the open panel file due to:\n\n%@", [bookmarkError localizedDescription]];
+                NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
+                [self showAsyncAlertWithMessage:@"An error has occurred." info:errorMessage];
+                
+                //---------------------------------------------------------
+                // Stop Accessing Resource:
+                //---------------------------------------------------------
+                [openPanelURL stopAccessingSecurityScopedResource];
+                return;
+            }
+            
+            //---------------------------------------------------------
+            // The bookmark is nil:
+            //---------------------------------------------------------
+            if (bookmark == nil) {
+                NSString *errorMessage = @"Bookmark data from the open panel is nil.\n\nThis shouldn't happen and is most likely a bug.";
+                NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
+                [self showAsyncAlertWithMessage:@"An error has occurred." info:errorMessage];
+                
+                //---------------------------------------------------------
+                // Stop Accessing Resource:
+                //---------------------------------------------------------
+                [openPanelURL stopAccessingSecurityScopedResource];
+                return;
+            }
+            
+            //---------------------------------------------------------
+            // Same the encoded bookmark for next time:
+            //---------------------------------------------------------
+            NSString *base64EncodedBookmark = [bookmark base64EncodedStringWithOptions:0];
+            [userDefaults setObject:base64EncodedBookmark forKey:@"brawToolboxDocumentBookmarkData"];
+            
+            //---------------------------------------------------------
+            //
+            // Lets now try and resolve the bookmark in the FCPXML:
+            //
+            //---------------------------------------------------------
+                        
+            //---------------------------------------------------------
+            // Resolve the decoded bookmark data into a
+            // security-scoped URL:
+            //---------------------------------------------------------
+            NSData *decodedBookmarkData = [[[NSData alloc] initWithBase64EncodedString:bookmarkDataString
+                                                                               options:0] autorelease];
+            
+            NSError *brawBookmarkError  = nil;
+            BOOL isStale                = NO;
+            
+            NSURL* brawDecodedBookmarkURL = [NSURL URLByResolvingBookmarkData:decodedBookmarkData
+                                                                      options:NSURLBookmarkResolutionWithSecurityScope
+                                                                relativeToURL:openPanelURL
+                                                          bookmarkDataIsStale:&isStale
+                                                                        error:&brawBookmarkError];
+            
+            //---------------------------------------------------------
+            // If there was an error:
+            //---------------------------------------------------------
+            if (brawBookmarkError != nil) {
+                NSString *errorMessage = [NSString stringWithFormat:@"Failed to resolve bookmark due to:\n\n%@", [brawBookmarkError localizedDescription]];
+                NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
+                [self showAsyncAlertWithMessage:@"An error has occurred." info:errorMessage];
+                
+                
+                //---------------------------------------------------------
+                // Stop Action API & Stop Accessing Resource:
+                //---------------------------------------------------------
+                [openPanelURL stopAccessingSecurityScopedResource];
+                return;
+            }
+            
+            if (![brawDecodedBookmarkURL startAccessingSecurityScopedResource]) {
+                NSString *errorMessage = @"Failed to startAccessingSecurityScopedResource when attempting to access the BRAW Toolbox clip.\n\nThis shouldn't happen.";
+                NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
+                [self showAsyncAlertWithMessage:@"An error has occurred." info:errorMessage];
+                return;
+            }
+            
+            //[self showAsyncAlertWithMessage:@"VICTORY!" info:[brawDecodedBookmarkURL path]];
+                        
+            //---------------------------------------------------------
+            // Check to see if there's a Gyroflow project next to the
+            // BRAW file:
+            //---------------------------------------------------------
+            NSURL *gyroflowUrl = [[brawDecodedBookmarkURL URLByDeletingPathExtension] URLByAppendingPathExtension:@"gyroflow"];
+            //NSLog(@"[Gyroflow Toolbox Renderer] importDroppedMedia Gyroflow URL: %@", [gyroflowUrl path]);
+            
+            NSFileManager *fileManager = [NSFileManager defaultManager];
+            if ([fileManager fileExistsAtPath:[gyroflowUrl path]]) {
+                //NSLog(@"[Gyroflow Toolbox Renderer] It's a Media File, with a Gyroflow Project next to it: %@", gyroflowUrl);
+                [self importGyroflowProjectWithOptionalURL:gyroflowUrl];
+            } else {
+                //NSLog(@"[Gyroflow Toolbox Renderer] It's a Media File, with no Gyroflow Project next to it: %@", brawDecodedBookmarkURL);
+                [self importMediaWithOptionalURL:brawDecodedBookmarkURL];
+            }
+                        
+            [openPanelURL stopAccessingSecurityScopedResource];
+            [brawDecodedBookmarkURL stopAccessingSecurityScopedResource];
+        }];
+        return;
+    }
+    
+    //---------------------------------------------------------
+    //
+    // We already have access to the BRAW Toolbox document:
+    //
+    //---------------------------------------------------------
+    
+    //NSLog(@"[Gyroflow Toolbox Renderer] We already have access to: %@", urlToBRAWToolboxDocument);
+    
+    //---------------------------------------------------------
+    // Resolve the decoded bookmark data into a
+    // security-scoped URL:
+    //---------------------------------------------------------
+    NSData *decodedBookmarkData = [[[NSData alloc] initWithBase64EncodedString:bookmarkDataString
+                                                                       options:0] autorelease];
+    
+    NSError *brawBookmarkError  = nil;
+    BOOL isStale                = NO;
+    
+    NSURL* brawDecodedBookmarkURL = [NSURL URLByResolvingBookmarkData:decodedBookmarkData
+                                                              options:NSURLBookmarkResolutionWithSecurityScope
+                                                        relativeToURL:urlToBRAWToolboxDocument
+                                                  bookmarkDataIsStale:&isStale
+                                                                error:&brawBookmarkError];
+    
+    //---------------------------------------------------------
+    // If there was an error:
+    //---------------------------------------------------------
+    if (brawBookmarkError != nil) {
+        //---------------------------------------------------------
+        // Show error message:
+        //---------------------------------------------------------
+        NSString *errorMessage = [NSString stringWithFormat:@"Failed to resolve bookmark due to:\n\n%@", [brawBookmarkError localizedDescription]];
+        NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
+        [self showAsyncAlertWithMessage:@"An error has occurred." info:errorMessage];
+                
+        //---------------------------------------------------------
+        // Stop Action API & Stop Accessing Resource:
+        //---------------------------------------------------------
+        [urlToBRAWToolboxDocument stopAccessingSecurityScopedResource];
+        return;
+    }
+    
+    //---------------------------------------------------------
+    // Failed to access resource due to sandbox:
+    //---------------------------------------------------------
+    if (![brawDecodedBookmarkURL startAccessingSecurityScopedResource]) {
+        //---------------------------------------------------------
+        // Show error message:
+        //---------------------------------------------------------
+        NSString *errorMessage = @"Failed to startAccessingSecurityScopedResource when attempting to access the BRAW Toolbox clip.\n\nThis shouldn't happen.";
+        NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
+        [self showAsyncAlertWithMessage:@"An error has occurred." info:errorMessage];
+        
+        //---------------------------------------------------------
+        // Stop Action API & Stop Accessing Resource:
+        //---------------------------------------------------------
+        [urlToBRAWToolboxDocument stopAccessingSecurityScopedResource];
+        return;
+    }
+                    
+    //---------------------------------------------------------
+    // Check to see if there's a Gyroflow project next to the
+    // BRAW file:
+    //---------------------------------------------------------
+    NSURL *gyroflowUrl = [[brawDecodedBookmarkURL URLByDeletingPathExtension] URLByAppendingPathExtension:@"gyroflow"];
+    //NSLog(@"[Gyroflow Toolbox Renderer] importDroppedMedia Gyroflow URL: %@", [gyroflowUrl path]);
+    
+    NSFileManager *fileManager = [NSFileManager defaultManager];
+    if ([fileManager fileExistsAtPath:[gyroflowUrl path]]) {
+        //NSLog(@"[Gyroflow Toolbox Renderer] It's a Media File, with a Gyroflow Project next to it: %@", gyroflowUrl);
+        [self importGyroflowProjectWithOptionalURL:gyroflowUrl];
+    } else {
+        //NSLog(@"[Gyroflow Toolbox Renderer] It's a Media File, with no Gyroflow Project next to it: %@", brawDecodedBookmarkURL);
+        [self importMediaWithOptionalURL:brawDecodedBookmarkURL];
+    }
+            
+    //---------------------------------------------------------
+    // Stop accessing resources:
+    //---------------------------------------------------------
+    [brawDecodedBookmarkURL stopAccessingSecurityScopedResource];
+    [urlToBRAWToolboxDocument stopAccessingSecurityScopedResource];
 }
 
 //---------------------------------------------------------
@@ -4228,6 +4422,97 @@
 #pragma mark - Helpers
 //
 //---------------------------------------------------------
+
+//---------------------------------------------------------
+// Converts a NSNumber to a Control State:
+//---------------------------------------------------------
+- (NSInteger)boolToControlState:(BOOL)state {
+    if (state) {
+        return NSControlStateValueOn;
+    } else {
+        return NSControlStateValueOff;
+    }
+}
+
+//---------------------------------------------------------
+// Is Valid BRAW Toolbox String?
+//---------------------------------------------------------
+- (BOOL)isValidBRAWToolboxString:(NSString *)inputString {
+    //---------------------------------------------------------
+    // Check for <filter-video ref="XXX" name="BRAW Toolbox">:
+    //---------------------------------------------------------
+    NSRange filterVideoRange = [inputString rangeOfString:@"<filter-video ref=\"" options:NSCaseInsensitiveSearch];
+    if (filterVideoRange.location == NSNotFound) {
+        return NO;
+    }
+    NSRange brawToolboxRange = [inputString rangeOfString:@"name=\"BRAW Toolbox\">" options:NSCaseInsensitiveSearch];
+    if (brawToolboxRange.location == NSNotFound) {
+        return NO;
+    }
+    
+    //---------------------------------------------------------
+    // Check for <param name="File Path":
+    //---------------------------------------------------------
+    NSRange filePathRange = [inputString rangeOfString:@"<param name=\"File Path\"" options:NSCaseInsensitiveSearch];
+    if (filePathRange.location == NSNotFound) {
+        return NO;
+    }
+    
+    //---------------------------------------------------------
+    // Check for <param name="Bookmark Data":
+    //---------------------------------------------------------
+    NSRange bookmarkDataRange = [inputString rangeOfString:@"<param name=\"Bookmark Data\"" options:NSCaseInsensitiveSearch];
+    if (bookmarkDataRange.location == NSNotFound) {
+        return NO;
+    }
+    
+    //---------------------------------------------------------
+    // Check for <param name="Decode Quality":
+    //---------------------------------------------------------
+    NSRange decodeQualityRange = [inputString rangeOfString:@"<param name=\"Decode Quality\"" options:NSCaseInsensitiveSearch];
+    if (decodeQualityRange.location == NSNotFound) {
+        return NO;
+    }
+    
+    //---------------------------------------------------------
+    // If all checks passed:
+    //---------------------------------------------------------
+    return YES;
+}
+
+//---------------------------------------------------------
+// Get user home directory path:
+//---------------------------------------------------------
+- (NSString*)getUserHomeDirectoryPath {
+    
+    NSString *homeDirectory = NSHomeDirectory();
+    NSArray *pathComponents = [homeDirectory pathComponents];
+
+    //---------------------------------------------------------
+    // Find the index of "Users" in path components:
+    //---------------------------------------------------------
+    NSUInteger usersIndex = [pathComponents indexOfObject:@"Users"];
+
+    //---------------------------------------------------------
+    // If "Users" is found and the next component exists,
+    // create the desired path and return it:
+    //---------------------------------------------------------
+    if (usersIndex != NSNotFound && usersIndex + 1 < [pathComponents count]) {
+        NSString *username = pathComponents[usersIndex + 1];
+        NSString *userHomePath = [NSString stringWithFormat:@"/Users/%@", username];
+        NSLog(@"[Gyroflow Toolbox] getUserHomeDirectoryPath - Method 1: %@", userHomePath);
+        return userHomePath;
+    }
+
+    //---------------------------------------------------------
+    // If username not found, lets try the original method:
+    //---------------------------------------------------------
+    struct passwd *pw = getpwuid(getuid());
+    assert(pw);
+    NSString *userHomeDirectoryPath = [NSString stringWithUTF8String:pw->pw_dir];
+    NSLog(@"[Gyroflow Toolbox] getUserHomeDirectoryPath - Method 2: %@", userHomeDirectoryPath);
+    return userHomeDirectoryPath;
+}
 
 //---------------------------------------------------------
 // Run on Main Queue Without Deadlocking:
@@ -4238,15 +4523,6 @@ void runOnMainQueueWithoutDeadlocking(void (^block)(void)) {
     } else {
         dispatch_sync(dispatch_get_main_queue(), block);
     }
-}
-
-//---------------------------------------------------------
-// Get user home directory path:
-//---------------------------------------------------------
-- (NSString*)getUserHomeDirectoryPath {
-    struct passwd *pw = getpwuid(getuid());
-    assert(pw);
-    return [NSString stringWithUTF8String:pw->pw_dir];
 }
 
 //---------------------------------------------------------
@@ -4264,6 +4540,20 @@ void runOnMainQueueWithoutDeadlocking(void (^block)(void)) {
 //---------------------------------------------------------
 - (void)showAlertWithMessage:(NSString*)message info:(NSString*)info {
     runOnMainQueueWithoutDeadlocking(^{
+        NSAlert *alert          = [[[NSAlert alloc] init] autorelease];
+        alert.icon              = [NSImage imageNamed:@"GyroflowToolbox"];
+        alert.alertStyle        = NSAlertStyleInformational;
+        alert.messageText       = message;
+        alert.informativeText   = info;
+        [alert runModal];
+    });
+}
+
+//---------------------------------------------------------
+// Show Asynchronous Alert:
+//---------------------------------------------------------
+- (void)showAsyncAlertWithMessage:(NSString*)message info:(NSString*)info {
+    dispatch_async(dispatch_get_main_queue(), ^{
         NSAlert *alert          = [[[NSAlert alloc] init] autorelease];
         alert.icon              = [NSImage imageNamed:@"GyroflowToolbox"];
         alert.alertStyle        = NSAlertStyleInformational;

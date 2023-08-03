@@ -94,3 +94,11 @@ const char* loadLensProfile(
     const char*                 gyroflow_project_data,
     const char*                 lens_profile_path
 );
+
+//---------------------------------------------------------
+// Load a Preset into a Gyroflow Project:
+//---------------------------------------------------------
+const char* loadPreset(
+    const char*                 gyroflow_project_data,
+    const char*                 lens_profile_path
+);

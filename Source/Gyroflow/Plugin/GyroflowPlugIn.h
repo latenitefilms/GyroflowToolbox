@@ -8,6 +8,56 @@
 #import <Foundation/Foundation.h>
 #import <FxPlug/FxPlugSDK.h>
 
+#include "gyroflow.h"
+
+#import "GyroflowParameters.h"
+#import "GyroflowConstants.h"
+#import "BRAWToolboxXMLReader.h"
+
+#import "CustomButtonView.h"
+#import "CustomDropZoneView.h"
+
+#import "HeaderView.h"
+
+#import "TileableRemoteBRAWShaderTypes.h"
+#import "MetalDeviceCache.h"
+
+#import <IOSurface/IOSurfaceObjC.h>
+#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include <unistd.h>
+#include <sys/types.h>
+#include <pwd.h>
+#include <assert.h>
+
+#include <ImageIO/ImageIO.h>
+
+#import <Metal/Metal.h>
+#import <AVFoundation/AVFoundation.h>
+
+//---------------------------------------------------------
+// Metal Performance Shaders for scaling:
+//---------------------------------------------------------
+#import <simd/simd.h>
+#import <MetalKit/MetalKit.h>
+#import <MetalPerformanceShaders/MetalPerformanceShaders.h>
+
+#import <Foundation/Foundation.h>
+
+//---------------------------------------------------------
+// NSMenu Addition:
+//---------------------------------------------------------
+@interface NSMenu ()
+- (BOOL)popUpMenuPositioningItem:(nullable NSMenuItem *)item atLocation:(NSPoint)location inView:(nullable NSView *)view appearance:(nullable NSAppearance *)appearance NS_AVAILABLE_MAC(10_6);
+@end
+
+//---------------------------------------------------------
+// Gyroflow Plugin:
+//---------------------------------------------------------
 @interface GyroflowPlugIn : NSObject <FxTileableEffect> {    
     //---------------------------------------------------------
     // Cached Custom Views:
@@ -22,6 +72,8 @@
     NSView* headerView;
     NSView* loadPresetLensProfileView;
     NSView* exportGyroflowProjectView;
+    NSView* openUserGuideView;
+    NSView* settingsView;
 }
-@property (assign) id<PROAPIAccessing> apiManager;
+@property (assign) id<PROAPIAccessing> _Nonnull apiManager;
 @end
