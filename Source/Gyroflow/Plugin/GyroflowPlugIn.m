@@ -2909,7 +2909,7 @@
             //---------------------------------------------------------
             // Gyroflow Project file exists:
             //---------------------------------------------------------
-            defaultFolderURL = [gyroflowProjectURL copy];
+            defaultFolderURL = gyroflowProjectURL;
         } else {
             //---------------------------------------------------------
             // If the Gyroflow Project path doesn't exist, try the
@@ -3799,7 +3799,7 @@
         NSString *desktopPath = [[self getUserHomeDirectoryPath] stringByAppendingString:@"/Desktop/"];
         NSURL *defaultFolderURL = [NSURL fileURLWithPath:desktopPath];
         if (optionalURL) {
-            defaultFolderURL = [optionalURL copy];
+            defaultFolderURL = optionalURL;
         } else {
             NSString *lastImportMediaPath = [userDefaults stringForKey:@"lastImportMediaPath"];
             if ([fileManager fileExistsAtPath:lastImportMediaPath]) {
@@ -4174,7 +4174,7 @@
         NSString *desktopPath = [[self getUserHomeDirectoryPath] stringByAppendingString:@"/Desktop/"];
         NSURL *defaultFolderURL = [NSURL fileURLWithPath:desktopPath];
         if (optionalURL) {
-            defaultFolderURL = [optionalURL copy];
+            defaultFolderURL = optionalURL;
         } else {
             NSString *lastImportGyroflowProjectPath = [userDefaults stringForKey:@"lastImportGyroflowProjectPath"];
             if ([fileManager fileExistsAtPath:lastImportGyroflowProjectPath]) {
@@ -4797,7 +4797,7 @@
         }
     }
     
-    return [result copy];
+    return result;
 }
 
 //---------------------------------------------------------
