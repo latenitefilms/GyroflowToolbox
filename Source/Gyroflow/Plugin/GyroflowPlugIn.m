@@ -55,7 +55,7 @@
         //---------------------------------------------------------
         lensProfilesLookup = [self getLensProfileIdentifiersFromDirectory:lensProfilesPath];
         
-        NSLog(@"[Gyroflow Toolbox Renderer] lensProfilesLookup: %@", lensProfilesLookup);
+        //NSLog(@"[Gyroflow Toolbox Renderer] lensProfilesLookup: %@", lensProfilesLookup);
         
         //---------------------------------------------------------
         // Cache the API Manager:
@@ -213,7 +213,7 @@
         return view;
     } else if (parameterID == kCB_Header) {
         
-        NSRect frameRect = NSMakeRect(0, 0, 200, 310); // x y w h
+        NSRect frameRect = NSMakeRect(0, 0, 200, 324); // x y w h
         NSView* view = [[HeaderView alloc] initWithFrame:frameRect];
         
         headerView = view;
@@ -1557,7 +1557,7 @@
     
     MTLRenderPassColorAttachmentDescriptor* colorAttachmentDescriptor   = [[MTLRenderPassColorAttachmentDescriptor alloc] init];
     colorAttachmentDescriptor.texture = outputTexture;
-    colorAttachmentDescriptor.clearColor = MTLClearColorMake(1.0, 1.0, 1.0, 1.0); // Black
+    colorAttachmentDescriptor.clearColor = MTLClearColorMake(1.0, 1.0, 1.0, 1.0); // White
     colorAttachmentDescriptor.loadAction = MTLLoadActionClear;
     MTLRenderPassDescriptor* renderPassDescriptor = [MTLRenderPassDescriptor renderPassDescriptor];
     renderPassDescriptor.colorAttachments [ 0 ] = colorAttachmentDescriptor;
@@ -2131,10 +2131,13 @@
     [userDefaults removeObjectForKey:@"suppressRequestSandboxAccessAlert"];
     [userDefaults removeObjectForKey:@"suppressSuccessfullyImported"];
     [userDefaults removeObjectForKey:@"suppressSuccessfullyReloaded"];
-        
+    
     [userDefaults removeObjectForKey:@"gyroFlowPreferencesBookmarkData"];
-    [userDefaults removeObjectForKey:@"lastProject"];
     [userDefaults removeObjectForKey:@"brawToolboxDocumentBookmarkData"];
+        
+    [userDefaults removeObjectForKey:@"lastReloadPath"];
+    [userDefaults removeObjectForKey:@"lastImportGyroflowProjectPath"];
+    [userDefaults removeObjectForKey:@"lastImportMediaPath"];
 }
 
 //---------------------------------------------------------
@@ -2279,6 +2282,7 @@
     [savePanel setNameFieldStringValue:gyroflowProjectName];
     [savePanel setDirectoryURL:[NSURL fileURLWithPath:gyroflowProjectPath]];
     [savePanel setAllowedContentTypes:allowedContentTypes];
+    [savePanel setAppearance:[NSAppearance appearanceNamed:NSAppearanceNameVibrantDark]];
     
     //---------------------------------------------------------
     // Show the Save Panel:
@@ -2419,8 +2423,7 @@
     [panel setCanChooseFiles:YES];
     [panel setAllowsMultipleSelection:NO];
     [panel setDirectoryURL:lensProfilesURL];
-    
-    
+    [panel setAppearance:[NSAppearance appearanceNamed:NSAppearanceNameVibrantDark]];
     [panel setAllowedContentTypes:allowedContentTypes];
     
     //---------------------------------------------------------
@@ -2812,6 +2815,11 @@
     //NSLog(@"[Gyroflow Toolbox Renderer] BUTTON PRESSED: Reload Gyroflow Project");
     
     //---------------------------------------------------------
+    // Setup User Defaults:
+    //---------------------------------------------------------
+    NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
+    
+    //---------------------------------------------------------
     // Trash all the caches in Rust land:
     //---------------------------------------------------------
     trashCache();
@@ -2862,7 +2870,7 @@
     // Make sure there's actually encoded bookmark data. If
     // there's no bookmark, lets try the file path instead:
     //---------------------------------------------------------
-    if ([encodedBookmark isEqualToString:@""]) {
+    if (encodedBookmark == nil || [encodedBookmark isEqualToString:@""]) {
         //NSLog(@"[Gyroflow Toolbox Renderer] encodedBookmark is empty, so lets try file path instead...");
         
         //---------------------------------------------------------
@@ -2882,7 +2890,7 @@
         }
         
         //---------------------------------------------------------
-        // Setup an NSOpenPanel:
+        // Get Gyroflow Project URL & Filename:
         //---------------------------------------------------------
         NSURL *gyroflowProjectURL           = [NSURL fileURLWithPath:gyroflowProjectPath];
         NSString *gyroflowProjectFilename   = [gyroflowProjectURL lastPathComponent];
@@ -2890,20 +2898,67 @@
         //NSLog(@"[Gyroflow Toolbox Renderer] gyroflowProjectURL: %@", gyroflowProjectURL);
         //NSLog(@"[Gyroflow Toolbox Renderer] gyroflowProjectFilename: %@", gyroflowProjectFilename);
         
-        NSOpenPanel* panel = [NSOpenPanel openPanel];
-        [panel setCanChooseDirectories:NO];
-        [panel setCanCreateDirectories:YES];
-        [panel setCanChooseFiles:YES];
-        [panel setAllowsMultipleSelection:NO];
-        [panel setDirectoryURL:gyroflowProjectURL];
-        [panel setNameFieldStringValue:gyroflowProjectFilename];
+        //---------------------------------------------------------
+        // Check to see if the Gyroflow Project path actually
+        // exists:
+        //---------------------------------------------------------
+        NSString *desktopPath = [[self getUserHomeDirectoryPath] stringByAppendingString:@"/Desktop/"];
+        NSURL *defaultFolderURL = [NSURL fileURLWithPath:desktopPath];
+        NSFileManager *fileManager = [NSFileManager defaultManager];
+        if ([fileManager fileExistsAtPath:gyroflowProjectPath]) {
+            //---------------------------------------------------------
+            // Gyroflow Project file exists:
+            //---------------------------------------------------------
+            defaultFolderURL = [gyroflowProjectURL copy];
+        } else {
+            //---------------------------------------------------------
+            // If the Gyroflow Project path doesn't exist, try the
+            // media folder instead:
+            //---------------------------------------------------------
+            BOOL validMediaPath = NO;
+            NSString *mediaPath;
+            [paramGetAPI getStringParameterValue:&mediaPath fromParameter:kCB_MediaPath];
+            if (mediaPath != nil && ![mediaPath isEqualToString:@""]) {
+                NSString *mediaPathFolder = [mediaPath stringByDeletingLastPathComponent];
+                if ([fileManager fileExistsAtPath:mediaPathFolder]) {
+                    defaultFolderURL = [NSURL fileURLWithPath:mediaPathFolder];
+                    validMediaPath = YES;
+                }
+            }
+            
+            //---------------------------------------------------------
+            // If the Media Path doesn't exist either, then use the
+            // last known good path:
+            //---------------------------------------------------------
+            if (!validMediaPath) {
+                NSString *lastReloadPath = [userDefaults stringForKey:@"lastReloadPath"];
+                if ([fileManager fileExistsAtPath:lastReloadPath]) {
+                    //---------------------------------------------------------
+                    // Use last Reload Path:
+                    //---------------------------------------------------------
+                    defaultFolderURL = [NSURL fileURLWithPath:lastReloadPath];
+                }
+            }
+        }
         
         //---------------------------------------------------------
         // Limit the file type to .gyroflow files:
         //---------------------------------------------------------
         UTType *gyroflowExtension       = [UTType typeWithFilenameExtension:@"gyroflow"];
         NSArray *allowedContentTypes    = [NSArray arrayWithObject:gyroflowExtension];
+                
+        //---------------------------------------------------------
+        // Setup an NSOpenPanel:
+        //---------------------------------------------------------
+        NSOpenPanel* panel = [NSOpenPanel openPanel];
+        [panel setCanChooseDirectories:NO];
+        [panel setCanCreateDirectories:YES];
+        [panel setCanChooseFiles:YES];
+        [panel setAllowsMultipleSelection:NO];
+        [panel setDirectoryURL:defaultFolderURL];
+        [panel setNameFieldStringValue:gyroflowProjectFilename];
         [panel setAllowedContentTypes:allowedContentTypes];
+        [panel setAppearance:[NSAppearance appearanceNamed:NSAppearanceNameVibrantDark]];
         
         //---------------------------------------------------------
         // Open the panel:
@@ -2927,6 +2982,11 @@
         //---------------------------------------------------------
         NSURL *openPanelURL = [panel URL];
         //NSLog(@"[Gyroflow Toolbox Renderer] openPanelURL: %@", openPanelURL);
+        
+        //---------------------------------------------------------
+        // Save path for next time...
+        //---------------------------------------------------------
+        [userDefaults setObject:[[openPanelURL path] stringByDeletingLastPathComponent] forKey:@"lastReloadPath"];
         
         BOOL startedOK = [openPanelURL startAccessingSecurityScopedResource];
         if (startedOK == NO) {
@@ -3664,9 +3724,18 @@
     }
     
     NSString *lastProjectPath = [preferences valueForKey:@"lastProject"];
-    NSURL *lastProjectURL = [NSURL fileURLWithPath:lastProjectPath];
     
-    [self importGyroflowProjectWithOptionalURL:lastProjectURL];
+    //---------------------------------------------------------
+    // Make sure the last Gyroflow Project actually exists on
+    // the file system:
+    //---------------------------------------------------------
+    NSFileManager *fileManager = [NSFileManager defaultManager];
+    if (lastProjectPath && [fileManager fileExistsAtPath:lastProjectPath]) {
+        NSURL *lastProjectURL = [NSURL fileURLWithPath:lastProjectPath];
+        [self importGyroflowProjectWithOptionalURL:lastProjectURL];
+    } else {
+        [self showAlertWithMessage:@"No Gyroflow Project Found" info:@"The last Gyroflow Project loaded into Gyroflow no longer exists."];
+    }
 }
 
 //---------------------------------------------------------
@@ -3715,18 +3784,28 @@
     }
     
     if (isAccessible) {
+        //---------------------------------------------------------
+        // The file is already accessible in the sandbox, so we
+        // don't have to ask the user for permission:
+        //---------------------------------------------------------
         //NSLog(@"[Gyroflow Toolbox Renderer] importMediaWithOptionalURL has an accessible NSURL!");
         url = optionalURL;
     } else {
         //---------------------------------------------------------
-        // Setup an NSOpenPanel:
+        // Work out default URL for NSOpenPanel:
         //---------------------------------------------------------
-        NSOpenPanel* panel = [NSOpenPanel openPanel];
-        [panel setCanChooseDirectories:NO];
-        [panel setCanCreateDirectories:YES];
-        [panel setCanChooseFiles:YES];
-        [panel setAllowsMultipleSelection:NO];
-        [panel setDirectoryURL:optionalURL];
+        NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
+        NSFileManager *fileManager = [NSFileManager defaultManager];
+        NSString *desktopPath = [[self getUserHomeDirectoryPath] stringByAppendingString:@"/Desktop/"];
+        NSURL *defaultFolderURL = [NSURL fileURLWithPath:desktopPath];
+        if (optionalURL) {
+            defaultFolderURL = [optionalURL copy];
+        } else {
+            NSString *lastImportMediaPath = [userDefaults stringForKey:@"lastImportMediaPath"];
+            if ([fileManager fileExistsAtPath:lastImportMediaPath]) {
+                defaultFolderURL = [NSURL fileURLWithPath:lastImportMediaPath];
+            }
+        }
         
         //---------------------------------------------------------
         // Limit the file type to Gyroflow supported media files:
@@ -3739,6 +3818,17 @@
         UTType *insv                    = [UTType typeWithFilenameExtension:@"insv"];
                 
         NSArray *allowedContentTypes    = [NSArray arrayWithObjects:mov, mxf, braw, mpFour, r3d, insv, nil];
+        
+        //---------------------------------------------------------
+        // Setup an NSOpenPanel:
+        //---------------------------------------------------------
+        NSOpenPanel* panel = [NSOpenPanel openPanel];
+        [panel setCanChooseDirectories:NO];
+        [panel setCanCreateDirectories:YES];
+        [panel setCanChooseFiles:YES];
+        [panel setAllowsMultipleSelection:NO];
+        [panel setDirectoryURL:defaultFolderURL];
+        [panel setAppearance:[NSAppearance appearanceNamed:NSAppearanceNameVibrantDark]];
         [panel setAllowedContentTypes:allowedContentTypes];
         
         //---------------------------------------------------------
@@ -3749,7 +3839,11 @@
             return NO;
         }
         
+        //---------------------------------------------------------
+        // Save path for next time...
+        //---------------------------------------------------------
         url = [panel URL];
+        [userDefaults setObject:[[url path] stringByDeletingLastPathComponent] forKey:@"lastImportMediaPath"];
         
         //---------------------------------------------------------
         // Start accessing security scoped resource:
@@ -3819,7 +3913,7 @@
     
     const char* doesHaveAccurateTimestamps = hasAccurateTimestamps([gyroflowProject UTF8String]);
     NSString *doesHaveAccurateTimestampsString = [NSString stringWithUTF8String:doesHaveAccurateTimestamps];
-    NSLog(@"[Gyroflow Toolbox Renderer] doesHaveAccurateTimestamps: %@", doesHaveAccurateTimestampsString);
+    //NSLog(@"[Gyroflow Toolbox Renderer] doesHaveAccurateTimestamps: %@", doesHaveAccurateTimestampsString);
     
     if (doesHaveAccurateTimestampsString == nil || ![doesHaveAccurateTimestampsString isEqualToString:@"YES"]) {
         //---------------------------------------------------------
@@ -3838,7 +3932,7 @@
     if (!requiresGyroflowLaunch) {
         const char* hasData = doesGyroflowProjectContainStabilisationData([gyroflowProject UTF8String]);
         NSString *hasDataResult = [NSString stringWithUTF8String: hasData];
-        NSLog(@"[Gyroflow Toolbox Renderer] hasDataResult: %@", hasDataResult);
+        //NSLog(@"[Gyroflow Toolbox Renderer] hasDataResult: %@", hasDataResult);
         if (hasDataResult == nil || ![hasDataResult isEqualToString:@"YES"]) {
             NSString *errorMessage = @"The file you imported doesn't seem to contain any gyroscope data.\n\nPlease check the media file to make sure it's correct and valid.";
             NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
@@ -4058,6 +4152,85 @@
     
     //NSLog(@"[Gyroflow Toolbox Renderer] Import Gyroflow Project with Optional URL Triggered: %@", optionalURL);
     
+    NSURL *openPanelURL = nil;
+    BOOL isAccessible = NO;
+    
+    if (optionalURL) {
+        isAccessible = [[NSFileManager defaultManager] isReadableFileAtPath:[optionalURL path]];
+    }
+    
+    if (isAccessible) {
+        //---------------------------------------------------------
+        // The file is already accessible in the sandbox, so we
+        // don't have to ask the user for permission:
+        //---------------------------------------------------------
+        openPanelURL = optionalURL;
+    } else {
+        //---------------------------------------------------------
+        // Work out default URL for NSOpenPanel:
+        //---------------------------------------------------------
+        NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
+        NSFileManager *fileManager = [NSFileManager defaultManager];
+        NSString *desktopPath = [[self getUserHomeDirectoryPath] stringByAppendingString:@"/Desktop/"];
+        NSURL *defaultFolderURL = [NSURL fileURLWithPath:desktopPath];
+        if (optionalURL) {
+            defaultFolderURL = [optionalURL copy];
+        } else {
+            NSString *lastImportGyroflowProjectPath = [userDefaults stringForKey:@"lastImportGyroflowProjectPath"];
+            if ([fileManager fileExistsAtPath:lastImportGyroflowProjectPath]) {
+                defaultFolderURL = [NSURL fileURLWithPath:lastImportGyroflowProjectPath];
+            }
+        }
+        
+        //---------------------------------------------------------
+        // Limit the file type to .gyroflow files:
+        //---------------------------------------------------------
+        UTType *gyroflowExtension       = [UTType typeWithFilenameExtension:@"gyroflow"];
+        NSArray *allowedContentTypes    = [NSArray arrayWithObject:gyroflowExtension];
+        
+        //---------------------------------------------------------
+        // Setup an NSOpenPanel:
+        //---------------------------------------------------------
+        NSOpenPanel* panel = [NSOpenPanel openPanel];
+        [panel setMessage:@"Please select a Gyroflow Project:"];
+        [panel setPrompt:@"Open Gyroflow Project"];
+        [panel setCanChooseDirectories:NO];
+        [panel setCanCreateDirectories:YES];
+        [panel setCanChooseFiles:YES];
+        [panel setAllowsMultipleSelection:NO];
+        [panel setDirectoryURL:defaultFolderURL];
+        [panel setAllowedContentTypes:allowedContentTypes];
+        [panel setAppearance:[NSAppearance appearanceNamed:NSAppearanceNameVibrantDark]];
+        
+        //---------------------------------------------------------
+        // Open the panel:
+        //---------------------------------------------------------
+        NSModalResponse result = [panel runModal];
+        if (result != NSModalResponseOK) {
+            return;
+        }
+        
+        //---------------------------------------------------------
+        // Save path for next time...
+        //---------------------------------------------------------
+        openPanelURL = [panel URL];
+        [userDefaults setObject:[[openPanelURL path] stringByDeletingLastPathComponent] forKey:@"lastImportGyroflowProjectPath"];
+        
+        //---------------------------------------------------------
+        // Start accessing security scoped resource:
+        //---------------------------------------------------------
+        BOOL startedOK = [openPanelURL startAccessingSecurityScopedResource];
+        if (startedOK == NO) {
+            //---------------------------------------------------------
+            // Show error message:
+            //---------------------------------------------------------
+            NSString *errorMessage = @"Failed to startAccessingSecurityScopedResource. This shouldn't happen.";
+            NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
+            [self showAlertWithMessage:@"An error has occurred." info:errorMessage];
+            return;
+        }
+    }
+    
     //---------------------------------------------------------
     // Load the Custom Parameter Action API:
     //---------------------------------------------------------
@@ -4071,46 +4244,6 @@
         [self showAlertWithMessage:@"An error has occurred." info:errorMessage];
         return;
     }
-     
-    //---------------------------------------------------------
-    // Setup an NSOpenPanel:
-    //---------------------------------------------------------
-    NSOpenPanel* panel = [NSOpenPanel openPanel];
-    [panel setCanChooseDirectories:NO];
-    [panel setCanCreateDirectories:YES];
-    [panel setCanChooseFiles:YES];
-    [panel setAllowsMultipleSelection:NO];
-    [panel setDirectoryURL:optionalURL];
-        
-    //---------------------------------------------------------
-    // Limit the file type to .gyroflow files:
-    //---------------------------------------------------------
-    UTType *gyroflowExtension       = [UTType typeWithFilenameExtension:@"gyroflow"];
-    NSArray *allowedContentTypes    = [NSArray arrayWithObject:gyroflowExtension];
-    [panel setAllowedContentTypes:allowedContentTypes];
-
-    //---------------------------------------------------------
-    // Open the panel:
-    //---------------------------------------------------------
-    NSModalResponse result = [panel runModal];
-    if (result != NSModalResponseOK) {
-        return;
-    }
-
-    //---------------------------------------------------------
-    // Start accessing security scoped resource:
-    //---------------------------------------------------------
-    NSURL *url = [panel URL];
-    BOOL startedOK = [url startAccessingSecurityScopedResource];
-    if (startedOK == NO) {
-        //---------------------------------------------------------
-        // Show error message:
-        //---------------------------------------------------------
-        NSString *errorMessage = @"Failed to startAccessingSecurityScopedResource. This shouldn't happen.";
-        NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
-        [self showAlertWithMessage:@"An error has occurred." info:errorMessage];
-        return;
-    }
 
     //---------------------------------------------------------
     // Create a Security Scope Bookmark, so we can reload
@@ -4118,7 +4251,7 @@
     //---------------------------------------------------------
     NSError *bookmarkError = nil;
     NSURLBookmarkCreationOptions bookmarkOptions = NSURLBookmarkCreationWithSecurityScope | NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess;
-    NSData *bookmark = [url bookmarkDataWithOptions:bookmarkOptions
+    NSData *bookmark = [openPanelURL bookmarkDataWithOptions:bookmarkOptions
                      includingResourceValuesForKeys:nil
                                       relativeToURL:nil
                                               error:&bookmarkError];
@@ -4137,15 +4270,15 @@
         return;
     }
     
-    NSString *selectedGyroflowProjectFile            = [[url lastPathComponent] stringByDeletingPathExtension];
-    NSString *selectedGyroflowProjectPath            = [url path];
+    NSString *selectedGyroflowProjectFile            = [[openPanelURL lastPathComponent] stringByDeletingPathExtension];
+    NSString *selectedGyroflowProjectPath            = [openPanelURL path];
     NSString *selectedGyroflowProjectBookmarkData    = [bookmark base64EncodedStringWithOptions:0];
     
     //---------------------------------------------------------
     // Read the Gyroflow Project Data from File:
     //---------------------------------------------------------
     NSError *readError = nil;
-    NSString *selectedGyroflowProjectData = [NSString stringWithContentsOfURL:url encoding:NSUTF8StringEncoding error:&readError];
+    NSString *selectedGyroflowProjectData = [NSString stringWithContentsOfURL:openPanelURL encoding:NSUTF8StringEncoding error:&readError];
     if (readError != nil) {
         NSString *errorMessage = [NSString stringWithFormat:@"Failed to read Gyroflow Project File due to:\n\n%@", [readError localizedDescription]];
         NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
@@ -4270,7 +4403,7 @@
     //---------------------------------------------------------
     // Stop accessing security scoped resource:
     //---------------------------------------------------------
-    [url stopAccessingSecurityScopedResource];
+    [openPanelURL stopAccessingSecurityScopedResource];
     
     //---------------------------------------------------------
     // Show Victory Message:
@@ -4397,6 +4530,7 @@
             [panel setAllowedContentTypes:allowedContentTypes];
             [panel setExtensionHidden:NO];
             [panel setCanSelectHiddenExtension:YES];
+            [panel setAppearance:[NSAppearance appearanceNamed:NSAppearanceNameVibrantDark]];
             
             //---------------------------------------------------------
             // Open the panel:
