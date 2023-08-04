@@ -4,11 +4,23 @@
 
 [Gyroflow](https://github.com/gyroflow/gyroflow) is a free and open source third-party application that can stabilise your video by using motion data from a gyroscope and optionally an accelerometer. Modern cameras record that data internally (such as Blackmagic, GoPro, Sony, Insta360 etc), and Gyroflow stabilises the captured footage precisely by using that data. It can also use gyro data from an external source, such as Betaflight Blackbox.
 
-Gyroflow Toolbox allows you to take the stabilised data from Gyroflow and use it within Final Cut Pro as an effect, so you don't have to export a ProRes from Gyroflow!
+**Gyroflow Toolbox** allows you to take the stabilised data from Gyroflow and use it within Final Cut Pro as an effect, so you don't have to export a ProRes from Gyroflow!
 
-<div class="video-container">
-    <iframe class="video" src="https://www.youtube-nocookie.com/embed/QAds3x8UU1w?controls=0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-</div>
+It's important to understand that **Gyroflow** and **Gyroflow Toolbox** are independent/seperate applications, that share the same render engine - [Gyroflow Core](https://docs.gyroflow.xyz/app/technical-details/gyroflow-core).
+
+---
+
+### Learning Gyroflow
+
+Gyroflow has [fantastic documentation](https://docs.gyroflow.xyz/app/) that is regularly updated.
+
+The [Gyroflow Discord](https://discord.gg/BBJ2UVAr2D) is also very active and a great way to get fast support from some of the best and nicest people in the industry.
+
+There are also some great YouTube Videos around, such as:
+
+[![](/static/youtube-gyroflow.jpeg)](https://www.youtube.com/watch?v=QR-SINyvNyI)
+
+[![](/static/youtube-how-to-use.jpeg)](https://www.youtube.com/watch?v=QAds3x8UU1w)
 
 ---
 
@@ -16,17 +28,19 @@ Gyroflow Toolbox allows you to take the stabilised data from Gyroflow and use it
 
 To create the Gyroflow Project (that you import into Gyroflow Toolbox), you'll need to install the latest [Gyroflow](https://gyroflow.xyz/download) application.
 
-You don't necessarily have to install Gyroflow on the same machine as Gyroflow Toolbox - for example, you could run Gyroflow on a fast PC, then copy the exported Gyroflow Project to your Mac to import into Gyroflow Toolbox.
+However, you don't necessarily have to install **Gyroflow** on the same machine as **Gyroflow Toolbox** - for example, you could run Gyroflow on a fast PC, then copy the exported Gyroflow Project to your Mac to import into Gyroflow Toolbox.
 
-There are also some formats, such as **Sony**, **GoPro**, **DJI** and **Insta360** that don't require launching Gyroflow.
+There are also some formats, such as **GoPro**, **DJI**, **Insta360** (and even some **Sony** clips) that don't require launching Gyroflow at all, and you can stay completely within Final Cut Pro.
 
 ---
 
 ### Limitations
 
-**You should always put the Gyroflow Toolbox effect on a clip inside a Compound Clip.**
+_**You should always put the Gyroflow Toolbox effect on a clip inside a Compound Clip.**_
 
-This is because you should only ever apply the Gyroflow Toolbox effect to an **entire clip** - the clip cannot be trimmed. Due to limitations in Final Cut Pro's FxPlug4 API - we currently can't determine the source start timecode of a clip. Because of this, the Gyroflow Toolbox effect should only be applied to a clip where the start of the clip hasn't been trimmed in the timeline (i.e. the clip you have in the timeline should show the first frame of the source clip). If you need to trim the start of this clip, you can use the full clip within a Compound Clip, then trim the Compound Clip as required. We have been in contact with the Final Cut Pro team about this, and there's currently no other better workaround or solution. Discussed in [issue 8](https://github.com/latenitefilms/GyroflowToolbox/issues/8).
+This is because you should only ever apply the Gyroflow Toolbox effect to an **entire clip** - the clip cannot be trimmed. Due to limitations in Final Cut Pro's FxPlug4 API - we currently can't determine the source start timecode of a clip. Because of this, the Gyroflow Toolbox effect should only be applied to a clip where the start of the clip hasn't been trimmed in the timeline (i.e. the clip you have in the timeline should show the first frame of the source clip). If you need to trim the start of this clip, you can use the full clip within a Compound Clip, then trim the Compound Clip as required.
+
+We have been in contact with the Final Cut Pro team about this, and there's currently no other better workaround or solution. This is discussed [on GitHub](https://github.com/latenitefilms/GyroflowToolbox/issues/8) and we would appreciate it if you could let Apple know this is something you'd like to see addressed. You can reference our Apple Feedback Assistant ID: **FB12043900**.
 
 ---
 
@@ -63,44 +77,108 @@ This includes:
 
 ### How To Use
 
-!!!important
-This documentation is out-of-date for the v1.1.0 release and will be updated later today.
-!!!
+If you haven't already, follow the installation instructions [here](/installation/) first.
 
-After you have installed Gyroflow and Gyroflow Toolbox, you'll see a Gyroflow Toolbox Effect in the Effects Browser.
+After you have installed [Gyroflow](https://gyroflow.xyz/download) and Gyroflow Toolbox, you'll see a Gyroflow Toolbox Effect in the Effects Browser:
 
 ![](static/06-install.png)
 
 You can then apply this effect to any clips that are supported by Gyroflow.
 
-From the Inspector you can then click **Launch Gyroflow**, to open the Gyroflow application.
+---
+
+### Applying the Effect
+
+You should always put the Gyroflow Toolbox effect on a clip inside a Compound Clip (see [limitations above](#limitations)).
+
+It will then look like this:
 
 ![](static/07-install.png)
 
-Because Gyroflow Toolbox has no knowledge of the clip it's been applied to, we can't automatically load the video clip into Gyroflow, so you'll need to manually import it by either dragging the file in, or clicking the Open File button.
+---
 
-![](static/09-install.png)
+### Importing Gyroflow Project
 
-Gyroflow Toolbox also has some limitations with certain footage - for example, currently with the RED Komodo, you'll need to transcode the footage to ProRes, load the ProRes in Gyroflow then load your original `.R3D` in the **Motion data** section of Gyroflow.
+If you have a pre-existing Gyroflow Project, there's a few different ways you can import a Gyroflow Project:
 
-Lens profile and Motion data files are automatically detected for some cameras (such as GoPro's). Otherwise search for the correct lens profile and open the Motion data file.
+- Drag & Drop from Finder
+- Drag & Drop from another application (such as an Asset Management Tool)
+- Press the **Import Gyroflow Project**
+- Press the **Import Last Gyroflow Project**
 
-You should play the video to check if additional synchronisation is required. If so, right-click on the timeline and select **Auto sync here** at at least two points of the video where some motion is present. This synchronises the gyro data and the video.
+If you have a Gyroflow Project with the same filename sitting next to the Media File, Gyroflow Toolbox will always try and load that Gyroflow Project.
 
-You can also experiment with the stabilisation options and algorithms. They all give different "looks" for the final result.
+---
 
-You can learn more about Gyroflow [here](https://docs.gyroflow.xyz).
+### Importing Media File
 
-The [Gyroflow Discord](https://discord.gg/BBJ2UVAr2D) is also very active and a great way to get fast support.
+If you don't already have a Gyroflow Project for a media file, there's a few different ways you can import a media file:
 
-Once you have finished stabilising in Gyroflow you should click the **Export** button arrow and then **Export project file (including processed gyro data)**.
+- Drag & Drop from Final Cut Pro Browser
+- Drag & Drop from another application (such as an Asset Management Tool)
+- Drag & Drop from Finder
+- Press the **Import Media File** button
 
-It's important that you include the **processed gyro data**, otherwise none of the stabilisation will come across to Gyroflow Toolbox, and you'll get an error message when attempting to import it.
+If you drag-and-drop from the Final Cut Pro Browser you will be prompted to select the video file you imported (due to macOS's sandboxing).
 
-![](static/08-install.png)
+If there's a Gyroflow Project next to the Media File with the exact same filename, Gyroflow Toolbox will try to load that file instead.
 
-You can now press the **Import Project** button in the Final Cut Pro Inspector to import it.
+GoPro, DJI, Insta360 and some Sony files will automatically synchronise (as the gyroscope data is within the media file), so then you'll be presented with:
 
-The data from the Gyroflow Project gets saved within the Final Cut Pro library. If you want to reload it, you can either re-import, or if the file is in the same path, you can press **Reload Project**.
+![](static/10-install.png)
 
-You can adjust and keyframe the FOV, Smoothness and Lens Correction within Final Cut Pro.
+If the Media File requires synchronising in the hero Gyroflow application, Gyroflow Toolbox will launch the Media File in Gyroflow.
+
+If the Media File requires manually loading a **Lens Profile**, Gyroflow Toolbox will prompt to allow you to select a Lens Profile from the built-in collection within Gyroflow.
+
+---
+
+### Gyroflow Parameters
+
+Once you've imported a Media File or Gyroflow Project you can then use the Gyroflow Parameters to customise things.
+
+All of the parameters are keyframe-able, however...
+
+_**Any keyframes created in Gyroflow will take priority over the keyframes in Final Cut Pro.**_
+
+![](static/11-install.png)
+
+**Input Rotation** is when Final Cut Pro rotates the input pixels before feeding to Gyroflow Toolbox.
+
+For example, if an `.mp4` contains rotation in the metadata, Final Cut Pro may automatically rotate it. Gyroflow expects raw pixels directly from the source file, so if Final Cut Pro has already rotated them, it won't match.
+
+Given this, the **Input Rotation** is the rotation done by the host BEFORE feeding to Gyroflow Toolbox, whereas **Video Rotation** is a rotation by the Gyroflow engine AFTER stabilisation.
+
+---
+
+### Tools
+
+There are also some handy tools:
+
+![](static/12-install.png)
+
+#### Stabilisation Overview
+
+This allow you to zoom out the view to see the stabilization results. This is very useful to see if and how Gyroflow is working. You should disable this before rendering.
+
+#### Disable Gyroflow Stretch
+
+If you used Input stretch in the lens profile in Gyroflow, and you de-stretched the video separately in Resolve, check this to disable Gyroflow's internal stretching.
+
+---
+
+### File Management
+
+At the bottom of the Effect is in the Inspector is some File Management tools:
+
+![](static/13-install.png)
+
+**Reload Gyroflow Project** allows you to reload the contents of a Gyroflow Project if you've modified it externally (i.e. in the Gyroflow application).
+
+**Launch Gyroflow** is handy for opening the hero Gyroflow application. If you have a Gyroflow Project or Media File already loaded, it will open that file.
+
+**Export Gyroflow Project** is handy if you imported a GoPro, DJI or Insta360 clip (that didn't require synchronising in the hero Gyroflow application), and you need to export a Gyroflow Project for sharing or editing.
+
+**Reveal in Finder** reveals the Gyroflow Project in Finder.
+
+**Settings** allows you to enable/disable some of the helper alerts/popups throughout the application, **Show Log Files in Finder**, and **Reset All Settings** (which is only really used for debugging/development).
