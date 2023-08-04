@@ -25,3 +25,31 @@ To get started, simply drop your video clip from the Final Cut Pro Browser or Fi
 Gyroflow Toolbox allows you to take the stabilised data from Gyroflow and use it within Final Cut Pro as an effect, so you don't have to export a ProRes from Gyroflow!
 
 You can watch a great Gyroflow Tutorial [here](https://www.youtube.com/watch?v=QAds3x8UU1w).
+
+---
+
+### Examples
+
+{% embed url="https://gyroflow.xyz/demo/?v=1" %}
+GoPro Hero 6
+{% endembed %}
+
+{% embed url="https://gyroflow.xyz/demo/?demo=1&v=2" %}
+GoPro Hero 5 Session
+{% endembed %}
+
+{% embed url="https://gyroflow.xyz/demo/?demo=2" %}
+GoPro Hero 8
+{% endembed %}
+
+{% embed url="https://gyroflow.xyz/demo/?demo=3" %}
+GoPro Hero 8
+{% endembed %}
+
+{% embed url="https://gyroflow.xyz/demo/?demo=4" %}
+GoPro Hero 10 + Horizon Lock
+{% endembed %}
+
+{% embed url="https://gyroflow.xyz/demo/?demo=5" %}
+Blackmagic Pocket Cinema Camera 4k + Laowa 9mm
+{% endembed %}
