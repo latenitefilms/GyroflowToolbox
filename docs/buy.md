@@ -14,6 +14,14 @@ You can find information about Educational Pricing [here](https://gyroflowtoolbo
 
 ---
 
+## Support Gyroflow
+
+**Gyroflow Toolbox** wouldn't be possible without the genius of [AdrianEddy](https://github.com/AdrianEddy), and the hero [Gyroflow](https://gyroflow.xyz) application.
+
+You can donate to the Gyroflow team [here](https://gyroflow.xyz/donate).
+
+---
+
 ## Previous Versions
 
 The initial public release of **Gyroflow Toolbox v1.0.0** was **USD$4.99**.
