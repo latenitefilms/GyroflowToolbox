@@ -13,9 +13,9 @@ links:
   link: /buy
   icon: desktop-download
 
-- text: Source Code
-  link: https://github.com/latenitefilms/gyroflowtoolbox/
-  icon: file-code
+- text: Discord
+  link: https://discord.gg/BBJ2UVAr2D
+  icon: people
   target: blank
 
 - text: Issues
@@ -26,16 +26,6 @@ links:
 - text: Discussions
   link: https://github.com/latenitefilms/gyroflowtoolbox/discussions
   icon: comment-discussion
-  target: blank
-
-- text: Discord
-  link: https://discord.gg/BBJ2UVAr2D
-  icon: people
-  target: blank
-
-- text: FCP Cafe
-  link: https://fcp.cafe
-  icon: flame
   target: blank
 
 - text: Chris on Twitter
