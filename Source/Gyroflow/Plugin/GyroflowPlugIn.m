@@ -1744,11 +1744,30 @@
     //---------------------------------------------------------
     // Make sure the plugin state is valid:
     //---------------------------------------------------------
-    if ((pluginState == nil) || (sourceImages [ 0 ].ioSurface == nil) || (destinationImage.ioSurface == nil))
-    {
+    if (pluginState == nil) {
+        NSString *errorMessage = @"FATAL ERROR: Invalid plugin state received from host - pluginState was nil.";
+        NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
         if (outError != NULL) {
-            NSString *errorMessage = @"FATAL ERROR - Invalid plugin state received from host.";
-            NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
+            *outError = [NSError errorWithDomain:FxPlugErrorDomain
+                                            code:kFxError_InvalidParameter
+                                        userInfo:@{ NSLocalizedDescriptionKey : errorMessage }];
+        }
+        return NO;
+    }
+    if (sourceImages[0].ioSurface == nil) {
+        NSString *errorMessage = @"FATAL ERROR: Invalid plugin state received from host - sourceImages[0].ioSurface was nil.";
+        NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
+        if (outError != NULL) {
+            *outError = [NSError errorWithDomain:FxPlugErrorDomain
+                                            code:kFxError_InvalidParameter
+                                        userInfo:@{ NSLocalizedDescriptionKey : errorMessage }];
+        }
+        return NO;
+    }
+    if (destinationImage.ioSurface == nil) {
+        NSString *errorMessage = @"FATAL ERROR: Invalid plugin state received from host - destinationImage.ioSurface was nil.";
+        NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
+        if (outError != NULL) {
             *outError = [NSError errorWithDomain:FxPlugErrorDomain
                                             code:kFxError_InvalidParameter
                                         userInfo:@{ NSLocalizedDescriptionKey : errorMessage }];
