@@ -1261,7 +1261,18 @@
     //---------------------------------------------------------
     NSString *gyroflowData;
     [paramGetAPI getStringParameterValue:&gyroflowData fromParameter:kCB_GyroflowProjectData];
-    params.gyroflowData = gyroflowData;
+        
+    //---------------------------------------------------------
+    // If the Gyroflow Project data is base64 encoded, try
+    // to decode it first, otherwise pass the original string:
+    //---------------------------------------------------------
+    NSData *base64EncodedData = [[NSData alloc] initWithBase64EncodedString:gyroflowData options:0];
+    if (base64EncodedData != nil) {
+        NSString *decodedGyroflowData = [[NSString alloc] initWithData:base64EncodedData encoding:NSUTF8StringEncoding];
+        params.gyroflowData = decodedGyroflowData;
+    } else {
+        params.gyroflowData = gyroflowData;
+    }
     
     //---------------------------------------------------------
     // FOV:
@@ -2071,7 +2082,7 @@
             suppressSuccessfullyImported.enabled       = YES;
             suppressSuccessfullyImported.state         = [self boolToControlState:[userDefaults boolForKey:@"suppressSuccessfullyImported"]];
             [disableAlertSubMenu addItem:suppressSuccessfullyImported];
-                        
+            
             //---------------------------------------------------------
             // Successfully Reloaded:
             //---------------------------------------------------------
@@ -2263,6 +2274,16 @@
     }
     
     //---------------------------------------------------------
+    // If the Gyroflow Project is base64 encoded, try to
+    // decode it first:
+    //---------------------------------------------------------
+    NSData *base64EncodedData = [[NSData alloc] initWithBase64EncodedString:gyroflowProjectData options:0];
+    if (base64EncodedData != nil) {
+        NSString *decodedGyroflowData = [[NSString alloc] initWithData:base64EncodedData encoding:NSUTF8StringEncoding];
+        gyroflowProjectData = [NSString stringWithString:decodedGyroflowData];
+    }
+    
+    //---------------------------------------------------------
     // Get the existing Gyroflow Project Path:
     //---------------------------------------------------------
     NSString *gyroflowProjectPath = nil;
@@ -2411,6 +2432,17 @@
     //---------------------------------------------------------
     NSString *gyroflowProjectData = nil;
     [paramGetAPI getStringParameterValue:&gyroflowProjectData fromParameter:kCB_GyroflowProjectData];
+    
+    //---------------------------------------------------------
+    // If the Gyroflow Project is base64 encoded, try to
+    // decode it first:
+    //---------------------------------------------------------
+    NSData *base64EncodedData = [[NSData alloc] initWithBase64EncodedString:gyroflowProjectData options:0];
+    if (base64EncodedData != nil) {
+        NSString *decodedGyroflowData = [[NSString alloc] initWithData:base64EncodedData encoding:NSUTF8StringEncoding];
+        gyroflowProjectData = [NSString stringWithString:decodedGyroflowData];
+    }
+    
     //NSLog(@"[Gyroflow Toolbox Renderer] gyroflowProjectData: %@", gyroflowProjectData);
           
     if (gyroflowProjectData == nil) {
@@ -2565,9 +2597,11 @@
     }
     
     //---------------------------------------------------------
-    // Save the data to FxPlug:
+    // Save the data to FxPlug as base64 encoded data:
     //---------------------------------------------------------
-    [paramSetAPI setStringParameterValue:loadResultString toParameter:kCB_GyroflowProjectData];
+    NSData *loadResultStringData = [loadResultString dataUsingEncoding:NSUTF8StringEncoding];
+    NSString *base64EncodedString = [loadResultStringData base64EncodedStringWithOptions:0];
+    [paramSetAPI setStringParameterValue:base64EncodedString toParameter:kCB_GyroflowProjectData];
     
     //---------------------------------------------------------
     // Trash the cache!
@@ -3271,7 +3305,9 @@
         //---------------------------------------------------------
         // Update 'Gyroflow Project Data':
         //---------------------------------------------------------
-        [paramSetAPI setStringParameterValue:selectedGyroflowProjectData toParameter:kCB_GyroflowProjectData];
+        NSData *loadResultStringData = [selectedGyroflowProjectData dataUsingEncoding:NSUTF8StringEncoding];
+        NSString *base64EncodedString = [loadResultStringData base64EncodedStringWithOptions:0];
+        [paramSetAPI setStringParameterValue:base64EncodedString toParameter:kCB_GyroflowProjectData];
         
         //---------------------------------------------------------
         // Update 'Loaded Gyroflow Project' Text Box:
@@ -3385,7 +3421,9 @@
     //---------------------------------------------------------
     // Update 'Gyroflow Project Data':
     //---------------------------------------------------------
-    [paramSetAPI setStringParameterValue:selectedGyroflowProjectData toParameter:kCB_GyroflowProjectData];
+    NSData *loadResultStringData = [selectedGyroflowProjectData dataUsingEncoding:NSUTF8StringEncoding];
+    NSString *base64EncodedString = [loadResultStringData base64EncodedStringWithOptions:0];
+    [paramSetAPI setStringParameterValue:base64EncodedString toParameter:kCB_GyroflowProjectData];
     
     //---------------------------------------------------------
     // Generate a new unique identifier:
@@ -4125,7 +4163,9 @@
     //---------------------------------------------------------
     // Update 'Gyroflow Project Data':
     //---------------------------------------------------------
-    [paramSetAPI setStringParameterValue:gyroflowProject toParameter:kCB_GyroflowProjectData];
+    NSData *gyroflowProjectData = [gyroflowProject dataUsingEncoding:NSUTF8StringEncoding];
+    NSString *base64EncodedString = [gyroflowProjectData base64EncodedStringWithOptions:0];
+    [paramSetAPI setStringParameterValue:base64EncodedString toParameter:kCB_GyroflowProjectData];
     
     //---------------------------------------------------------
     // Update 'Loaded Gyroflow Project' Text Box:
@@ -4442,7 +4482,9 @@
     //---------------------------------------------------------
     // Update 'Gyroflow Project Data':
     //---------------------------------------------------------
-    [paramSetAPI setStringParameterValue:selectedGyroflowProjectData toParameter:kCB_GyroflowProjectData];
+    NSData *gyroflowProjectData = [selectedGyroflowProjectData dataUsingEncoding:NSUTF8StringEncoding];
+    NSString *base64EncodedString = [gyroflowProjectData base64EncodedStringWithOptions:0];
+    [paramSetAPI setStringParameterValue:base64EncodedString toParameter:kCB_GyroflowProjectData];
     
     //---------------------------------------------------------
     // Update 'Loaded Gyroflow Project' Text Box:
