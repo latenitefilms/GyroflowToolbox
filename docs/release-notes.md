@@ -1,6 +1,18 @@
 # Release Notes
 
-### 1.1.0
+### 1.1.1 (Build 15)
+
+#### 🎉 Released:
+- 6th August 2023
+
+#### 🐞 Bug Fixes:
+
+- Fixed an issue where the Gyroflow Toolbox output could be incorrectly clipped when in a HDR project. Thanks for reporting Tumist! Thanks to AdrianEddy for fixing the issue in Gyroflow Core!
+- Fixed an issue where a Gyroflow Project could fail to reload correctly after restarting Final Cut Pro due to FxPlug4 incorrectly HTML decoding the string value. We solve this by now base64 encoding the Gyroflow Project in FxPlug4.
+
+---
+
+### 1.1.0 (Build 14)
 
 #### 🎉 Released:
 - 4th August 2023
@@ -26,7 +38,7 @@
 
 ---
 
-### 1.0.0
+### 1.0.0 (Build 11)
 
 #### 🎉 Released:
 - 1st January 2023
