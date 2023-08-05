@@ -1,6 +1,6 @@
 [package]
 name = "gyroflow-toolbox"
-version = "1.1.0"
+version = "1.1.1"
 authors = ["Chris Hocking <chris@latenitefilms.com>", "Adrian <adrian.eddy@gmail.com>"]
 edition = "2021"
 description = "Connects the Gyroflow Toolbox FxPlug4 API to the gyroflow_core Rust Engine"
