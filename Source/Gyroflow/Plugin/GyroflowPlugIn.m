@@ -85,7 +85,9 @@
         // * kFxPropertyKey_UsesLumaChroma
         // * kFxPropertyKey_UsesNonmatchingTextureLayout
         // * kFxPropertyKey_UsesRationalTime
-        //---------------------------------------------------------
+        //---------------------------------------------------------        
+        kFxPropertyKey_IsThreadSafe : @YES,
+        kFxPropertyKey_MayRemapTime : @NO,
         
         //---------------------------------------------------------
         // @const      kFxPropertyKey_NeedsFullBuffer
@@ -1269,7 +1271,19 @@
     NSData *base64EncodedData = [[NSData alloc] initWithBase64EncodedString:gyroflowData options:0];
     if (base64EncodedData != nil) {
         NSString *decodedGyroflowData = [[NSString alloc] initWithData:base64EncodedData encoding:NSUTF8StringEncoding];
-        params.gyroflowData = decodedGyroflowData;
+        if (decodedGyroflowData != nil) {
+            params.gyroflowData = decodedGyroflowData;
+            
+            //---------------------------------------------------------
+            // Release memory:
+            //---------------------------------------------------------
+            [decodedGyroflowData release];
+        }
+        
+        //---------------------------------------------------------
+        // Release memory:
+        //---------------------------------------------------------
+        [base64EncodedData release];
     } else {
         params.gyroflowData = gyroflowData;
     }
@@ -1458,7 +1472,14 @@
 //---------------------------------------------------------
 // Render an Error Message:
 //---------------------------------------------------------
-- (BOOL)renderErrorMessageWithID:(NSString*)errorMessageID correctedHeight:(float *)correctedHeight destinationImage:(FxImageTile * _Nonnull)destinationImage differenceBetweenHeights:(float *)differenceBetweenHeights fullHeight:(float)fullHeight fullWidth:(float)fullWidth outError:(NSError * _Nullable * _Nullable)outError outputHeight:(float)outputHeight outputWidth:(float)outputWidth sourceImages:(NSArray<FxImageTile *> * _Nonnull)sourceImages {
+- (BOOL)renderErrorMessageWithID:(NSString*)errorMessageID
+                destinationImage:(FxImageTile * _Nonnull)destinationImage
+                      fullHeight:(float)fullHeight
+                       fullWidth:(float)fullWidth
+                        outError:(NSError * _Nullable * _Nullable)outError
+                    outputHeight:(float)outputHeight outputWidth:(float)outputWidth
+                    sourceImages:(NSArray<FxImageTile *> * _Nonnull)sourceImages
+{
     MetalDeviceCache* deviceCache       = [MetalDeviceCache deviceCache];
     MTLPixelFormat pixelFormat          = [MetalDeviceCache MTLPixelFormatForImageTile:destinationImage];
     id<MTLCommandQueue> commandQueue    = [deviceCache commandQueueWithRegistryID:destinationImage.deviceRegistryID
@@ -1495,9 +1516,11 @@
     // If square pixels, we'll manipulate the height and y
     // axis manually:
     //---------------------------------------------------------
+    float correctedHeight = outputHeight;
+    float differenceBetweenHeights = 0;
     if (fullHeight == outputHeight) {
-        *correctedHeight = ((float)inputTexture.height/(float)inputTexture.width) * outputWidth;
-        *differenceBetweenHeights = (outputHeight - *correctedHeight) / 2;
+        correctedHeight = ((float)inputTexture.height/(float)inputTexture.width) * outputWidth;
+        differenceBetweenHeights = (outputHeight - correctedHeight) / 2;
     }
     
     //---------------------------------------------------------
@@ -1597,7 +1620,7 @@
     // clipping.
     //---------------------------------------------------------
     MTLViewport viewport = {
-        0, *differenceBetweenHeights, outputWidth, *correctedHeight, -1.0, 1.0
+        0, differenceBetweenHeights, outputWidth, correctedHeight, -1.0, 1.0
     };
     
     //---------------------------------------------------------
@@ -1749,9 +1772,6 @@
                         atTime:(CMTime)renderTime
                          error:(NSError * _Nullable *)outError
 {
-    
-    //NSLog(@"[Gyroflow Toolbox Renderer] Render time!");
-    
     //---------------------------------------------------------
     // Make sure the plugin state is valid:
     //---------------------------------------------------------
@@ -1824,8 +1844,6 @@
     NSNumber *fovOverview               = params.fovOverview;
     NSNumber *disableGyroflowStretch    = params.disableGyroflowStretch;
     
-    //NSLog(@"[Gyroflow Toolbox Renderer] uniqueIdentifier: '%@'", uniqueIdentifier);
-    
     //---------------------------------------------------------
     // Calculate output width & height:
     //---------------------------------------------------------
@@ -1835,26 +1853,29 @@
     float fullHeight        = (destinationImage.imagePixelBounds.top - destinationImage.imagePixelBounds.bottom);
     
     //---------------------------------------------------------
-    // Prepare our aspect ratio correction objects:
-    //---------------------------------------------------------
-    float correctedHeight               = outputHeight;
-    float differenceBetweenHeights      = 0;
-    
-    //---------------------------------------------------------
     // There's no unique identifier or Gyroflow Data,
     // so let's abort:
     //---------------------------------------------------------
     if (uniqueIdentifier == nil || [uniqueIdentifier isEqualToString:@""] || gyroflowData == nil || [gyroflowData isEqualToString:@""]) {
-        //NSLog(@"[Gyroflow Toolbox Renderer] Showing early error message!");
-        return [self renderErrorMessageWithID:@"NoGyroflowProjectLoaded" correctedHeight:&correctedHeight destinationImage:destinationImage differenceBetweenHeights:&differenceBetweenHeights fullHeight:fullHeight fullWidth:fullWidth outError:outError outputHeight:outputHeight outputWidth:outputWidth sourceImages:sourceImages];
+        return [self renderErrorMessageWithID:@"NoGyroflowProjectLoaded"
+                             destinationImage:destinationImage
+                                   fullHeight:fullHeight
+                                    fullWidth:fullWidth
+                                     outError:outError
+                                 outputHeight:outputHeight
+                                  outputWidth:outputWidth
+                                 sourceImages:sourceImages];
     }
     
-    //NSLog(@"[Gyroflow Toolbox Renderer] uniqueIdentifier during render: %@", uniqueIdentifier);
-    
     //---------------------------------------------------------
-    // Set up the renderer, in this case we are using Metal.
+    // Setup the Metal Device Cache:
     //---------------------------------------------------------
     MetalDeviceCache* deviceCache = [MetalDeviceCache deviceCache];
+    
+    //---------------------------------------------------------
+    // Get the Device Registry ID from the Destination Image:
+    //---------------------------------------------------------
+    uint64_t deviceRegistryID = destinationImage.deviceRegistryID;
     
     //---------------------------------------------------------
     // Setup the Pixel Format based on the destination image:
@@ -1864,7 +1885,7 @@
     //---------------------------------------------------------
     // Setup a new Command Queue for FxPlug4:
     //---------------------------------------------------------
-    id<MTLCommandQueue> commandQueue = [deviceCache commandQueueWithRegistryID:sourceImages[0].deviceRegistryID
+    id<MTLCommandQueue> commandQueue = [deviceCache commandQueueWithRegistryID:deviceRegistryID
                                                                    pixelFormat:pixelFormat];
     
     //---------------------------------------------------------
@@ -1887,14 +1908,33 @@
     
     //---------------------------------------------------------
     // Setup our input texture:
+    //
+    // Retrieve a Metal texture from the IOSurface for
+    // rendering on the passed-in device. The returned texture
+    // is autoreleased
     //---------------------------------------------------------
-    id<MTLDevice> inputDevice       = [deviceCache deviceWithRegistryID:sourceImages[0].deviceRegistryID];
-    id<MTLTexture> inputTexture     = [sourceImages[0] metalTextureForDevice:inputDevice];
+    id<MTLTexture> inputTexture = [sourceImages[0] metalTextureForDevice:[deviceCache deviceWithRegistryID:deviceRegistryID]];
     
     //---------------------------------------------------------
     // Setup our output texture:
+    //
+    // Retrieve a Metal texture from the IOSurface for
+    // rendering on the passed-in device. The returned texture
+    // is autoreleased
     //---------------------------------------------------------
-    id<MTLTexture> outputTexture = [destinationImage metalTextureForDevice:[deviceCache deviceWithRegistryID:destinationImage.deviceRegistryID]];
+    id<MTLTexture> outputTexture = [destinationImage metalTextureForDevice:[deviceCache deviceWithRegistryID:deviceRegistryID]];
+    
+    //---------------------------------------------------------
+    // Create a temporary output texture to go from Rust
+    // to Objective-C land, that we have full control of:
+    //---------------------------------------------------------
+    MTLTextureDescriptor *textureDescriptor = [[MTLTextureDescriptor alloc] init];
+    textureDescriptor.textureType = MTLTextureType2D;
+    textureDescriptor.pixelFormat = pixelFormat;
+    textureDescriptor.width = outputTexture.width;
+    textureDescriptor.height = outputTexture.height;
+    id<MTLTexture> tempTexture = [[deviceCache deviceWithRegistryID:deviceRegistryID] newTextureWithDescriptor:textureDescriptor];
+    [textureDescriptor release];
     
     //---------------------------------------------------------
     // Determine the Pixel Format:
@@ -1911,6 +1951,11 @@
         inputPixelFormat = @"RGBAf";
         numberOfBytes = 4;
     } else {
+        //---------------------------------------------------------
+        // Release the temp texture before aborting:
+        //---------------------------------------------------------
+        [tempTexture release];
+        
         //---------------------------------------------------------
         // Output error message to Console:
         //---------------------------------------------------------
@@ -1947,6 +1992,11 @@
     uint8_t         xDisableGyroflowStretch    = [disableGyroflowStretch unsignedCharValue];
     
     //---------------------------------------------------------
+    // Retain the Textures whilst in Rust-land:
+    //---------------------------------------------------------
+    [inputTexture retain];
+    
+    //---------------------------------------------------------
     // Trigger the Gyroflow Rust Function:
     //---------------------------------------------------------
     const char* result = processFrame(
@@ -1970,46 +2020,82 @@
                                       xFOVOverview,             // uint8_t
                                       xDisableGyroflowStretch,  // uint8_t
                                       inputTexture,             // MTLTexture
-                                      outputTexture,            // MTLTexture
+                                      tempTexture,              // MTLTexture
                                       commandQueue              // MTLCommandQueue
                                       );
-    
+        
     NSString *resultString = [NSString stringWithUTF8String: result];
-    //NSLog(@"[Gyroflow Toolbox Renderer] resultString: %@", resultString);
+    
+    //---------------------------------------------------------
+    // Release the Input Texture:
+    //---------------------------------------------------------
+    if (inputTexture != nil) {
+        [inputTexture setPurgeableState:MTLPurgeableStateEmpty];
+        [inputTexture release];
+        inputTexture = nil;
+    }
     
     //---------------------------------------------------------
     // Gyroflow Core had an error, so abort:
     //---------------------------------------------------------
     if (![resultString isEqualToString:@"DONE"]) {
-        return [self renderErrorMessageWithID:@"GyroflowCoreRenderError" correctedHeight:&correctedHeight destinationImage:destinationImage differenceBetweenHeights:&differenceBetweenHeights fullHeight:fullHeight fullWidth:fullWidth outError:outError outputHeight:outputHeight outputWidth:outputWidth sourceImages:sourceImages];
+        //---------------------------------------------------------
+        // Release the Temp Texture:
+        //---------------------------------------------------------
+        [tempTexture release];
+        
+        //---------------------------------------------------------
+        // Show Error Message:
+        //---------------------------------------------------------
+        return [self renderErrorMessageWithID:@"GyroflowCoreRenderError"
+                             destinationImage:destinationImage
+                                   fullHeight:fullHeight
+                                    fullWidth:fullWidth
+                                     outError:outError
+                                 outputHeight:outputHeight
+                                  outputWidth:outputWidth
+                                 sourceImages:sourceImages];
     }
+
     
     //---------------------------------------------------------
-    // Debugging:
+    // Copy the Temporary Texture to the Output Texture via
+    // a Command Buffer:
     //---------------------------------------------------------
-    /*
-     NSString *debugMessage = [NSString stringWithFormat:@"[Gyroflow Toolbox Renderer] RENDERING A FRAME:\n"];
-     debugMessage = [debugMessage stringByAppendingFormat:@"processFrame result: %@\n", resultString];
-     debugMessage = [debugMessage stringByAppendingFormat:@"inputTexture.width: %lu\n", (unsigned long)inputTexture.width];
-     debugMessage = [debugMessage stringByAppendingFormat:@"inputTexture.height: %lu\n", (unsigned long)inputTexture.height];
-     debugMessage = [debugMessage stringByAppendingFormat:@"outputWidth: %f\n", outputWidth];
-     debugMessage = [debugMessage stringByAppendingFormat:@"outputHeight: %f\n", outputHeight];
-     debugMessage = [debugMessage stringByAppendingFormat:@"gyroflowPath: %@\n", gyroflowPath];
-     debugMessage = [debugMessage stringByAppendingFormat:@"timestamp: %@\n", timestamp];
-     debugMessage = [debugMessage stringByAppendingFormat:@"fov: %f\n", sourceFOV];
-     debugMessage = [debugMessage stringByAppendingFormat:@"smoothness: %f\n", sourceSmoothness];
-     debugMessage = [debugMessage stringByAppendingFormat:@"lensCorrection: %f\n", sourceLensCorrection];
-     NSLog(@"%@", debugMessage);
-     */
+    id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
     
-    //NSLog(@"[Gyroflow Toolbox Renderer] inputTexture.debugDescription: %@", inputTexture.debugDescription);
+    id<MTLBlitCommandEncoder> blitEncoder = [commandBuffer blitCommandEncoder];
+    
+    [blitEncoder copyFromTexture:tempTexture
+                     sourceSlice:0
+                     sourceLevel:0
+                    sourceOrigin:MTLOriginMake(0, 0, 0)
+                      sourceSize:MTLSizeMake([tempTexture width], [tempTexture height], 1)
+                       toTexture:outputTexture
+                destinationSlice:0
+                destinationLevel:0
+               destinationOrigin:MTLOriginMake(0, 0, 0)];
+    
+    [blitEncoder endEncoding];
+
+    [commandBuffer commit];
+    [commandBuffer waitUntilScheduled];
+        
+    //---------------------------------------------------------
+    // Release the Temporary Texture:
+    //---------------------------------------------------------
+    if (tempTexture != nil) {
+        [tempTexture setPurgeableState:MTLPurgeableStateEmpty];
+        [tempTexture release];
+        tempTexture = nil;
+    }
     
     //---------------------------------------------------------
     // Return the command queue back into the cache,
     // so we can re-use it again:
     //---------------------------------------------------------
     [deviceCache returnCommandQueueToCache:commandQueue];
-    
+        
     return YES;
 }
 
@@ -2280,7 +2366,19 @@
     NSData *base64EncodedData = [[NSData alloc] initWithBase64EncodedString:gyroflowProjectData options:0];
     if (base64EncodedData != nil) {
         NSString *decodedGyroflowData = [[NSString alloc] initWithData:base64EncodedData encoding:NSUTF8StringEncoding];
-        gyroflowProjectData = [NSString stringWithString:decodedGyroflowData];
+        if (decodedGyroflowData != nil) {
+            gyroflowProjectData = [NSString stringWithString:decodedGyroflowData];
+            
+            //---------------------------------------------------------
+            // Release memory:
+            //---------------------------------------------------------
+            [decodedGyroflowData release];
+        }
+        
+        //---------------------------------------------------------
+        // Release memory:
+        //---------------------------------------------------------
+        [base64EncodedData release];
     }
     
     //---------------------------------------------------------
@@ -2440,7 +2538,19 @@
     NSData *base64EncodedData = [[NSData alloc] initWithBase64EncodedString:gyroflowProjectData options:0];
     if (base64EncodedData != nil) {
         NSString *decodedGyroflowData = [[NSString alloc] initWithData:base64EncodedData encoding:NSUTF8StringEncoding];
-        gyroflowProjectData = [NSString stringWithString:decodedGyroflowData];
+        if (decodedGyroflowData != nil) {
+            gyroflowProjectData = [NSString stringWithString:decodedGyroflowData];
+            
+            //---------------------------------------------------------
+            // Release memory:
+            //---------------------------------------------------------
+            [decodedGyroflowData release];
+        }
+        
+        //---------------------------------------------------------
+        // Release memory:
+        //---------------------------------------------------------
+        [base64EncodedData release];
     }
     
     //NSLog(@"[Gyroflow Toolbox Renderer] gyroflowProjectData: %@", gyroflowProjectData);

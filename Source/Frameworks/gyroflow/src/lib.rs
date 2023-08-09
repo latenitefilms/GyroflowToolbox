@@ -939,11 +939,23 @@ pub extern "C" fn processFrame(
                //---------------------------------------------------------
                manager.params.write().framebuffer_inverted = true;
 
+               //---------------------------------------------------------               
+               // Set Stabilisation Settings:
                //---------------------------------------------------------
-               // Set the Interpolation:
-               //---------------------------------------------------------
-               manager.stabilization.write().interpolation = gyroflow_core::stabilization::Interpolation::Lanczos4;
+               {
+                    let mut stab = manager.stabilization.write();
 
+                    //---------------------------------------------------------
+                    // Set the Interpolation:
+                    //---------------------------------------------------------
+                    stab.interpolation = gyroflow_core::stabilization::Interpolation::Lanczos4;
+
+                    //---------------------------------------------------------
+                    // Share wpgu instances:
+                    //---------------------------------------------------------
+                    stab.share_wgpu_instances = true;
+               }
+               
                //---------------------------------------------------------
                // Force the background color to transparent:
                //---------------------------------------------------------
