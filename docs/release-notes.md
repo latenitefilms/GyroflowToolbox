@@ -1,5 +1,17 @@
 # Release Notes
 
+### 1.1.2 (Build 16)
+
+#### 🎉 Released:
+- 10th August 2023
+
+#### 🐞 Bug Fixes:
+
+- Updated to FxPlug v4.2.7, which offers improved stability and reliability.
+- Fixed a bug that could cause a memory leak. Thanks for reporting Денис Глушков!
+
+---
+
 ### 1.1.1 (Build 15)
 
 #### 🎉 Released:
