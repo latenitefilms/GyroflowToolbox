@@ -13,6 +13,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (assign) IBOutlet NSView *view;
 
+@property (assign) IBOutlet NSTextField *versionString;
+
 @end
 
 NS_ASSUME_NONNULL_END

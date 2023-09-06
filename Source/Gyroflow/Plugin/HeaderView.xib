@@ -8,6 +8,7 @@
     <objects>
         <customObject id="-2" userLabel="File's Owner" customClass="HeaderView">
             <connections>
+                <outlet property="versionString" destination="BRf-Ct-07H" id="4Jp-mi-tfR"/>
                 <outlet property="view" destination="c22-O7-iKe" id="4hP-iw-023"/>
             </connections>
         </customObject>
@@ -52,9 +53,9 @@
                     </textFieldCell>
                 </textField>
                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="BRf-Ct-07H">
-                    <rect key="frame" x="127" y="270" width="75" height="14"/>
+                    <rect key="frame" x="70" y="270" width="132" height="14"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                    <textFieldCell key="cell" lineBreakMode="clipping" title="Version v1.1.0" id="wPO-Q3-MzM">
+                    <textFieldCell key="cell" lineBreakMode="clipping" alignment="right" title="v0.0.0 (Build 000)" id="wPO-Q3-MzM">
                         <font key="font" metaFont="smallSystem"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                         <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
