@@ -1,5 +1,17 @@
 # Release Notes
 
+### 1.1.3 (Build 17)
+
+#### 🎉 Released:
+- 6th September 2023
+
+#### 🐞 Bug Fixes:
+
+- Fixed a bug where the stabilisation wouldn't load correctly after importing a clip or Gyroflow Project into Final Cut Pro until after you modified a parameter or toggled the Stabilisation Overview. Thanks for reporting JoneyMacaroney and JLPG!
+- Fixed a bug where the Gyroflow Toolbox version information at the top of the Final Cut Pro Inspector was incorrect. Thanks for reporting JoneyMacaroney and JLPG!
+
+---
+
 ### 1.1.2 (Build 16)
 
 #### 🎉 Released:
