@@ -859,6 +859,11 @@ pub extern "C" fn processFrame(
     });
 
     //---------------------------------------------------------
+    // Have parameters changed:
+    //---------------------------------------------------------
+    let mut params_changed = false;
+    
+    //---------------------------------------------------------
     // Get the Unique Identifier:
     //---------------------------------------------------------
     let unique_identifier_pointer = unsafe { CStr::from_ptr(unique_identifier) };
@@ -903,6 +908,11 @@ pub extern "C" fn processFrame(
        //---------------------------------------------------------
        manager.clone()
    } else {
+       //---------------------------------------------------------
+       // On first load, always Invalidate & Recompute:
+       //---------------------------------------------------------
+       params_changed = true;
+       
        //---------------------------------------------------------
        // Setup the Gyroflow Manager:
        //---------------------------------------------------------
@@ -974,10 +984,6 @@ pub extern "C" fn processFrame(
        cache.get(&cache_key).unwrap().clone()
    };
 
-   //---------------------------------------------------------
-   // Have parameters changed:
-   //---------------------------------------------------------
-   let mut params_changed = false;   
    {
        let mut params = manager.params.write();
 
