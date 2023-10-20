@@ -85,8 +85,7 @@
         // * kFxPropertyKey_UsesLumaChroma
         // * kFxPropertyKey_UsesNonmatchingTextureLayout
         // * kFxPropertyKey_UsesRationalTime
-        //---------------------------------------------------------        
-        kFxPropertyKey_IsThreadSafe : @YES,
+        //---------------------------------------------------------
         kFxPropertyKey_MayRemapTime : @NO,
         
         //---------------------------------------------------------
