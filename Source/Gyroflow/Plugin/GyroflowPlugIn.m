@@ -86,7 +86,7 @@
         // * kFxPropertyKey_UsesNonmatchingTextureLayout
         // * kFxPropertyKey_UsesRationalTime
         //---------------------------------------------------------        
-        kFxPropertyKey_IsThreadSafe : @YES,
+        //kFxPropertyKey_IsThreadSafe : @YES,
         kFxPropertyKey_MayRemapTime : @NO,
         
         //---------------------------------------------------------
@@ -1928,13 +1928,13 @@
     // Create a temporary output texture to go from Rust
     // to Objective-C land, that we have full control of:
     //---------------------------------------------------------
-    MTLTextureDescriptor *textureDescriptor = [[MTLTextureDescriptor alloc] init];
-    textureDescriptor.textureType = MTLTextureType2D;
-    textureDescriptor.pixelFormat = pixelFormat;
-    textureDescriptor.width = outputTexture.width;
-    textureDescriptor.height = outputTexture.height;
-    id<MTLTexture> tempTexture = [[deviceCache deviceWithRegistryID:deviceRegistryID] newTextureWithDescriptor:textureDescriptor];
-    [textureDescriptor release];
+    // MTLTextureDescriptor *textureDescriptor = [[MTLTextureDescriptor alloc] init];
+    // textureDescriptor.textureType = MTLTextureType2D;
+    // textureDescriptor.pixelFormat = pixelFormat;
+    // textureDescriptor.width = outputTexture.width;
+    // textureDescriptor.height = outputTexture.height;
+    // id<MTLTexture> tempTexture = [[deviceCache deviceWithRegistryID:deviceRegistryID] newTextureWithDescriptor:textureDescriptor];
+    // [textureDescriptor release];
     
     //---------------------------------------------------------
     // Determine the Pixel Format:
@@ -1954,7 +1954,7 @@
         //---------------------------------------------------------
         // Release the temp texture before aborting:
         //---------------------------------------------------------
-        [tempTexture release];
+        //[tempTexture release];
         
         //---------------------------------------------------------
         // Output error message to Console:
@@ -1994,7 +1994,10 @@
     //---------------------------------------------------------
     // Retain the Textures whilst in Rust-land:
     //---------------------------------------------------------
-    [inputTexture retain];
+    //[inputTexture retain];
+    
+    //NSLog(@"BEFORE - inputTexture: %@", inputTexture.description);
+    //NSLog(@"BEFORE - outputTexture: %@", outputTexture.description);
     
     //---------------------------------------------------------
     // Trigger the Gyroflow Rust Function:
@@ -2020,20 +2023,25 @@
                                       xFOVOverview,             // uint8_t
                                       xDisableGyroflowStretch,  // uint8_t
                                       inputTexture,             // MTLTexture
-                                      tempTexture,              // MTLTexture
+                                      outputTexture,            // MTLTexture
                                       commandQueue              // MTLCommandQueue
                                       );
         
     NSString *resultString = [NSString stringWithUTF8String: result];
     
+    //NSLog(@"AFTER - inputTexture: %@", inputTexture.description);
+    //NSLog(@"AFTER - outputTexture: %@", outputTexture.description);
+    
     //---------------------------------------------------------
     // Release the Input Texture:
     //---------------------------------------------------------
+    /*
     if (inputTexture != nil) {
         [inputTexture setPurgeableState:MTLPurgeableStateEmpty];
         [inputTexture release];
         inputTexture = nil;
     }
+    */
     
     //---------------------------------------------------------
     // Gyroflow Core had an error, so abort:
@@ -2042,7 +2050,7 @@
         //---------------------------------------------------------
         // Release the Temp Texture:
         //---------------------------------------------------------
-        [tempTexture release];
+        //[tempTexture release];
         
         //---------------------------------------------------------
         // Show Error Message:
@@ -2062,6 +2070,7 @@
     // Copy the Temporary Texture to the Output Texture via
     // a Command Buffer:
     //---------------------------------------------------------
+    /*
     id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
     
     id<MTLBlitCommandEncoder> blitEncoder = [commandBuffer blitCommandEncoder];
@@ -2089,6 +2098,7 @@
         [tempTexture release];
         tempTexture = nil;
     }
+    */
     
     //---------------------------------------------------------
     // Return the command queue back into the cache,
