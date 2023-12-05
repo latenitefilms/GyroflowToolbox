@@ -29,9 +29,8 @@ pub extern "C" fn startLogger() {
         .fold(simplelog::ConfigBuilder::new(), |mut cfg, x| { cfg.add_filter_ignore_str(x); cfg })
         .build();
 
-    if let Ok(file_log) = std::fs::File::create(&format!("{}/Library/Containers/com.latenitefilms.GyroflowToolbox.Renderer/Data/Library/Application Support/gyroflow-ofx.log", std::env::var("HOME").unwrap())) {
-        let _ = simplelog::WriteLogger::init(log::LevelFilter::Debug, log_config, file_log);
-    }
+    let file_log = std::fs::File::create(&format!("{}/Library/Containers/com.latenitefilms.GyroflowToolbox.Renderer/Data/Library/Application Support/gyroflow-ofx.log", std::env::var("HOME").unwrap())).unwrap();
+    let _ = simplelog::WriteLogger::init(log::LevelFilter::Debug, log_config, file_log);
 }
 
 // This code block defines a lazy static variable called `MANAGER_CACHE` that is a `Mutex`-protected LRU cache of `StabilizationManager` instances.
