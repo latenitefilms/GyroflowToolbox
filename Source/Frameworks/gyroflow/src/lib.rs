@@ -388,7 +388,7 @@ pub extern "C" fn doesGyroflowProjectContainStabilisationData(
 
                 log::error!("[Gyroflow Toolbox Rust] imu_orientation: {:?}", gyro.imu_orientation);
                 log::error!("[Gyroflow Toolbox Rust] integration_method: {:?}", gyro.integration_method);
-                log::error!("[Gyroflow Toolbox Rust] file_path: {:?}", gyro.file_path);
+                log::error!("[Gyroflow Toolbox Rust] file_url: {:?}", gyro.file_url);
                 
                 !gyro.raw_imu.is_empty() || !gyro.quaternions.is_empty()
             };
@@ -544,14 +544,13 @@ pub extern "C" fn loadLensProfile(
     //---------------------------------------------------------
     // Import the `gyroflow_project_data_string`:
     //---------------------------------------------------------
-    let blocking = true;
-    let path = Some(std::path::PathBuf::from(&*gyroflow_project_data_string));
+    let blocking = true;    
     let cancel_flag = Arc::new(AtomicBool::new(false));
     let mut is_preset = false;
     match stab.import_gyroflow_data(
         gyroflow_project_data_string.as_bytes(), 
         blocking, 
-        path, 
+        None, 
         |_|(),
         cancel_flag,
         &mut is_preset
@@ -572,7 +571,7 @@ pub extern "C" fn loadLensProfile(
             // Export Gyroflow data:
             //---------------------------------------------------------
             let gyroflow_data: String;
-            match stab.export_gyroflow_data(false, false, "{}") {
+            match stab.export_gyroflow_data(gyroflow_core::GyroflowProjectType::WithGyroData, "{}", None) {
                 Ok(data) => {
                     gyroflow_data = data;
                     log::info!("[Gyroflow Toolbox Rust] Gyroflow data exported successfully");
@@ -647,13 +646,12 @@ pub extern "C" fn loadPreset(
     // Import the `gyroflow_project_data_string`:
     //---------------------------------------------------------
     let blocking = true;
-    let path = Some(std::path::PathBuf::from(&*gyroflow_project_data_string));
     let cancel_flag = Arc::new(AtomicBool::new(false));
     let mut is_preset = false;
     match stab.import_gyroflow_data(
         gyroflow_project_data_string.as_bytes(), 
         blocking, 
-        path, 
+        None,
         |_|(),
         cancel_flag,
         &mut is_preset
@@ -673,7 +671,7 @@ pub extern "C" fn loadPreset(
             // Export Gyroflow data:
             //---------------------------------------------------------
             let gyroflow_data: String;
-            match stab.export_gyroflow_data(false, false, "{}") {
+            match stab.export_gyroflow_data(gyroflow_core::GyroflowProjectType::WithGyroData, "{}", None) {
                 Ok(data) => {
                     gyroflow_data = data;
                     log::info!("[Gyroflow Toolbox Rust] Gyroflow data exported successfully");
@@ -773,7 +771,7 @@ pub extern "C" fn importMediaFile(
     // Export Gyroflow data:
     //---------------------------------------------------------
     let gyroflow_data: String;
-    match stab.export_gyroflow_data(false, false, "{}") {
+    match stab.export_gyroflow_data(gyroflow_core::GyroflowProjectType::WithGyroData, "{}", None) {
         Ok(data) => {
             gyroflow_data = data;
             log::info!("[Gyroflow Toolbox Rust] Gyroflow data exported successfully");
