@@ -45,6 +45,11 @@
         NSLog(@"[Gyroflow Toolbox Renderer] applicationSupportDirectory: '%@'", applicationSupportDirectory);
         
         //---------------------------------------------------------
+        // Start the Gyroflow Core Logger:
+        //---------------------------------------------------------
+        startLogger();
+        
+        //---------------------------------------------------------
         // Get the Lens Profiles path:
         //---------------------------------------------------------
         NSBundle *mainBundle = [NSBundle mainBundle];

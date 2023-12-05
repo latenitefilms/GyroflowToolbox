@@ -19,6 +19,21 @@ use std::sync::Arc;                         // Adds Atomic Reference Count suppo
 use std::sync::atomic::AtomicBool;          // The AtomicBool type is a type of atomic variable that can be used in concurrent (multi-threaded) contexts.
 use std::sync::Mutex;                       // A mutual exclusion primitive useful for protecting shared data
 
+//---------------------------------------------------------
+// Start writing log files to disk:
+//---------------------------------------------------------
+#[no_mangle]
+pub extern "C" fn startLogger() {
+    let log_config = [ "mp4parse", "wgpu", "naga", "akaze", "ureq", "rustls", "ofx" ]
+        .into_iter()
+        .fold(simplelog::ConfigBuilder::new(), |mut cfg, x| { cfg.add_filter_ignore_str(x); cfg })
+        .build();
+
+    if let Ok(file_log) = std::fs::File::create(&format!("{}/Library/Containers/com.latenitefilms.GyroflowToolbox.Renderer/Data/Library/Application Support/gyroflow-ofx.log", std::env::var("HOME").unwrap())) {
+        let _ = simplelog::WriteLogger::init(log::LevelFilter::Debug, log_config, file_log);
+    }
+}
+
 // This code block defines a lazy static variable called `MANAGER_CACHE` that is a `Mutex`-protected LRU cache of `StabilizationManager` instances.
 //
 // The `lazy_static!` macro is used to ensure that the variable is initialized only once, and only when it is first accessed.
