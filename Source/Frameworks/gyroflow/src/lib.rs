@@ -986,7 +986,7 @@ pub extern "C" fn processFrame(
                     //---------------------------------------------------------
                     // Share wpgu instances:
                     //---------------------------------------------------------
-                    stab.share_wgpu_instances = false;
+                    stab.share_wgpu_instances = true;
                }
                
                //---------------------------------------------------------
