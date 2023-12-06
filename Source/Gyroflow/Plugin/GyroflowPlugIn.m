@@ -1933,18 +1933,6 @@
     id<MTLTexture> outputTexture = [destinationImage metalTextureForDevice:[deviceCache deviceWithRegistryID:deviceRegistryID]];
     
     //---------------------------------------------------------
-    // Create a temporary output texture to go from Rust
-    // to Objective-C land, that we have full control of:
-    //---------------------------------------------------------
-    MTLTextureDescriptor *textureDescriptor = [[MTLTextureDescriptor alloc] init];
-    textureDescriptor.textureType = MTLTextureType2D;
-    textureDescriptor.pixelFormat = pixelFormat;
-    textureDescriptor.width = outputTexture.width;
-    textureDescriptor.height = outputTexture.height;
-    id<MTLTexture> tempTexture = [[deviceCache deviceWithRegistryID:deviceRegistryID] newTextureWithDescriptor:textureDescriptor];
-    [textureDescriptor release];
-    
-    //---------------------------------------------------------
     // Determine the Pixel Format:
     //---------------------------------------------------------
     int numberOfBytes;
@@ -1959,11 +1947,6 @@
         inputPixelFormat = @"RGBAf";
         numberOfBytes = 4;
     } else {
-        //---------------------------------------------------------
-        // Release the temp texture before aborting:
-        //---------------------------------------------------------
-        [tempTexture release];
-        
         //---------------------------------------------------------
         // Output error message to Console:
         //---------------------------------------------------------
@@ -2000,11 +1983,6 @@
     uint8_t         xDisableGyroflowStretch    = [disableGyroflowStretch unsignedCharValue];
     
     //---------------------------------------------------------
-    // Retain the Textures whilst in Rust-land:
-    //---------------------------------------------------------
-    [inputTexture retain];
-    
-    //---------------------------------------------------------
     // Trigger the Gyroflow Rust Function:
     //---------------------------------------------------------
     const char* result = processFrame(
@@ -2028,8 +2006,8 @@
                                       xFOVOverview,             // uint8_t
                                       xDisableGyroflowStretch,  // uint8_t
                                       inputTexture,             // MTLTexture
-                                      tempTexture,              // MTLTexture
-                                      commandQueue              // MTLCommandQueue
+                                      outputTexture,            // MTLTexture
+                                      NULL //commandQueue              // MTLCommandQueue
                                       );
         
     NSString *resultString = [NSString stringWithUTF8String: result];
@@ -2048,11 +2026,6 @@
     //---------------------------------------------------------
     if (![resultString isEqualToString:@"DONE"]) {
         //---------------------------------------------------------
-        // Release the Temp Texture:
-        //---------------------------------------------------------
-        [tempTexture release];
-        
-        //---------------------------------------------------------
         // Show Error Message:
         //---------------------------------------------------------
         return [self renderErrorMessageWithID:@"GyroflowCoreRenderError"
@@ -2065,39 +2038,6 @@
                                  sourceImages:sourceImages];
     }
 
-    
-    //---------------------------------------------------------
-    // Copy the Temporary Texture to the Output Texture via
-    // a Command Buffer:
-    //---------------------------------------------------------
-    id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
-    
-    id<MTLBlitCommandEncoder> blitEncoder = [commandBuffer blitCommandEncoder];
-    
-    [blitEncoder copyFromTexture:tempTexture
-                     sourceSlice:0
-                     sourceLevel:0
-                    sourceOrigin:MTLOriginMake(0, 0, 0)
-                      sourceSize:MTLSizeMake([tempTexture width], [tempTexture height], 1)
-                       toTexture:outputTexture
-                destinationSlice:0
-                destinationLevel:0
-               destinationOrigin:MTLOriginMake(0, 0, 0)];
-    
-    [blitEncoder endEncoding];
-
-    [commandBuffer commit];
-    [commandBuffer waitUntilScheduled];
-        
-    //---------------------------------------------------------
-    // Release the Temporary Texture:
-    //---------------------------------------------------------
-    if (tempTexture != nil) {
-        [tempTexture setPurgeableState:MTLPurgeableStateEmpty];
-        [tempTexture release];
-        tempTexture = nil;
-    }
-    
     //---------------------------------------------------------
     // Return the command queue back into the cache,
     // so we can re-use it again:
