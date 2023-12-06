@@ -2013,15 +2013,6 @@
     NSString *resultString = [NSString stringWithUTF8String: result];
     
     //---------------------------------------------------------
-    // Release the Input Texture:
-    //---------------------------------------------------------
-    if (inputTexture != nil) {
-        [inputTexture setPurgeableState:MTLPurgeableStateEmpty];
-        [inputTexture release];
-        inputTexture = nil;
-    }
-    
-    //---------------------------------------------------------
     // Gyroflow Core had an error, so abort:
     //---------------------------------------------------------
     if (![resultString isEqualToString:@"DONE"]) {
