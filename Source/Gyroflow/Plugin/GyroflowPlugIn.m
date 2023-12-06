@@ -47,7 +47,11 @@
         //---------------------------------------------------------
         // Start the Gyroflow Core Logger:
         //---------------------------------------------------------
-        startLogger();
+        NSString* gyroflowCoreLogPath = [applicationSupportDirectory stringByAppendingString:@"/GyroflowCore.log"];
+        
+        NSLog(@"[Gyroflow Toolbox Renderer] gyroflowCoreLogPath: '%@'", gyroflowCoreLogPath);
+        
+        startLogger([gyroflowCoreLogPath UTF8String]);
         
         //---------------------------------------------------------
         // Get the Lens Profiles path:

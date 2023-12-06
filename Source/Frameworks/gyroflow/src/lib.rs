@@ -23,14 +23,23 @@ use std::sync::Mutex;                       // A mutual exclusion primitive usef
 // Start writing log files to disk:
 //---------------------------------------------------------
 #[no_mangle]
-pub extern "C" fn startLogger() {
+pub extern "C" fn startLogger(
+    log_path: *const c_char,
+) {
+    log::error!("[Gyroflow Toolbox Rust] Starting Rust Logger...");
+    log::error!("[Gyroflow Toolbox Rust] log path: {:?}", log_path);
+
+    let log_path_pointer = unsafe { CStr::from_ptr(log_path) };
+    let log_path_string = log_path_pointer.to_string_lossy();
+
     let log_config = [ "mp4parse", "wgpu", "naga", "akaze", "ureq", "rustls", "ofx" ]
         .into_iter()
         .fold(simplelog::ConfigBuilder::new(), |mut cfg, x| { cfg.add_filter_ignore_str(x); cfg })
         .build();
 
-    let file_log = std::fs::File::create(&format!("{}/Library/Containers/com.latenitefilms.GyroflowToolbox.Renderer/Data/Library/Application Support/gyroflow-ofx.log", std::env::var("HOME").unwrap())).unwrap();
-    let _ = simplelog::WriteLogger::init(log::LevelFilter::Debug, log_config, file_log);
+    if let Ok(file_log) = std::fs::File::create(log_path_string.as_ref()) {
+        let _ = simplelog::WriteLogger::init(log::LevelFilter::Debug, log_config, file_log);
+    }
 }
 
 // This code block defines a lazy static variable called `MANAGER_CACHE` that is a `Mutex`-protected LRU cache of `StabilizationManager` instances.
