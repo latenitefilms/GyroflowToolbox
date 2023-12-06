@@ -1115,6 +1115,9 @@ pub extern "C" fn processFrame(
            texture_copy: false,
        }
    };
+   
+   log::debug!("[Gyroflow Toolbox Rust] in_mtl_tex: {:?}", in_mtl_tex);
+   log::debug!("[Gyroflow Toolbox Rust] out_mtl_tex: {:?}", out_mtl_tex);
 
    //---------------------------------------------------------
    // Get the Stabilization Result:
