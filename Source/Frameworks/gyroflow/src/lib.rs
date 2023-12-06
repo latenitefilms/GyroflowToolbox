@@ -26,6 +26,8 @@ use std::sync::Mutex;                       // A mutual exclusion primitive usef
 pub extern "C" fn startLogger(
     log_path: *const c_char,
 ) {
+    log_panics::init();
+    
     log::error!("[Gyroflow Toolbox Rust] Starting Rust Logger...");
     log::error!("[Gyroflow Toolbox Rust] log path: {:?}", log_path);
 
