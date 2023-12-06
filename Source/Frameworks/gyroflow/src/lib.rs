@@ -890,7 +890,7 @@ pub extern "C" fn processFrame(
     let unique_identifier_pointer = unsafe { CStr::from_ptr(unique_identifier) };
     let unique_identifier_string = unique_identifier_pointer.to_string_lossy();
 
-    //log::info!("[Gyroflow Toolbox Rust] unique_identifier_string: {:?}", unique_identifier_string);
+    //log::debug!("[Gyroflow Toolbox Rust] unique_identifier_string: {:?}", unique_identifier_string);
 
     //---------------------------------------------------------
     // Get Pixel Format:
@@ -1129,7 +1129,7 @@ pub extern "C" fn processFrame(
         },
         e => {
             log::error!("[Gyroflow Toolbox Rust] Unsupported pixel format: {:?}", pixel_format_string);
-            log::error!("[Gyroflow Toolbox Rust] Error duing stabilization: {:?}", e);
+            log::error!("[Gyroflow Toolbox Rust] Error during stabilization: {:?}", e);
             let error_msg = format!("{}", e);
             let result = CString::new(error_msg).unwrap();            
             return result.into_raw()
@@ -1139,7 +1139,7 @@ pub extern "C" fn processFrame(
    //---------------------------------------------------------
    // Output the Stabilization result to the Console:
    //---------------------------------------------------------
-   //log::info!("[Gyroflow Toolbox Rust] stabilization_result: {:?}", &_stabilization_result);
+   log::debug!("[Gyroflow Toolbox Rust] stabilization_result: {:?}", &_stabilization_result);
 
    //---------------------------------------------------------
    // Return "DONE":
