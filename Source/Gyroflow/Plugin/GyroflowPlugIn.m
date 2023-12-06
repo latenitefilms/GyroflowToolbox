@@ -1881,47 +1881,13 @@
     MetalDeviceCache* deviceCache = [MetalDeviceCache deviceCache];
     
     //---------------------------------------------------------
-    // Get the Device Registry ID from the Destination Image:
-    //---------------------------------------------------------
-    uint64_t deviceRegistryID = destinationImage.deviceRegistryID;
-    
-    //---------------------------------------------------------
-    // Setup the Pixel Format based on the destination image:
-    //---------------------------------------------------------
-    MTLPixelFormat pixelFormat = [MetalDeviceCache MTLPixelFormatForImageTile:destinationImage];
-    
-    //---------------------------------------------------------
-    // Setup a new Command Queue for FxPlug4:
-    //---------------------------------------------------------
-    id<MTLCommandQueue> commandQueue = [deviceCache commandQueueWithRegistryID:deviceRegistryID
-                                                                   pixelFormat:pixelFormat];
-    
-    //---------------------------------------------------------
-    // If the Command Queue wasn't created, abort:
-    //---------------------------------------------------------
-    if (commandQueue == nil)
-    {
-        //---------------------------------------------------------
-        // Output error message to Console:
-        //---------------------------------------------------------
-        NSString *errorMessage = @"FATAL ERROR - Unable to get command queue. May need to increase cache size.";
-        NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
-        if (outError != NULL) {
-            *outError = [NSError errorWithDomain:FxPlugErrorDomain
-                                            code:kFxError_InvalidParameter
-                                        userInfo:@{ NSLocalizedDescriptionKey : errorMessage }];
-        }
-        return NO;
-    }
-    
-    //---------------------------------------------------------
     // Setup our input texture:
     //
     // Retrieve a Metal texture from the IOSurface for
     // rendering on the passed-in device. The returned texture
     // is autoreleased
     //---------------------------------------------------------
-    id<MTLTexture> inputTexture = [sourceImages[0] metalTextureForDevice:[deviceCache deviceWithRegistryID:deviceRegistryID]];
+    id<MTLTexture> inputTexture = [sourceImages[0] metalTextureForDevice:[deviceCache deviceWithRegistryID:sourceImages[0].deviceRegistryID]];
     
     //---------------------------------------------------------
     // Setup our output texture:
@@ -1930,7 +1896,12 @@
     // rendering on the passed-in device. The returned texture
     // is autoreleased
     //---------------------------------------------------------
-    id<MTLTexture> outputTexture = [destinationImage metalTextureForDevice:[deviceCache deviceWithRegistryID:deviceRegistryID]];
+    id<MTLTexture> outputTexture = [destinationImage metalTextureForDevice:[deviceCache deviceWithRegistryID:destinationImage.deviceRegistryID]];
+    
+    //---------------------------------------------------------
+    // Setup the Pixel Format based on the source image:
+    //---------------------------------------------------------
+    MTLPixelFormat pixelFormat = [MetalDeviceCache MTLPixelFormatForImageTile:sourceImages[0]];
     
     //---------------------------------------------------------
     // Determine the Pixel Format:
@@ -2007,7 +1978,7 @@
                                       xDisableGyroflowStretch,  // uint8_t
                                       inputTexture,             // MTLTexture
                                       outputTexture,            // MTLTexture
-                                      NULL //commandQueue              // MTLCommandQueue
+                                      NULL                      // MTLCommandQueue
                                       );
         
     NSString *resultString = [NSString stringWithUTF8String: result];
@@ -2028,12 +1999,6 @@
                                   outputWidth:outputWidth
                                  sourceImages:sourceImages];
     }
-
-    //---------------------------------------------------------
-    // Return the command queue back into the cache,
-    // so we can re-use it again:
-    //---------------------------------------------------------
-    [deviceCache returnCommandQueueToCache:commandQueue];
         
     return YES;
 }
