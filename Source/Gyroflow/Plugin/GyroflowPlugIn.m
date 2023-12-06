@@ -1899,11 +1899,6 @@
     id<MTLTexture> outputTexture = [destinationImage metalTextureForDevice:[deviceCache deviceWithRegistryID:destinationImage.deviceRegistryID]];
     
     //---------------------------------------------------------
-    // Setup the Pixel Format based on the source image:
-    //---------------------------------------------------------
-    MTLPixelFormat pixelFormat = [MetalDeviceCache MTLPixelFormatForImageTile:sourceImages[0]];
-    
-    //---------------------------------------------------------
     // Determine the Pixel Format:
     //---------------------------------------------------------
     int numberOfBytes;
