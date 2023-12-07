@@ -986,7 +986,7 @@ pub extern "C" fn processFrame(
                     //---------------------------------------------------------
                     // Share wpgu instances:
                     //---------------------------------------------------------
-                    stab.share_wgpu_instances = true;
+                    stab.share_wgpu_instances = false; // TODO: this should be changed to `true` once it's working again in `gyroflow_core`
                }
                
                //---------------------------------------------------------
@@ -1116,8 +1116,8 @@ pub extern "C" fn processFrame(
        }
    };
    
-   log::debug!("[Gyroflow Toolbox Rust] in_mtl_tex: {:?}", in_mtl_tex);
-   log::debug!("[Gyroflow Toolbox Rust] out_mtl_tex: {:?}", out_mtl_tex);
+   //log::debug!("[Gyroflow Toolbox Rust] in_mtl_tex: {:?}", in_mtl_tex);
+   //log::debug!("[Gyroflow Toolbox Rust] out_mtl_tex: {:?}", out_mtl_tex);
 
    //---------------------------------------------------------
    // Get the Stabilization Result:

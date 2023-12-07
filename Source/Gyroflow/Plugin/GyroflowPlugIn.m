@@ -1507,18 +1507,60 @@
     id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
     commandBuffer.label = @"Gyroflow Toolbox Error Command Buffer";
     [commandBuffer enqueue];
-    
+        
     //---------------------------------------------------------
     // Load the texture from our "Assets":
     //---------------------------------------------------------
-    MTKTextureLoader *loader = [[MTKTextureLoader alloc] initWithDevice:commandQueue.device];
+    NSImage *nsImage = [NSImage imageNamed:errorMessageID];
+    CGImageRef image = [nsImage CGImageForProposedRect:NULL context:nil hints:nil];
+
+    if (image == NULL) {
+        NSString *errorMessage = [NSString stringWithFormat:@"FATAL ERROR: Failed to get the following asset from the asset catalog: %@", errorMessageID];
+        NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
+        if (outError != NULL) {
+            *outError = [NSError errorWithDomain:FxPlugErrorDomain
+                                            code:kFxError_CommandQueueWasNilDuringShowErrorMessage
+                                        userInfo:@{ NSLocalizedDescriptionKey : errorMessage }];
+        }
+        return NO;
+    }
+
+    //---------------------------------------------------------
+    // Get the image width and height:
+    //---------------------------------------------------------
+    size_t width = CGImageGetWidth(image);
+    size_t height = CGImageGetHeight(image);
+
+    //---------------------------------------------------------
+    // Create a bitmap context in RGBA format:
+    //---------------------------------------------------------
+    void *bitmapData = malloc(width * height * 4);
+    CGColorSpaceRef colorSpace = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
+    CGContextRef context = CGBitmapContextCreate(bitmapData, width, height, 8, width * 4, colorSpace, kCGImageAlphaPremultipliedLast | kCGBitmapByteOrder32Big);
+
+    //---------------------------------------------------------
+    // Draw the image into the context:
+    //---------------------------------------------------------
+    CGContextDrawImage(context, CGRectMake(0, 0, width, height), image);
+
+    //---------------------------------------------------------
+    // Now bitmapData contains the image data in RGBA format:
+    //---------------------------------------------------------
+    MTLTextureDescriptor *textureDescriptor = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:MTLPixelFormatRGBA8Unorm_sRGB width:width height:height mipmapped:NO];
+    id<MTLTexture> inputTexture = [commandQueue.device newTextureWithDescriptor:textureDescriptor];
+    [inputTexture replaceRegion:MTLRegionMake2D(0, 0, width, height) mipmapLevel:0 withBytes:bitmapData bytesPerRow:4 * width];
     
-    NSDictionary *options = [[NSDictionary alloc] initWithObjectsAndKeys:
-                             [NSNumber numberWithBool:YES], MTKTextureLoaderOptionSRGB,
-                             nil];
-    
-    id<MTLTexture> inputTexture         = [loader newTextureWithName:errorMessageID scaleFactor:1.0 bundle:[NSBundle mainBundle] options:options error:nil];
-    id<MTLTexture> outputTexture        = [destinationImage metalTextureForDevice:[deviceCache deviceWithRegistryID:destinationImage.deviceRegistryID]];
+    //---------------------------------------------------------
+    // Cleanup:
+    //---------------------------------------------------------
+    CGContextRelease(context);
+    CGColorSpaceRelease(colorSpace);
+    free(bitmapData);
+
+    //---------------------------------------------------------
+    // Get the outputTexture from FxPlug:
+    //---------------------------------------------------------
+    id<MTLTexture> outputTexture = [destinationImage metalTextureForDevice:[deviceCache deviceWithRegistryID:destinationImage.deviceRegistryID]];
     
     //---------------------------------------------------------
     // If square pixels, we'll manipulate the height and y
@@ -1590,13 +1632,10 @@
         //---------------------------------------------------------
         [scaleCommandBuffer commit];
     }
-    
+
     //---------------------------------------------------------
-    // Release the texture loader:
+    // Setup Render Pass:
     //---------------------------------------------------------
-    [options release];
-    [loader release];
-    
     MTLRenderPassColorAttachmentDescriptor* colorAttachmentDescriptor   = [[MTLRenderPassColorAttachmentDescriptor alloc] init];
     colorAttachmentDescriptor.texture = outputTexture;
     colorAttachmentDescriptor.clearColor = MTLClearColorMake(1.0, 1.0, 1.0, 1.0); // White
