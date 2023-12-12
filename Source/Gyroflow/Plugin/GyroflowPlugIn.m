@@ -4272,13 +4272,13 @@
     }
         
     //---------------------------------------------------------
-    // Check to see if an official lens is loaded in the
+    // Check to see if a lens profile is loaded in the
     // Gyroflow Project:
     //---------------------------------------------------------
-    const char* officialLensLoaded = isOfficialLensLoaded([gyroflowProject UTF8String]);
-    NSString *isOfficialLensLoaded = [NSString stringWithUTF8String:officialLensLoaded];
-    //NSLog(@"[Gyroflow Toolbox Renderer] isOfficialLensLoaded: %@", isOfficialLensLoaded);
-    if (isOfficialLensLoaded == nil || ![isOfficialLensLoaded isEqualToString:@"YES"]) {
+    const char* lensProfileLoaded = isLensProfileLoaded([gyroflowProject UTF8String]);
+    NSString *isLensProfileLoaded = [NSString stringWithUTF8String:lensProfileLoaded];
+    //NSLog(@"[Gyroflow Toolbox Renderer] isLensProfileLoaded: %@", isLensProfileLoaded);
+    if (isLensProfileLoaded == nil || ![isLensProfileLoaded isEqualToString:@"YES"]) {
         //---------------------------------------------------------
         // Show popup with instructions:
         //---------------------------------------------------------

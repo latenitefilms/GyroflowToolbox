@@ -1,0 +1,69 @@
+{
+  "name": "OnePlus_Nord N10___1080p_16by9_1920x1080-29.92fps",
+  "note": "",
+  "calibrated_by": "Minhaz M",
+  "camera_brand": "OnePlus",
+  "camera_model": "Nord N10",
+  "lens_model": "",
+  "camera_setting": "",
+  "calib_dimension": {
+    "w": 1920,
+    "h": 1080
+  },
+  "orig_dimension": {
+    "w": 1920,
+    "h": 1080
+  },
+  "output_dimension": {
+    "w": 1920,
+    "h": 1080
+  },
+  "frame_readout_time": null,
+  "gyro_lpf": null,
+  "input_horizontal_stretch": 1.0,
+  "input_vertical_stretch": 1.0,
+  "num_images": 15,
+  "fps": 29.920837,
+  "crop": null,
+  "official": false,
+  "asymmetrical": false,
+  "fisheye_params": {
+    "RMS_error": 0.37940934517418184,
+    "camera_matrix": [
+      [
+        1782.631718560088,
+        0.0,
+        941.0199858169163
+      ],
+      [
+        0.0,
+        1782.7744254893942,
+        541.0914874191418
+      ],
+      [
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "distortion_coeffs": [
+      0.368573803492445,
+      1.1653917731730197,
+      -8.923470719314462,
+      24.43683404729252
+    ],
+    "radial_distortion_limit": null
+  },
+  "identifier": "",
+  "calibrator_version": "1.5.2",
+  "date": "2023-10-10",
+  "compatible_settings": [],
+  "sync_settings": null,
+  "distortion_model": null,
+  "digital_lens": null,
+  "digital_lens_params": null,
+  "interpolations": null,
+  "focal_length": null,
+  "crop_factor": null,
+  "global_shutter": false
+}

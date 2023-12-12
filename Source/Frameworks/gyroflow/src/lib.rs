@@ -268,7 +268,7 @@ pub extern "C" fn getLensIdentifier(
     }
 }
 
-/// Checks if the official lens is loaded.
+/// Checks if a lens profile is loaded.
 ///
 /// # Arguments
 ///
@@ -282,7 +282,7 @@ pub extern "C" fn getLensIdentifier(
 ///
 /// This function is marked as unsafe because it accepts a raw pointer as an argument. It is the caller's responsibility to ensure that the pointer is valid and points to a null-terminated string.
 #[no_mangle]
-pub extern "C" fn isOfficialLensLoaded(
+pub extern "C" fn isLensProfileLoaded(
     gyroflow_project_data: *const c_char,
 ) -> *const c_char {
     //---------------------------------------------------------
@@ -323,7 +323,7 @@ pub extern "C" fn isOfficialLensLoaded(
             //---------------------------------------------------------
             // Is official lens loaded?
             //---------------------------------------------------------
-            let is_official_lens_loaded = stab.lens.read().official;
+            let is_official_lens_loaded = stab.lens.read().calib_dimension.w > 0;
             if is_official_lens_loaded {
                 let result = CString::new("YES").unwrap();
                 return result.into_raw()

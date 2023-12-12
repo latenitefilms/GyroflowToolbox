@@ -1,0 +1,69 @@
+{
+  "name": "Nikon_Z30___1080p_16by9_1920x1080-59.94fps",
+  "note": "",
+  "calibrated_by": "wuni",
+  "camera_brand": "Nikon",
+  "camera_model": "Z30",
+  "lens_model": "",
+  "camera_setting": "",
+  "calib_dimension": {
+    "w": 1920,
+    "h": 1080
+  },
+  "orig_dimension": {
+    "w": 1920,
+    "h": 1080
+  },
+  "output_dimension": {
+    "w": 1920,
+    "h": 1080
+  },
+  "frame_readout_time": null,
+  "gyro_lpf": null,
+  "input_horizontal_stretch": 1.0,
+  "input_vertical_stretch": 1.0,
+  "num_images": 15,
+  "fps": 59.94006,
+  "crop": null,
+  "official": false,
+  "asymmetrical": false,
+  "fisheye_params": {
+    "RMS_error": 0.3932668003791896,
+    "camera_matrix": [
+      [
+        1343.2448269016766,
+        0.0,
+        978.3868463048932
+      ],
+      [
+        0.0,
+        1345.915562014324,
+        520.0600521727678
+      ],
+      [
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "distortion_coeffs": [
+      0.36815269613907586,
+      -0.1355176242952051,
+      1.2500090529363723,
+      -1.7222758082606917
+    ],
+    "radial_distortion_limit": null
+  },
+  "identifier": "",
+  "calibrator_version": "1.5.2",
+  "date": "2023-10-10",
+  "compatible_settings": [],
+  "sync_settings": null,
+  "distortion_model": null,
+  "digital_lens": null,
+  "digital_lens_params": null,
+  "interpolations": null,
+  "focal_length": null,
+  "crop_factor": null,
+  "global_shutter": false
+}

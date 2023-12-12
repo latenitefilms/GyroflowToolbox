@@ -1,0 +1,69 @@
+{
+  "name": "Fujifilm_X-S20_Fijinon 15-55mm f3.5__4k_16by9_3840x2160-23.98fps",
+  "note": "",
+  "calibrated_by": "Anirudh Venkatesan",
+  "camera_brand": "Fujifilm",
+  "camera_model": "X-S20",
+  "lens_model": "Fijinon 15-55mm f3.5",
+  "camera_setting": "",
+  "calib_dimension": {
+    "w": 3840,
+    "h": 2160
+  },
+  "orig_dimension": {
+    "w": 3840,
+    "h": 2160
+  },
+  "output_dimension": {
+    "w": 3840,
+    "h": 2160
+  },
+  "frame_readout_time": 0.8464522952070846,
+  "gyro_lpf": 50.0,
+  "input_horizontal_stretch": 1.0,
+  "input_vertical_stretch": 1.0,
+  "num_images": 8,
+  "fps": 23.976025,
+  "crop": null,
+  "official": false,
+  "asymmetrical": false,
+  "fisheye_params": {
+    "RMS_error": 1.5718460016454945,
+    "camera_matrix": [
+      [
+        2361.5409930176315,
+        0.0,
+        1903.9344281661713
+      ],
+      [
+        0.0,
+        2357.9363445415565,
+        1088.7303215585123
+      ],
+      [
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "distortion_coeffs": [
+      0.31352607854936176,
+      0.1860313390472509,
+      0.1018572502267086,
+      -0.2863334474488139
+    ],
+    "radial_distortion_limit": null
+  },
+  "identifier": "",
+  "calibrator_version": "1.5.2",
+  "date": "2023-10-10",
+  "compatible_settings": [],
+  "sync_settings": null,
+  "distortion_model": null,
+  "digital_lens": null,
+  "digital_lens_params": null,
+  "interpolations": null,
+  "focal_length": 15.0,
+  "crop_factor": 1.6,
+  "global_shutter": false
+}

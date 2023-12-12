@@ -88,9 +88,9 @@ const char* hasAccurateTimestamps(
 );
 
 //---------------------------------------------------------
-// Is an official lens loaded in the Gyroflow Project?
+// Is a lens profile loaded in the Gyroflow Project?
 //---------------------------------------------------------
-const char* isOfficialLensLoaded(
+const char* isLensProfileLoaded(
     const char*                 gyroflow_project_data
 );
 
