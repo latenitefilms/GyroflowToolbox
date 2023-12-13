@@ -42,6 +42,14 @@ pub extern "C" fn startLogger(
     if let Ok(file_log) = std::fs::File::create(log_path_string.as_ref()) {
         let _ = simplelog::WriteLogger::init(log::LevelFilter::Debug, log_config, file_log);
     }
+    
+    //---------------------------------------------------------
+    // Load the Lens Profiles:
+    //---------------------------------------------------------
+    let stab = StabilizationManager::default();
+    stab.lens_profile_db.write().load_all();
+    let mut lock = MANAGER_CACHE.lock().unwrap();
+    lock.put("lens-profiles".into(), Arc::new(stab));
 }
 
 // This code block defines a lazy static variable called `MANAGER_CACHE` that is a `Mutex`-protected LRU cache of `StabilizationManager` instances.
