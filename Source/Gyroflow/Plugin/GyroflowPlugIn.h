@@ -80,5 +80,15 @@
     //---------------------------------------------------------
     NSDictionary *lensProfilesLookup;
 }
-@property (assign) id<PROAPIAccessing> _Nonnull apiManager;
+
+//---------------------------------------------------------
+// Progress Alert:
+//---------------------------------------------------------
+@property (weak) IBOutlet NSAlert* _Nullable        progressAlert;
+
+//---------------------------------------------------------
+// FxPlug API Manager:
+//---------------------------------------------------------
+@property (assign) id<PROAPIAccessing> _Nonnull     apiManager;
+
 @end

@@ -14,13 +14,13 @@
 - (NSString *)getAppVersionAndBuildNumber {
     NSDictionary *infoDictionary = [[NSBundle mainBundle] infoDictionary];
     
-    // Get the version number
+    // Get the version number:
     NSString *version = [infoDictionary objectForKey:@"CFBundleShortVersionString"];
     
-    // Get the build number
+    // Get the build number:
     NSString *build = [infoDictionary objectForKey:@"CFBundleVersion"];
     
-    // Construct the string
+    // Construct the string:
     NSString *versionAndBuildString = [NSString stringWithFormat:@"v%@ (Build %@)", version, build];
     
     return versionAndBuildString;
@@ -43,8 +43,6 @@
 
 - (void)drawRect:(NSRect)dirtyRect {
     [super drawRect:dirtyRect];
-    
-    // Drawing code here.
 }
 
 @end
