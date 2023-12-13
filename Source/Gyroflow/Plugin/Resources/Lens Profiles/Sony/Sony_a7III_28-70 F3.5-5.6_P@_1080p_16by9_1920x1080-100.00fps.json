@@ -1,0 +1,69 @@
+{
+  "name": "Sony_a7III_28-70 F3.5-5.6_P@_1080p_16by9_1920x1080-100.00fps",
+  "note": "",
+  "calibrated_by": "林同学",
+  "camera_brand": "Sony",
+  "camera_model": "a7III",
+  "lens_model": "28-70 F3.5-5.6",
+  "camera_setting": "P@",
+  "calib_dimension": {
+    "w": 1920,
+    "h": 1080
+  },
+  "orig_dimension": {
+    "w": 1920,
+    "h": 1080
+  },
+  "output_dimension": {
+    "w": 1920,
+    "h": 1080
+  },
+  "frame_readout_time": null,
+  "gyro_lpf": null,
+  "input_horizontal_stretch": 1.0,
+  "input_vertical_stretch": 1.0,
+  "num_images": 15,
+  "fps": 100.0,
+  "crop": null,
+  "official": false,
+  "asymmetrical": false,
+  "fisheye_params": {
+    "RMS_error": 0.28481197851976325,
+    "camera_matrix": [
+      [
+        1546.1738653463851,
+        0.0,
+        957.1982897600556
+      ],
+      [
+        0.0,
+        1548.9083065793482,
+        517.2434282359242
+      ],
+      [
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "distortion_coeffs": [
+      0.32857150860295686,
+      0.13035437237888092,
+      0.24109007709523872,
+      -0.09184699768345105
+    ],
+    "radial_distortion_limit": null
+  },
+  "identifier": "",
+  "calibrator_version": "1.5.2",
+  "date": "2023-10-09",
+  "compatible_settings": [],
+  "sync_settings": null,
+  "distortion_model": null,
+  "digital_lens": null,
+  "digital_lens_params": null,
+  "interpolations": null,
+  "focal_length": null,
+  "crop_factor": null,
+  "global_shutter": false
+}

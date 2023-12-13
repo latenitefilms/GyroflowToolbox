@@ -19,6 +19,39 @@ use std::sync::Arc;                         // Adds Atomic Reference Count suppo
 use std::sync::atomic::AtomicBool;          // The AtomicBool type is a type of atomic variable that can be used in concurrent (multi-threaded) contexts.
 use std::sync::Mutex;                       // A mutual exclusion primitive useful for protecting shared data
 
+//---------------------------------------------------------
+// Start writing log files to disk:
+//---------------------------------------------------------
+#[no_mangle]
+pub extern "C" fn startLogger(
+    log_path: *const c_char,
+) {
+    log_panics::init();
+
+    log::error!("[Gyroflow Toolbox Rust] Starting Rust Logger...");
+    log::error!("[Gyroflow Toolbox Rust] log path: {:?}", log_path);
+
+    let log_path_pointer = unsafe { CStr::from_ptr(log_path) };
+    let log_path_string = log_path_pointer.to_string_lossy();
+
+    let log_config = [ "mp4parse", "wgpu", "naga", "akaze", "ureq", "rustls", "ofx" ]
+        .into_iter()
+        .fold(simplelog::ConfigBuilder::new(), |mut cfg, x| { cfg.add_filter_ignore_str(x); cfg })
+        .build();
+
+    if let Ok(file_log) = std::fs::File::create(log_path_string.as_ref()) {
+        let _ = simplelog::WriteLogger::init(log::LevelFilter::Debug, log_config, file_log);
+    }
+    
+    //---------------------------------------------------------
+    // Load the Lens Profiles:
+    //---------------------------------------------------------
+    let stab = StabilizationManager::default();
+    stab.lens_profile_db.write().load_all();
+    let mut lock = MANAGER_CACHE.lock().unwrap();
+    lock.put("lens-profiles".into(), Arc::new(stab));
+}
+
 // This code block defines a lazy static variable called `MANAGER_CACHE` that is a `Mutex`-protected LRU cache of `StabilizationManager` instances.
 //
 // The `lazy_static!` macro is used to ensure that the variable is initialized only once, and only when it is first accessed.
@@ -103,8 +136,8 @@ pub extern "C" fn getDefaultValues(
     horizon_roll: *mut f64,
     position_offset_x: *mut f64,
     position_offset_y: *mut f64,
-    video_rotation: *mut f64,    
-) -> *const c_char {    
+    video_rotation: *mut f64,
+) -> *const c_char {
     //---------------------------------------------------------
     // Convert the Gyroflow Project data to a `&str`:
     //---------------------------------------------------------
@@ -128,13 +161,13 @@ pub extern "C" fn getDefaultValues(
     //---------------------------------------------------------
     // Import the `gyroflow_project_data_string`:
     //---------------------------------------------------------
-    let blocking = true;    
+    let blocking = true;
     let cancel_flag = Arc::new(AtomicBool::new(false));
     let mut is_preset = false;
     match stab.import_gyroflow_data(
-        gyroflow_project_data_string.as_bytes(), 
-        blocking, 
-        None, 
+        gyroflow_project_data_string.as_bytes(),
+        blocking,
+        None,
         |_|(),
         cancel_flag,
         &mut is_preset
@@ -156,16 +189,16 @@ pub extern "C" fn getDefaultValues(
             }
 
             let result = CString::new("OK").unwrap();
-            return result.into_raw()                
+            return result.into_raw()
         },
         Err(e) => {
             //---------------------------------------------------------
             // An error has occurred:
             //---------------------------------------------------------
             log::error!("[Gyroflow Toolbox Rust] Error importing gyroflow data: {:?}", e);
-            
+
             let error_msg = format!("{}", e);
-            let result = CString::new(error_msg).unwrap();            
+            let result = CString::new(error_msg).unwrap();
             return result.into_raw()
         },
     }
@@ -211,13 +244,13 @@ pub extern "C" fn getLensIdentifier(
     //---------------------------------------------------------
     // Import the `gyroflow_project_data_string`:
     //---------------------------------------------------------
-    let blocking = true;    
+    let blocking = true;
     let cancel_flag = Arc::new(AtomicBool::new(false));
     let mut is_preset = false;
     match stab.import_gyroflow_data(
-        gyroflow_project_data_string.as_bytes(), 
-        blocking, 
-        None, 
+        gyroflow_project_data_string.as_bytes(),
+        blocking,
+        None,
         |_|(),
         cancel_flag,
         &mut is_preset
@@ -227,23 +260,23 @@ pub extern "C" fn getLensIdentifier(
             // Get the Lens Identifier:
             //---------------------------------------------------------
             let identifier = stab.lens.read().identifier.to_string();
-            let result = CString::new(identifier).unwrap();            
-            return result.into_raw();       
+            let result = CString::new(identifier).unwrap();
+            return result.into_raw();
         },
         Err(e) => {
             //---------------------------------------------------------
             // An error has occurred:
             //---------------------------------------------------------
             log::error!("[Gyroflow Toolbox Rust] Error importing gyroflow data: {:?}", e);
-            
+
             let error_msg = format!("{}", e);
-            let result = CString::new(error_msg).unwrap();            
+            let result = CString::new(error_msg).unwrap();
             return result.into_raw()
         },
     }
 }
 
-/// Checks if the official lens is loaded.
+/// Checks if a lens profile is loaded.
 ///
 /// # Arguments
 ///
@@ -257,7 +290,7 @@ pub extern "C" fn getLensIdentifier(
 ///
 /// This function is marked as unsafe because it accepts a raw pointer as an argument. It is the caller's responsibility to ensure that the pointer is valid and points to a null-terminated string.
 #[no_mangle]
-pub extern "C" fn isOfficialLensLoaded(
+pub extern "C" fn isLensProfileLoaded(
     gyroflow_project_data: *const c_char,
 ) -> *const c_char {
     //---------------------------------------------------------
@@ -283,13 +316,13 @@ pub extern "C" fn isOfficialLensLoaded(
     //---------------------------------------------------------
     // Import the `gyroflow_project_data_string`:
     //---------------------------------------------------------
-    let blocking = true;    
+    let blocking = true;
     let cancel_flag = Arc::new(AtomicBool::new(false));
     let mut is_preset = false;
     match stab.import_gyroflow_data(
-        gyroflow_project_data_string.as_bytes(), 
-        blocking, 
-        None, 
+        gyroflow_project_data_string.as_bytes(),
+        blocking,
+        None,
         |_|(),
         cancel_flag,
         &mut is_preset
@@ -298,7 +331,7 @@ pub extern "C" fn isOfficialLensLoaded(
             //---------------------------------------------------------
             // Is official lens loaded?
             //---------------------------------------------------------
-            let is_official_lens_loaded = stab.lens.read().official;
+            let is_official_lens_loaded = stab.lens.read().calib_dimension.w > 0;
             if is_official_lens_loaded {
                 let result = CString::new("YES").unwrap();
                 return result.into_raw()
@@ -312,9 +345,9 @@ pub extern "C" fn isOfficialLensLoaded(
             // An error has occurred:
             //---------------------------------------------------------
             log::error!("[Gyroflow Toolbox Rust] Error importing gyroflow data: {:?}", e);
-            
+
             let error_msg = format!("{}", e);
-            let result = CString::new(error_msg).unwrap();            
+            let result = CString::new(error_msg).unwrap();
             return result.into_raw()
         },
     }
@@ -360,13 +393,13 @@ pub extern "C" fn doesGyroflowProjectContainStabilisationData(
     //---------------------------------------------------------
     // Import the `gyroflow_project_data_string`:
     //---------------------------------------------------------
-    let blocking = true;    
+    let blocking = true;
     let cancel_flag = Arc::new(AtomicBool::new(false));
     let mut is_preset = false;
     match stab.import_gyroflow_data(
-        gyroflow_project_data_string.as_bytes(), 
-        blocking, 
-        None, 
+        gyroflow_project_data_string.as_bytes(),
+        blocking,
+        None,
         |_|(),
         cancel_flag,
         &mut is_preset
@@ -375,7 +408,7 @@ pub extern "C" fn doesGyroflowProjectContainStabilisationData(
             //---------------------------------------------------------
             // Check if gyroflow project contains stabilization data:
             //---------------------------------------------------------
-            let has_motion = { 
+            let has_motion = {
                 let gyro = stab.gyro.read();
 
                 log::error!("[Gyroflow Toolbox Rust] gyro.file_metadata.raw_imu: {:?}", gyro.file_metadata.raw_imu);
@@ -388,8 +421,8 @@ pub extern "C" fn doesGyroflowProjectContainStabilisationData(
 
                 log::error!("[Gyroflow Toolbox Rust] imu_orientation: {:?}", gyro.imu_orientation);
                 log::error!("[Gyroflow Toolbox Rust] integration_method: {:?}", gyro.integration_method);
-                log::error!("[Gyroflow Toolbox Rust] file_path: {:?}", gyro.file_path);
-                
+                log::error!("[Gyroflow Toolbox Rust] file_url: {:?}", gyro.file_url);
+
                 !gyro.raw_imu.is_empty() || !gyro.quaternions.is_empty()
             };
 
@@ -410,9 +443,9 @@ pub extern "C" fn doesGyroflowProjectContainStabilisationData(
             // An error has occurred:
             //---------------------------------------------------------
             log::error!("[Gyroflow Toolbox Rust] Error importing gyroflow data: {:?}", e);
-            
+
             let error_msg = format!("{}", e);
-            let result = CString::new(error_msg).unwrap();            
+            let result = CString::new(error_msg).unwrap();
             return result.into_raw()
         },
     }
@@ -455,13 +488,13 @@ pub extern "C" fn hasAccurateTimestamps(
     //---------------------------------------------------------
     // Import the `gyroflow_project_data_string`:
     //---------------------------------------------------------
-    let blocking = true;    
+    let blocking = true;
     let cancel_flag = Arc::new(AtomicBool::new(false));
     let mut is_preset = false;
     match stab.import_gyroflow_data(
-        gyroflow_project_data_string.as_bytes(), 
-        blocking, 
-        None, 
+        gyroflow_project_data_string.as_bytes(),
+        blocking,
+        None,
         |_|(),
         cancel_flag,
         &mut is_preset
@@ -470,8 +503,8 @@ pub extern "C" fn hasAccurateTimestamps(
             //---------------------------------------------------------
             // Check if gyroflow project contains stabilization data:
             //---------------------------------------------------------
-            let has_accurate_timestamps = { 
-                let gyro = stab.gyro.read(); 
+            let has_accurate_timestamps = {
+                let gyro = stab.gyro.read();
                 gyro.file_metadata.has_accurate_timestamps
             };
 
@@ -492,9 +525,9 @@ pub extern "C" fn hasAccurateTimestamps(
             // An error has occurred:
             //---------------------------------------------------------
             log::error!("[Gyroflow Toolbox Rust] Error importing gyroflow data: {:?}", e);
-            
+
             let error_msg = format!("{}", e);
-            let result = CString::new(error_msg).unwrap();            
+            let result = CString::new(error_msg).unwrap();
             return result.into_raw()
         },
     }
@@ -545,13 +578,12 @@ pub extern "C" fn loadLensProfile(
     // Import the `gyroflow_project_data_string`:
     //---------------------------------------------------------
     let blocking = true;
-    let path = Some(std::path::PathBuf::from(&*gyroflow_project_data_string));
     let cancel_flag = Arc::new(AtomicBool::new(false));
     let mut is_preset = false;
     match stab.import_gyroflow_data(
-        gyroflow_project_data_string.as_bytes(), 
-        blocking, 
-        path, 
+        gyroflow_project_data_string.as_bytes(),
+        blocking,
+        None,
         |_|(),
         cancel_flag,
         &mut is_preset
@@ -561,7 +593,7 @@ pub extern "C" fn loadLensProfile(
             // Load Lens Profile:
             //---------------------------------------------------------
             if let Err(e) = stab.load_lens_profile(&lens_profile_path_string) {
-                
+
                 log::error!("[Gyroflow Toolbox Rust] Error loading Lens Profile: {:?}", e);
 
                 let result = CString::new("FAIL").unwrap();
@@ -572,7 +604,7 @@ pub extern "C" fn loadLensProfile(
             // Export Gyroflow data:
             //---------------------------------------------------------
             let gyroflow_data: String;
-            match stab.export_gyroflow_data(false, false, "{}") {
+            match stab.export_gyroflow_data(gyroflow_core::GyroflowProjectType::WithGyroData, "{}", None) {
                 Ok(data) => {
                     gyroflow_data = data;
                     log::info!("[Gyroflow Toolbox Rust] Gyroflow data exported successfully");
@@ -587,16 +619,16 @@ pub extern "C" fn loadLensProfile(
             // Return Gyroflow Project data as string:
             //---------------------------------------------------------
             let result = CString::new(gyroflow_data).unwrap();
-            return result.into_raw()            
+            return result.into_raw()
         },
         Err(e) => {
             //---------------------------------------------------------
             // An error has occurred:
             //---------------------------------------------------------
             log::error!("[Gyroflow Toolbox Rust] Error importing Lens Profile: {:?}", e);
-            
+
             let error_msg = format!("{}", e);
-            let result = CString::new(error_msg).unwrap();            
+            let result = CString::new(error_msg).unwrap();
             return result.into_raw()
         },
     }
@@ -647,13 +679,12 @@ pub extern "C" fn loadPreset(
     // Import the `gyroflow_project_data_string`:
     //---------------------------------------------------------
     let blocking = true;
-    let path = Some(std::path::PathBuf::from(&*gyroflow_project_data_string));
     let cancel_flag = Arc::new(AtomicBool::new(false));
     let mut is_preset = false;
     match stab.import_gyroflow_data(
-        gyroflow_project_data_string.as_bytes(), 
-        blocking, 
-        path, 
+        gyroflow_project_data_string.as_bytes(),
+        blocking,
+        None,
         |_|(),
         cancel_flag,
         &mut is_preset
@@ -673,7 +704,7 @@ pub extern "C" fn loadPreset(
             // Export Gyroflow data:
             //---------------------------------------------------------
             let gyroflow_data: String;
-            match stab.export_gyroflow_data(false, false, "{}") {
+            match stab.export_gyroflow_data(gyroflow_core::GyroflowProjectType::WithGyroData, "{}", None) {
                 Ok(data) => {
                     gyroflow_data = data;
                     log::info!("[Gyroflow Toolbox Rust] Gyroflow data exported successfully");
@@ -688,16 +719,16 @@ pub extern "C" fn loadPreset(
             // Return Gyroflow Project data as string:
             //---------------------------------------------------------
             let result = CString::new(gyroflow_data).unwrap();
-            return result.into_raw()            
+            return result.into_raw()
         },
         Err(e) => {
             //---------------------------------------------------------
             // An error has occurred:
             //---------------------------------------------------------
             log::error!("[Gyroflow Toolbox Rust] Error importing Preset: {:?}", e);
-            
+
             let error_msg = format!("{}", e);
-            let result = CString::new(error_msg).unwrap();            
+            let result = CString::new(error_msg).unwrap();
             return result.into_raw()
         },
     }
@@ -706,7 +737,7 @@ pub extern "C" fn loadPreset(
 /// This function is called from Objective-C land and is responsible for clearing the cache.
 ///
 /// # Returns
-/// 
+///
 /// This function returns the size of the cache as a `u32`.
 #[no_mangle]
 pub extern "C" fn trashCache() -> u32 {
@@ -733,7 +764,7 @@ pub extern "C" fn trashCache() -> u32 {
 /// This function returns the Gyroflow Project as a string or "FAIL".
 #[no_mangle]
 pub extern "C" fn importMediaFile(
-    media_file_path: *const c_char,    
+    media_file_path: *const c_char,
 ) -> *const c_char {
     //---------------------------------------------------------
     // Convert the file path to a `&str`:
@@ -768,12 +799,12 @@ pub extern "C" fn importMediaFile(
             log::error!("[Gyroflow Toolbox Rust] An error occured: {:?}", e);
         }
     }
-    
+
     //---------------------------------------------------------
     // Export Gyroflow data:
     //---------------------------------------------------------
     let gyroflow_data: String;
-    match stab.export_gyroflow_data(false, false, "{}") {
+    match stab.export_gyroflow_data(gyroflow_core::GyroflowProjectType::WithGyroData, "{}", None) {
         Ok(data) => {
             gyroflow_data = data;
             log::info!("[Gyroflow Toolbox Rust] Gyroflow data exported successfully");
@@ -826,7 +857,7 @@ pub extern "C" fn processFrame(
     unique_identifier: *const c_char,
     width: u32,
     height: u32,
-    pixel_format: *const c_char,    
+    pixel_format: *const c_char,
     number_of_bytes: i8,
     path: *const c_char,
     data: *const c_char,
@@ -862,14 +893,14 @@ pub extern "C" fn processFrame(
     // Have parameters changed:
     //---------------------------------------------------------
     let mut params_changed = false;
-    
+
     //---------------------------------------------------------
     // Get the Unique Identifier:
     //---------------------------------------------------------
     let unique_identifier_pointer = unsafe { CStr::from_ptr(unique_identifier) };
     let unique_identifier_string = unique_identifier_pointer.to_string_lossy();
 
-    //log::info!("[Gyroflow Toolbox Rust] unique_identifier_string: {:?}", unique_identifier_string);
+    //log::debug!("[Gyroflow Toolbox Rust] unique_identifier_string: {:?}", unique_identifier_string);
 
     //---------------------------------------------------------
     // Get Pixel Format:
@@ -912,7 +943,7 @@ pub extern "C" fn processFrame(
        // On first load, always Invalidate & Recompute:
        //---------------------------------------------------------
        params_changed = true;
-       
+
        //---------------------------------------------------------
        // Setup the Gyroflow Manager:
        //---------------------------------------------------------
@@ -949,7 +980,7 @@ pub extern "C" fn processFrame(
                //---------------------------------------------------------
                manager.params.write().framebuffer_inverted = true;
 
-               //---------------------------------------------------------               
+               //---------------------------------------------------------
                // Set Stabilisation Settings:
                //---------------------------------------------------------
                {
@@ -965,7 +996,7 @@ pub extern "C" fn processFrame(
                     //---------------------------------------------------------
                     stab.share_wgpu_instances = true;
                }
-               
+
                //---------------------------------------------------------
                // Force the background color to transparent:
                //---------------------------------------------------------
@@ -1082,16 +1113,19 @@ pub extern "C" fn processFrame(
            rect: None,
            data: BufferSource::Metal { texture: out_mtl_tex as *mut metal::MTLTexture, command_queue: command_queue as *mut metal::MTLCommandQueue },
            rotation: None,
-           texture_copy: false,
+           texture_copy: true,
        },
        input: BufferDescription {
            size: (output_width, output_height, input_stride),
            rect: None,
            data: BufferSource::Metal { texture: in_mtl_tex as *mut metal::MTLTexture, command_queue: command_queue as *mut metal::MTLCommandQueue },
            rotation: Some(input_rotation as f32),
-           texture_copy: false,
+           texture_copy: true,
        }
    };
+
+   //log::debug!("[Gyroflow Toolbox Rust] in_mtl_tex: {:?}", in_mtl_tex);
+   //log::debug!("[Gyroflow Toolbox Rust] out_mtl_tex: {:?}", out_mtl_tex);
 
    //---------------------------------------------------------
    // Get the Stabilization Result:
@@ -1108,9 +1142,9 @@ pub extern "C" fn processFrame(
         },
         e => {
             log::error!("[Gyroflow Toolbox Rust] Unsupported pixel format: {:?}", pixel_format_string);
-            log::error!("[Gyroflow Toolbox Rust] Error duing stabilization: {:?}", e);
+            log::error!("[Gyroflow Toolbox Rust] Error during stabilization: {:?}", e);
             let error_msg = format!("{}", e);
-            let result = CString::new(error_msg).unwrap();            
+            let result = CString::new(error_msg).unwrap();
             return result.into_raw()
        }
    };
@@ -1118,7 +1152,7 @@ pub extern "C" fn processFrame(
    //---------------------------------------------------------
    // Output the Stabilization result to the Console:
    //---------------------------------------------------------
-   //log::info!("[Gyroflow Toolbox Rust] stabilization_result: {:?}", &_stabilization_result);
+   log::debug!("[Gyroflow Toolbox Rust] stabilization_result: {:?}", &_stabilization_result);
 
    //---------------------------------------------------------
    // Return "DONE":
