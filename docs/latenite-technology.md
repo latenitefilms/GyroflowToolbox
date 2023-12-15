@@ -1,1 +1,0 @@
-{{ include "latenite/latenite-technology" }}

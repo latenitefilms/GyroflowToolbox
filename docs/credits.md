@@ -6,4 +6,6 @@ Chris also created [CommandPost](https://commandpost.io) and [BRAW Toolbox](http
 
 However, none of this would be possible without the incredible [Gyroflow](https://github.com/gyroflow/gyroflow) project and the incredibly help and support from their main developer, [AdrianEddy](https://github.com/AdrianEddy).
 
+You can donate to the Gyroflow team [here](https://gyroflow.xyz/donate).
+
 The Gyroflow Toolbox icon was designed by the amazing [Matthew Skiles](http://matthewskiles.com).
