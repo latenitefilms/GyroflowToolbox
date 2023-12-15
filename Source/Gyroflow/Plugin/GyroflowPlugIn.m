@@ -72,8 +72,60 @@ typedef void (^BRAWCompletionHandler)(void);
         // Cache the API Manager:
         //---------------------------------------------------------
         _apiManager = newApiManager;
+        
+        //---------------------------------------------------------
+        // Restore any previous global bookmarks:
+        //---------------------------------------------------------
+        NSUserDefaults *userDefaults = [[NSUserDefaults alloc] init];
+        NSArray *globalBookmarks = [userDefaults objectForKey:@"globalBookmarks"];
+        if (globalBookmarks != nil) {
+            for (NSData* data in globalBookmarks) {
+                BOOL staleBookmark;
+                NSError *bookmarkError = nil;
+                NSURL* url = [NSURL URLByResolvingBookmarkData:data
+                                                       options:NSURLBookmarkResolutionWithSecurityScope
+                                                 relativeToURL:nil
+                                           bookmarkDataIsStale:&staleBookmark
+                                                         error:&bookmarkError];
+                if (bookmarkError != nil) {
+                    NSLog(@"[Gyroflow Toolbox Renderer] ERROR: Failed to restore global bookmark due to: %@", bookmarkError.localizedDescription);
+                    continue;
+                }
+                if (url == nil ) {
+                    NSLog(@"[Gyroflow Toolbox Renderer] ERROR: Failed to restore global bookmark.");
+                    continue;
+                }
+                
+                if (![url startAccessingSecurityScopedResource]) {
+                    NSLog(@"[Gyroflow Toolbox Renderer] ERROR: Failed to start accessing global bookmark.");
+                } else {
+                    NSLog(@"[Gyroflow Toolbox Renderer] Successfully loaded global bookmark: %@", [url path]);
+                    [_grantSandboxAccessURLs addObject:url];
+                }
+            }
+        }
+        [userDefaults release];
     }
     return self;
+}
+
+//---------------------------------------------------------
+// Deallocates the memory occupied by the receiver:
+//---------------------------------------------------------
+- (void)dealloc {
+    //---------------------------------------------------------
+    // Stop accessing security scoped bookmarks:
+    //---------------------------------------------------------
+    if (_grantSandboxAccessURLs) {
+        for (id url in _grantSandboxAccessURLs) {
+            NSLog(@"[Gyroflow Toolbox Renderer] Stopping access to: %@", [url path]);
+            [url stopAccessingSecurityScopedResource];
+        }
+    }
+    
+    [super dealloc];
+    
+    //NSLog(@"[Gyroflow Toolbox Renderer] Successfully deallocated!");
 }
 
 //---------------------------------------------------------
@@ -2136,6 +2188,30 @@ typedef void (^BRAWCompletionHandler)(void);
         [settingsMenu addItem:separator];
         
         //---------------------------------------------------------
+        // Grant Sandbox Access:
+        //---------------------------------------------------------
+        NSMenuItem *grantSandboxAccess = [[NSMenuItem alloc] initWithTitle:@"Grant Sandbox Access" action:@selector(pressGrantSandboxAccess:) keyEquivalent:@""];
+        grantSandboxAccess.target = self;
+        grantSandboxAccess.enabled = YES;
+        [settingsMenu addItem:grantSandboxAccess];
+
+        //---------------------------------------------------------
+        // Reset Sandbox Access:
+        //---------------------------------------------------------
+        NSMenuItem *resetSandboxAccess = [[NSMenuItem alloc] initWithTitle:@"Reset Sandbox Access" action:@selector(pressResetSandboxAccess:) keyEquivalent:@""];
+        resetSandboxAccess.target = self;
+        resetSandboxAccess.enabled = YES;
+        [settingsMenu addItem:resetSandboxAccess];
+        
+        //---------------------------------------------------------
+        // Add Separator:
+        //---------------------------------------------------------
+        NSMenuItem *separatorB   = [NSMenuItem separatorItem];
+        separatorB.target        = self;
+        separatorB.enabled       = YES;
+        [settingsMenu addItem:separatorB];
+        
+        //---------------------------------------------------------
         // Show Log File in Finder:
         //---------------------------------------------------------
         NSMenuItem *showLogFileInFinder    = [[[NSMenuItem alloc] initWithTitle:@"Show Log Files in Finder" action:@selector(showLogFileInFinder:) keyEquivalent:@""] autorelease];
@@ -2204,6 +2280,92 @@ typedef void (^BRAWCompletionHandler)(void);
     BOOL state = menuItem.state == NSControlStateValueOff; // NOTE: We want the opposite for the toggle.
     NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
     [userDefaults setBool:state forKey:menuItem.identifier];
+}
+
+//---------------------------------------------------------
+// Menu Item: Grant Sandbox Access:
+//---------------------------------------------------------
+- (void)pressGrantSandboxAccess:(id)sender
+{
+    //---------------------------------------------------------
+    // Display an open panel:
+    //---------------------------------------------------------
+    NSOpenPanel* panel = [NSOpenPanel openPanel];
+    [panel setCanChooseDirectories:YES];
+    [panel setCanCreateDirectories:NO];
+    [panel setCanChooseFiles:NO];
+    [panel setAllowsMultipleSelection:NO];
+    [panel setDirectoryURL:[NSURL fileURLWithPath:@"/Volumes/"]];
+    [panel setPrompt:@"Grant Access"];
+    [panel setMessage:@"Select a folder or drive then click 'Grant Access' to allow Gyroflow Toolbox access to it:"];
+    NSModalResponse result = [panel runModal];
+    if (result == NSModalResponseOK) {
+        NSURL *url = [panel URL];
+        
+        //---------------------------------------------------------
+        // Create a new app-scope security-scoped bookmark for
+        // future sessions:
+        //---------------------------------------------------------
+        NSError *bookmarkError = nil;
+        NSURLBookmarkCreationOptions bookmarkOptions = NSURLBookmarkCreationWithSecurityScope;
+        NSData *bookmark = [url bookmarkDataWithOptions:bookmarkOptions
+                         includingResourceValuesForKeys:nil
+                                          relativeToURL:nil
+                                                  error:&bookmarkError];
+        
+        //---------------------------------------------------------
+        // There was a bookmark error:
+        //---------------------------------------------------------
+        if (bookmarkError != nil) {
+            NSString *errorMessage = [NSString stringWithFormat:@"Failed to create security-scoped bookmark due to: %@", bookmarkError.localizedDescription];
+            NSLog(@"[Gyroflow Toolbox Renderer] ERROR: %@", errorMessage);
+            [self showAlertWithMessage:@"An error has occurred" info:errorMessage];
+            return;
+        }
+        if (bookmark == nil) {
+            NSString *errorMessage = @"Failed to create security-scoped bookmark due to an unknown error.";
+            NSLog(@"[Gyroflow Toolbox Renderer] ERROR: %@", errorMessage);
+            [self showAlertWithMessage:@"An error has occurred" info:errorMessage];
+            return;
+        }
+        
+        //---------------------------------------------------------
+        // Write bookmark to preferences:
+        //---------------------------------------------------------
+        NSUserDefaults *userDefaults = [[NSUserDefaults alloc] init];
+        
+        NSArray *globalBookmarks = [userDefaults objectForKey:@"globalBookmarks"];
+        
+        NSMutableArray *newGlobalBookmarks;
+        
+        if (globalBookmarks == nil) {
+            newGlobalBookmarks = [NSMutableArray new];
+        } else {
+            newGlobalBookmarks = [globalBookmarks mutableCopy];
+        }
+        [newGlobalBookmarks addObject:bookmark];
+        
+        [userDefaults setObject:newGlobalBookmarks forKey:@"globalBookmarks"];
+        
+        [userDefaults release];
+        [newGlobalBookmarks release];
+        
+        NSLog(@"[Gyroflow Toolbox Renderer] Created new security-scoped bookmark: %@", [url path]);
+    }
+}
+
+//---------------------------------------------------------
+// Menu Item: Reset Sandbox Access:
+//---------------------------------------------------------
+- (void)pressResetSandboxAccess:(id)sender
+{
+    NSUserDefaults *userDefaults = [[NSUserDefaults alloc] init];
+    NSArray *emptyArray = [NSArray new];
+    [userDefaults setObject:emptyArray forKey:@"globalBookmarks"];
+    [emptyArray release];
+    [userDefaults release];
+    
+    [self showAlertWithMessage:@"Sandbox Access Reset" info:@"All previously granted sandbox access has been revoked.\n\nYou will need to restart Final Cut Pro for this to take affect."];
 }
 
 //---------------------------------------------------------
@@ -3969,6 +4131,24 @@ typedef void (^BRAWCompletionHandler)(void);
 // Do we have access to the BRAW Toolbox Documents file?
 //---------------------------------------------------------
 -(BOOL)doWeHaveAccessToBRAWToolboxDocumentsFile {
+    
+    //---------------------------------------------------------
+    // Check if we can read the BRAW Toolbox Documents file
+    // already due to granting of sandbox access:
+    //---------------------------------------------------------
+    NSString *userHomePath = [self getUserHomeDirectoryPath];
+    //NSLog(@"[Gyroflow Toolbox Renderer] userHomePath: %@", userHomePath);
+    
+    NSString *documentFilePath = [userHomePath stringByAppendingString:@"/Library/Group Containers/A5HDJTY9X5.com.latenitefilms.BRAWToolbox/Library/Application Support/BRAWToolbox.document"];
+    //NSLog(@"[Gyroflow Toolbox Renderer] documentFilePath: %@", documentFilePath);
+    
+    NSURL *documentFileURL = [NSURL fileURLWithPath:documentFilePath];
+    //NSLog(@"[Gyroflow Toolbox Renderer] documentFileURL: %@", documentFileURL);
+        
+    if ([[NSFileManager defaultManager] isReadableFileAtPath:[documentFileURL path]]) {
+        return YES;
+    }
+    
     //---------------------------------------------------------
     // Read setting from User Defaults:
     //---------------------------------------------------------
@@ -4193,7 +4373,7 @@ typedef void (^BRAWCompletionHandler)(void);
     // If we need to request access to BRAW Toolbox document:
     //---------------------------------------------------------
     if (![self doWeHaveAccessToBRAWToolboxDocumentsFile]) {
-        NSLog(@"[Gyroflow Toolbox Renderer] We need to request access to the BRAW Toolbox Document:");
+        //NSLog(@"[Gyroflow Toolbox Renderer] We need to request access to the BRAW Toolbox Document:");
         [self requestAccessToBRAWToolboxDocumentsFileWithCompletion:^{
             //---------------------------------------------------------
             // Try again:
@@ -4206,98 +4386,120 @@ typedef void (^BRAWCompletionHandler)(void);
     //NSLog(@"[Gyroflow Toolbox Renderer] We have access to the BRAW Toolbox Document!");
         
     //---------------------------------------------------------
-    // Read setting from User Defaults:
+    // Check if we can read the BRAW Toolbox Documents file
+    // already due to granting of sandbox access:
     //---------------------------------------------------------
-    NSUserDefaults *userDefaults = [[[NSUserDefaults alloc] init] autorelease];
-    NSString *brawToolboxDocumentBookmarkData = [userDefaults stringForKey:@"brawToolboxDocumentBookmarkData"];
+    NSString *userHomePath = [self getUserHomeDirectoryPath];
+    //NSLog(@"[Gyroflow Toolbox Renderer] userHomePath: %@", userHomePath);
     
-    //---------------------------------------------------------
-    // Make sure brawToolboxDocumentBookmarkData is valid:
-    //---------------------------------------------------------
-    if (brawToolboxDocumentBookmarkData == nil || [brawToolboxDocumentBookmarkData isEqualToString:@""]) {
-        //---------------------------------------------------------
-        // Show error message:
-        //---------------------------------------------------------
-        NSString *errorMessage = [NSString stringWithFormat:@"Failed to get the BRAW Toolbox Document bookmark from Settings. This shouldn't be possible as we have already checked for access to it!"];
-        NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
-        [self showAsyncAlertWithMessage:@"An error has occurred." info:errorMessage];
-        return;
-    }
+    NSString *documentFilePath = [userHomePath stringByAppendingString:@"/Library/Group Containers/A5HDJTY9X5.com.latenitefilms.BRAWToolbox/Library/Application Support/BRAWToolbox.document"];
+    //NSLog(@"[Gyroflow Toolbox Renderer] documentFilePath: %@", documentFilePath);
     
+    NSURL *documentFileURL = [NSURL fileURLWithPath:documentFilePath];
+    //NSLog(@"[Gyroflow Toolbox Renderer] documentFileURL: %@", documentFileURL);
+            
     //---------------------------------------------------------
-    // Decode the Base64 bookmark data:
+    // If we can already read the BRAW Toolbox Document file:
     //---------------------------------------------------------
-    NSData *decodedBookmark = [[[NSData alloc] initWithBase64EncodedString:brawToolboxDocumentBookmarkData
-                                                              options:0] autorelease];
+    NSURL *urlToBRAWToolboxDocument = nil;
+    if ([[NSFileManager defaultManager] isReadableFileAtPath:[documentFileURL path]]) {
+        NSLog(@"[Gyroflow Toolbox Renderer] We can already read the BRAW Toolbox Documents file...");
+        urlToBRAWToolboxDocument = documentFileURL;
+    } else {
+        //---------------------------------------------------------
+        // Read setting from User Defaults:
+        //---------------------------------------------------------
+        NSUserDefaults *userDefaults = [[[NSUserDefaults alloc] init] autorelease];
+        NSString *brawToolboxDocumentBookmarkData = [userDefaults stringForKey:@"brawToolboxDocumentBookmarkData"];
+        
+        //---------------------------------------------------------
+        // Make sure brawToolboxDocumentBookmarkData is valid:
+        //---------------------------------------------------------
+        if (brawToolboxDocumentBookmarkData == nil || [brawToolboxDocumentBookmarkData isEqualToString:@""]) {
+            //---------------------------------------------------------
+            // Show error message:
+            //---------------------------------------------------------
+            NSString *errorMessage = [NSString stringWithFormat:@"Failed to get the BRAW Toolbox Document bookmark from Settings. This shouldn't be possible as we have already checked for access to it!"];
+            NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
+            [self showAsyncAlertWithMessage:@"An error has occurred." info:errorMessage];
+            return;
+        }
+        
+        //---------------------------------------------------------
+        // Decode the Base64 bookmark data:
+        //---------------------------------------------------------
+        NSData *decodedBookmark = [[[NSData alloc] initWithBase64EncodedString:brawToolboxDocumentBookmarkData
+                                                                  options:0] autorelease];
 
-    //---------------------------------------------------------
-    // Make sure decodedBookmark is valid::
-    //---------------------------------------------------------
-    if (decodedBookmark == nil) {
         //---------------------------------------------------------
-        // Show error message:
+        // Make sure decodedBookmark is valid::
         //---------------------------------------------------------
-        NSString *errorMessage = [NSString stringWithFormat:@"Failed to decode the BRAW Toolbox Document bookmark. This shouldn't be possible as we have already checked for access to it!"];
-        NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
-        [self showAsyncAlertWithMessage:@"An error has occurred." info:errorMessage];
-        return;
+        if (decodedBookmark == nil) {
+            //---------------------------------------------------------
+            // Show error message:
+            //---------------------------------------------------------
+            NSString *errorMessage = [NSString stringWithFormat:@"Failed to decode the BRAW Toolbox Document bookmark. This shouldn't be possible as we have already checked for access to it!"];
+            NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
+            [self showAsyncAlertWithMessage:@"An error has occurred." info:errorMessage];
+            return;
+        }
+        
+        //---------------------------------------------------------
+        // Resolve the decoded bookmark data into a
+        // security-scoped URL:
+        //---------------------------------------------------------
+        NSError *bookmarkError  = nil;
+        BOOL isStale            = NO;
+        
+        urlToBRAWToolboxDocument = [NSURL URLByResolvingBookmarkData:decodedBookmark
+                                                             options:NSURLBookmarkResolutionWithSecurityScope
+                                                       relativeToURL:nil
+                                                 bookmarkDataIsStale:&isStale
+                                                               error:&bookmarkError];
+        
+        //---------------------------------------------------------
+        // Was there a bookmark error?
+        //---------------------------------------------------------
+        if (bookmarkError != nil) {
+            //---------------------------------------------------------
+            // Show error message:
+            //---------------------------------------------------------
+            NSString *errorMessage = [NSString stringWithFormat:@"Failed resolve BRAW Toolbox Document bookmark due to: %@", bookmarkError.localizedDescription];
+            NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
+            [self showAsyncAlertWithMessage:@"An error has occurred." info:errorMessage];
+            return;
+        }
+        
+        //---------------------------------------------------------
+        // Is the bookmark stale?
+        //---------------------------------------------------------
+        if (isStale) {
+            NSLog(@"[Gyroflow Toolbox Renderer] WARNING - The BRAW Toolbox Document Security Scoped Resource is stale. This shouldn't be possible as we have already checked for access to it!");
+        }
+        
+        //---------------------------------------------------------
+        // Start Access Security Scoped Resource:
+        //---------------------------------------------------------
+        if (![urlToBRAWToolboxDocument startAccessingSecurityScopedResource]) {
+            //---------------------------------------------------------
+            // Show error message:
+            //---------------------------------------------------------
+            NSString *errorMessage = [NSString stringWithFormat:@"Failed to start accessing the BRAW Toolbox Document Security Scoped Resource. This shouldn't be possible as we have already checked for access to it!"];
+            NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
+            [self showAsyncAlertWithMessage:@"An error has occurred." info:errorMessage];
+            return;
+        }
     }
     
     //---------------------------------------------------------
-    // Resolve the decoded bookmark data into a
-    // security-scoped URL:
-    //---------------------------------------------------------
-    NSError *bookmarkError  = nil;
-    BOOL isStale            = NO;
-    
-    NSURL *urlToBRAWToolboxDocument = [NSURL URLByResolvingBookmarkData:decodedBookmark
-                                                                options:NSURLBookmarkResolutionWithSecurityScope
-                                                          relativeToURL:nil
-                                                    bookmarkDataIsStale:&isStale
-                                                                  error:&bookmarkError];
-    
-    //---------------------------------------------------------
-    // Was there a bookmark error?
-    //---------------------------------------------------------
-    if (bookmarkError != nil) {
-        //---------------------------------------------------------
-        // Show error message:
-        //---------------------------------------------------------
-        NSString *errorMessage = [NSString stringWithFormat:@"Failed resolve BRAW Toolbox Document bookmark due to: %@", bookmarkError.localizedDescription];
-        NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
-        [self showAsyncAlertWithMessage:@"An error has occurred." info:errorMessage];
-        return;
-    }
-    
-    //---------------------------------------------------------
-    // Is the bookmark stale?
-    //---------------------------------------------------------
-    if (isStale) {
-        NSLog(@"[Gyroflow Toolbox Renderer] WARNING - The BRAW Toolbox Document Security Scoped Resource is stale. This shouldn't be possible as we have already checked for access to it!");
-    }
-    
-    //---------------------------------------------------------
-    // Start Access Security Scoped Resource:
-    //---------------------------------------------------------
-    if (![urlToBRAWToolboxDocument startAccessingSecurityScopedResource]) {
-        //---------------------------------------------------------
-        // Show error message:
-        //---------------------------------------------------------
-        NSString *errorMessage = [NSString stringWithFormat:@"Failed to start accessing the BRAW Toolbox Document Security Scoped Resource. This shouldn't be possible as we have already checked for access to it!"];
-        NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
-        [self showAsyncAlertWithMessage:@"An error has occurred." info:errorMessage];
-        return;
-    }
-
-    //---------------------------------------------------------
-    // Resolve the decoded bookmark data into a
+    // Resolve the decoded BRAW Toolbox bookmark data into a
     // security-scoped URL:
     //---------------------------------------------------------
     NSData *decodedBookmarkData = [[[NSData alloc] initWithBase64EncodedString:bookmarkDataString
                                                                        options:0] autorelease];
     
     NSError *brawBookmarkError  = nil;
-    isStale                     = NO;
+    BOOL isStale                = NO;
     
     NSURL* brawDecodedBookmarkURL = [NSURL URLByResolvingBookmarkData:decodedBookmarkData
                                                               options:NSURLBookmarkResolutionWithSecurityScope

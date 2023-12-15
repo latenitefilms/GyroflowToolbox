@@ -91,4 +91,9 @@
 //---------------------------------------------------------
 @property (assign) id<PROAPIAccessing> _Nonnull     apiManager;
 
+//---------------------------------------------------------
+// Global Bookmark URLs:
+//---------------------------------------------------------
+@property (assign) NSMutableArray* _Nonnull         grantSandboxAccessURLs;
+
 @end
