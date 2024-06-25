@@ -42,7 +42,7 @@ pub extern "C" fn startLogger(
     if let Ok(file_log) = std::fs::File::create(log_path_string.as_ref()) {
         let _ = simplelog::WriteLogger::init(log::LevelFilter::Debug, log_config, file_log);
     }
-    
+
     //---------------------------------------------------------
     // Load the Lens Profiles:
     //---------------------------------------------------------
@@ -410,20 +410,21 @@ pub extern "C" fn doesGyroflowProjectContainStabilisationData(
             //---------------------------------------------------------
             let has_motion = {
                 let gyro = stab.gyro.read();
+                let metadata = gyro.file_metadata.read();
 
-                log::error!("[Gyroflow Toolbox Rust] gyro.file_metadata.raw_imu: {:?}", gyro.file_metadata.raw_imu);
-                log::error!("[Gyroflow Toolbox Rust] gyro.file_metadata.quaternions: {:?}", gyro.file_metadata.quaternions);
+                log::error!("[Gyroflow Toolbox Rust] gyro.file_metadata.raw_imu: {:?}", metadata.raw_imu);
+                log::error!("[Gyroflow Toolbox Rust] gyro.file_metadata.quaternions: {:?}", metadata.quaternions);
 
-                log::error!("[Gyroflow Toolbox Rust] gyro.raw_imu: {:?}", gyro.raw_imu);
+                //log::error!("[Gyroflow Toolbox Rust] gyro.raw_imu: {:?}", metadata.raw_imu);
                 log::error!("[Gyroflow Toolbox Rust] gyro.quaternions: {:?}", gyro.quaternions);
 
-                log::error!("[Gyroflow Toolbox Rust] detected_source: {:?}", gyro.file_metadata.detected_source);
+                log::error!("[Gyroflow Toolbox Rust] detected_source: {:?}", metadata.detected_source);
 
-                log::error!("[Gyroflow Toolbox Rust] imu_orientation: {:?}", gyro.imu_orientation);
+                log::error!("[Gyroflow Toolbox Rust] imu_orientation: {:?}", metadata.imu_orientation);
                 log::error!("[Gyroflow Toolbox Rust] integration_method: {:?}", gyro.integration_method);
                 log::error!("[Gyroflow Toolbox Rust] file_url: {:?}", gyro.file_url);
 
-                !gyro.raw_imu.is_empty() || !gyro.quaternions.is_empty()
+                !metadata.raw_imu.is_empty() || !gyro.quaternions.is_empty()
             };
 
             //---------------------------------------------------------
@@ -504,8 +505,7 @@ pub extern "C" fn hasAccurateTimestamps(
             // Check if gyroflow project contains stabilization data:
             //---------------------------------------------------------
             let has_accurate_timestamps = {
-                let gyro = stab.gyro.read();
-                gyro.file_metadata.has_accurate_timestamps
+                stab.gyro.read().file_metadata.read().has_accurate_timestamps
             };
 
             //---------------------------------------------------------
@@ -1132,13 +1132,13 @@ pub extern "C" fn processFrame(
    //---------------------------------------------------------
    let _stabilization_result = match pixel_format_string.as_ref() {
        "BGRA8Unorm" => {
-           manager.process_pixels::<BGRA8>(timestamp, &mut buffers)
+           manager.process_pixels::<BGRA8>(timestamp, None, &mut buffers)
         },
        "RGBAf16" => {
-           manager.process_pixels::<RGBAf16>(timestamp, &mut buffers)
+           manager.process_pixels::<RGBAf16>(timestamp, None, &mut buffers)
         },
        "RGBAf" => {
-           manager.process_pixels::<RGBAf>(timestamp, &mut buffers)
+           manager.process_pixels::<RGBAf>(timestamp, None, &mut buffers)
         },
         e => {
             log::error!("[Gyroflow Toolbox Rust] Unsupported pixel format: {:?}", pixel_format_string);
