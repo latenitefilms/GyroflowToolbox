@@ -1,6 +1,6 @@
 # Buy on Mac App Store
 
-**Gyroflow Toolbox** is a one-time payment of **USD9.99**.
+**Gyroflow Toolbox** is a one-time payment of **USD$9.99**.
 
 > [:icon-desktop-download: Click here to buy **Gyroflow Toolbox** on the **Mac App Store**](https://apps.apple.com/au/app/gyroflow-toolbox/id1667462993?mt=12)
 
