@@ -170,7 +170,8 @@ pub extern "C" fn getDefaultValues(
         None,
         |_|(),
         cancel_flag,
-        &mut is_preset
+        &mut is_preset,
+        true
     ) {
         Ok(_) => {
 
@@ -253,7 +254,8 @@ pub extern "C" fn getLensIdentifier(
         None,
         |_|(),
         cancel_flag,
-        &mut is_preset
+        &mut is_preset,
+        true
     ) {
         Ok(_) => {
             //---------------------------------------------------------
@@ -325,7 +327,8 @@ pub extern "C" fn isLensProfileLoaded(
         None,
         |_|(),
         cancel_flag,
-        &mut is_preset
+        &mut is_preset,
+        true
     ) {
         Ok(_) => {
             //---------------------------------------------------------
@@ -402,7 +405,8 @@ pub extern "C" fn doesGyroflowProjectContainStabilisationData(
         None,
         |_|(),
         cancel_flag,
-        &mut is_preset
+        &mut is_preset,
+        true
     ) {
         Ok(_) => {
             //---------------------------------------------------------
@@ -498,7 +502,8 @@ pub extern "C" fn hasAccurateTimestamps(
         None,
         |_|(),
         cancel_flag,
-        &mut is_preset
+        &mut is_preset,
+        true
     ) {
         Ok(_) => {
             //---------------------------------------------------------
@@ -586,7 +591,8 @@ pub extern "C" fn loadLensProfile(
         None,
         |_|(),
         cancel_flag,
-        &mut is_preset
+        &mut is_preset,
+        true
     ) {
         Ok(_) => {
             //---------------------------------------------------------
@@ -687,14 +693,15 @@ pub extern "C" fn loadPreset(
         None,
         |_|(),
         cancel_flag,
-        &mut is_preset
+        &mut is_preset,
+        true
     ) {
         Ok(_) => {
             //---------------------------------------------------------
             // Load Preset:
             //---------------------------------------------------------
             let mut is_preset = false;
-            if let Err(e) = stab.import_gyroflow_data(preset_path_string.as_bytes(), true, None, |_|(), Arc::new(AtomicBool::new(false)), &mut is_preset) {
+            if let Err(e) = stab.import_gyroflow_data(preset_path_string.as_bytes(), true, None, |_|(), Arc::new(AtomicBool::new(false)), &mut is_preset, true) {
                 log::error!("[Gyroflow Toolbox Rust] Error loading Preset: {:?}", e);
                 let result = CString::new("FAIL").unwrap();
                 return result.into_raw()
@@ -791,7 +798,7 @@ pub extern "C" fn importMediaFile(
     //---------------------------------------------------------
     // Load video file:
     //---------------------------------------------------------
-    match stab.load_video_file(&media_file_path_string, None) {
+    match stab.load_video_file(&media_file_path_string, None, true) {
         Ok(_) => {
             log::info!("[Gyroflow Toolbox Rust] Video file loaded successfully");
         },
@@ -956,13 +963,14 @@ pub extern "C" fn processFrame(
            CStr::from_ptr(data).to_bytes()
        };
        let mut is_preset = false;
-       match manager.import_gyroflow_data(&data_slice, true, None, |_|(), Arc::new(AtomicBool::new(false)), &mut is_preset) {
+       match manager.import_gyroflow_data(&data_slice, true, None, |_|(), Arc::new(AtomicBool::new(false)), &mut is_preset, true) {
            Ok(_) => {
                 //---------------------------------------------------------
                 // Disable Gyroflow Stretch:
                 //---------------------------------------------------------
                 if disable_gyroflow_stretch != 0 {
-                    manager.disable_lens_stretch();
+                    // TODO: Do we need to expose this an an option?
+                    manager.disable_lens_stretch(false);
                 }
 
                //---------------------------------------------------------
