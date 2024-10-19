@@ -270,15 +270,15 @@
         NSAlert *alert = [[[NSAlert alloc] init] autorelease];
         alert.alertStyle        = NSAlertStyleInformational;
         alert.messageText       = @"Permission Required";
-        alert.informativeText   = @"Gyroflow Toolbox requires explicit permission to access your Movies folder, to install the Gyroflow Toolbox Final Cut Pro effect.\n\nPlease ensure your Movies folder is selected on the next Open Folder window to continue.";
+        alert.informativeText   = @"Gyroflow Toolbox requires explicit permission to access your '~/Movies' folder, to install the Gyroflow Toolbox Final Cut Pro effect.\n\nPlease ensure your '~/Movies' folder is selected on the next Open Folder window to continue.";
         [alert beginSheetModalForWindow:self.window completionHandler:^(NSModalResponse result){
             //---------------------------------------------------------
             // Get the user's Movies directory:
             //---------------------------------------------------------
             NSArray* moviesPaths = NSSearchPathForDirectoriesInDomains(NSMoviesDirectory,NSUserDomainMask, YES);
             NSString* moviesPath = [moviesPaths objectAtIndex:0];
-            NSURL* moviesURL = [NSURL URLWithString:moviesPath];
-                    
+            NSURL* moviesURL = [NSURL fileURLWithPath:moviesPath];
+
             //---------------------------------------------------------
             // Display an open panel:
             //---------------------------------------------------------
@@ -292,7 +292,7 @@
             [panel setMessage:@"Please click 'Grant Access' to allow access to the Movies Folder:"];
             [panel beginSheetModalForWindow:self.window completionHandler:^(NSModalResponse result){
                 if (result != NSModalResponseOK) {
-                    [self showErrorAlertWithMessage:@"An error has occurred." info:@"Please make sure you select your Movies folder, and not another folder."];
+                    [self showErrorAlertWithMessage:@"An error has occurred." info:@"Please make sure you select your '~/Movies' folder, and not another folder."];
                     return;
                 } else {
                     NSURL *url = [panel URL];
