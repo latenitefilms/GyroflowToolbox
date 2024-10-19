@@ -113,7 +113,17 @@ enum {
     kFxError_PlugInStateIsNil,                                  // Plugin State is `nil`
     kFxError_UnsupportedPixelFormat,                            // Unsupported Pixel Format
     kFxError_FailedToCreatePluginState,                         // Failed to create plugin state
-    kFxError_CommandQueueWasNilDuringShowErrorMessage           // Command Queue was `nil` during a show error message render.
+    kFxError_CommandQueueWasNilDuringShowErrorMessage,          // Command Queue was `nil` during a show error message render.
+
+    //---------------------------------------------------------
+    // Error Messages:
+    //---------------------------------------------------------
+    kFxError_AssetLoadFailed,                                   // Failed to load error message asset
+    kFxError_ImageCreationFailed,                               // Failed to create image for error messages
+    kFxError_CIContextCreationFailed,                           // Failed to create Core Image context for error messages
+    kFxError_IOSurfaceCreationFailed,                           // Failed to create IOSurface for error messages
+    kFxError_MetalDeviceNotFound,                               // Failed to get Metal Device for error messages
+    kFxError_CommandBufferCreationFailed,                       // Failed to create Command Buffer for error messages
 };
 
 #endif /* GyroflowConstants_h */

@@ -39,6 +39,8 @@
 #import <Metal/Metal.h>
 #import <AVFoundation/AVFoundation.h>
 
+#import <CoreImage/CoreImage.h>
+
 //---------------------------------------------------------
 // Metal Performance Shaders for scaling:
 //---------------------------------------------------------

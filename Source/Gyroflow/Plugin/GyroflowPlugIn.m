@@ -1539,16 +1539,148 @@ typedef void (^BRAWCompletionHandler)(void);
                       fullHeight:(float)fullHeight
                        fullWidth:(float)fullWidth
                         outError:(NSError * _Nullable * _Nullable)outError
-                    outputHeight:(float)outputHeight outputWidth:(float)outputWidth
-                    sourceImages:(NSArray<FxImageTile *> * _Nonnull)sourceImages
-{
-    MetalDeviceCache* deviceCache       = [MetalDeviceCache deviceCache];
-    MTLPixelFormat pixelFormat          = [MetalDeviceCache MTLPixelFormatForImageTile:destinationImage];
-    id<MTLCommandQueue> commandQueue    = [deviceCache commandQueueWithRegistryID:destinationImage.deviceRegistryID
-                                                                      pixelFormat:pixelFormat];
-    if (commandQueue == nil)
-    {
-        NSString *errorMessage = @"FATAL ERROR: commandQueue was nil when attempting to show an error message.";
+                    outputHeight:(float)outputHeight
+                     outputWidth:(float)outputWidth
+                    sourceImages:(NSArray<FxImageTile *> * _Nonnull)sourceImages {
+
+    // ------------------------------------------------------------
+    // Load the PNG image from assets using NSImage:
+    // ------------------------------------------------------------
+    NSImage *nsImage = [NSImage imageNamed:errorMessageID];
+    if (!nsImage) {
+        NSString *errorMessage = [NSString stringWithFormat:@"FATAL ERROR: Failed to load asset: %@", errorMessageID];
+        NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
+        if (outError != NULL) {
+            *outError = [NSError errorWithDomain:FxPlugErrorDomain
+                                            code:kFxError_AssetLoadFailed
+                                        userInfo:@{ NSLocalizedDescriptionKey : errorMessage }];
+        }
+        return NO;
+    }
+
+    //---------------------------------------------------------
+    // Get CGImage from NSImage:
+    //---------------------------------------------------------
+    CGImageRef cgImage = [nsImage CGImageForProposedRect:NULL context:nil hints:nil];
+    if (!cgImage) {
+        NSString *errorMessage = [NSString stringWithFormat:@"FATAL ERROR: Unable to create CGImage from asset: %@", errorMessageID];
+        NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
+        if (outError != NULL) {
+            *outError = [NSError errorWithDomain:FxPlugErrorDomain
+                                            code:kFxError_AssetLoadFailed
+                                        userInfo:@{ NSLocalizedDescriptionKey : errorMessage }];
+        }
+        return NO;
+    }
+
+    //---------------------------------------------------------
+    // Flip the image:
+    //---------------------------------------------------------
+    if (cgImage) {
+        //---------------------------------------------------------
+        // Create a CGContext to flip the image vertically:
+        //---------------------------------------------------------
+        CGSize imageSize = CGSizeMake(CGImageGetWidth(cgImage), CGImageGetHeight(cgImage));
+        CGContextRef bitmapContext = CGBitmapContextCreate(NULL, imageSize.width, imageSize.height, 8, 0, CGImageGetColorSpace(cgImage), kCGImageAlphaPremultipliedLast);
+
+        //---------------------------------------------------------
+        // Apply a vertical flip transformation:
+        //---------------------------------------------------------
+        CGContextTranslateCTM(bitmapContext, 0, imageSize.height);
+        CGContextScaleCTM(bitmapContext, 1.0, -1.0);
+
+        //---------------------------------------------------------
+        // Draw the image into the flipped context:
+        //---------------------------------------------------------
+        CGContextDrawImage(bitmapContext, CGRectMake(0, 0, imageSize.width, imageSize.height), cgImage);
+
+        //---------------------------------------------------------
+        // Create a flipped CGImage:
+        //---------------------------------------------------------
+        CGImageRef flippedCGImage = CGBitmapContextCreateImage(bitmapContext);
+
+        //---------------------------------------------------------
+        // Release the context:
+        //---------------------------------------------------------
+        CGContextRelease(bitmapContext);
+
+        //---------------------------------------------------------
+        // Use flippedCGImage instead of cgImage:
+        //---------------------------------------------------------
+        cgImage = flippedCGImage;
+    }
+
+    // ------------------------------------------------------------
+    // Create a CIImage from the CGImage and apply transformations:
+    // ------------------------------------------------------------
+    CIImage *ciImage = [CIImage imageWithCGImage:cgImage];
+    if (!ciImage) {
+        NSString *errorMessage = [NSString stringWithFormat:@"FATAL ERROR: Failed to create CIImage from CGImage: %@", errorMessageID];
+        NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
+        if (outError != NULL) {
+            *outError = [NSError errorWithDomain:FxPlugErrorDomain
+                                            code:kFxError_ImageCreationFailed
+                                        userInfo:@{ NSLocalizedDescriptionKey : errorMessage }];
+        }
+        return NO;
+    }
+
+    //---------------------------------------------------------
+    // Get destination IOSurface for Metal:
+    //---------------------------------------------------------
+    IOSurfaceRef destinationIOSurface = (__bridge IOSurfaceRef)(destinationImage.ioSurface);
+    if (!destinationIOSurface) {
+        NSString *errorMessage = @"FATAL ERROR: Failed to get IOSurface from destination image.";
+        NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
+        if (outError != NULL) {
+            *outError = [NSError errorWithDomain:FxPlugErrorDomain
+                                            code:kFxError_IOSurfaceCreationFailed
+                                        userInfo:@{ NSLocalizedDescriptionKey : errorMessage }];
+        }
+        return NO;
+    }
+
+    CGSize outputSize = CGSizeMake(IOSurfaceGetWidth(destinationIOSurface), IOSurfaceGetHeight(destinationIOSurface));
+
+    // ------------------------------------------------------------
+    // Obtain the Metal device through the MetalDeviceCache:
+    // ------------------------------------------------------------
+    MetalDeviceCache *deviceCache = [MetalDeviceCache deviceCache];
+    id<MTLDevice> metalDevice = [deviceCache deviceWithRegistryID:destinationImage.deviceRegistryID];
+    if (!metalDevice) {
+        NSString *errorMessage = @"FATAL ERROR: Failed to get Metal device from cache.";
+        NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
+        if (outError != NULL) {
+            *outError = [NSError errorWithDomain:FxPlugErrorDomain
+                                            code:kFxError_MetalDeviceNotFound
+                                        userInfo:@{ NSLocalizedDescriptionKey : errorMessage }];
+        }
+        return NO;
+    }
+
+    // ------------------------------------------------------------
+    // Create a Metal-based CIContext for rendering:
+    // ------------------------------------------------------------
+    CIContext *ciContext = [CIContext contextWithMTLDevice:metalDevice];
+    if (!ciContext) {
+        NSString *errorMessage = @"FATAL ERROR: Failed to create CIContext.";
+        NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
+        if (outError != NULL) {
+            *outError = [NSError errorWithDomain:FxPlugErrorDomain
+                                            code:kFxError_CIContextCreationFailed
+                                        userInfo:@{ NSLocalizedDescriptionKey : errorMessage }];
+        }
+        return NO;
+    }
+
+    // ------------------------------------------------------------
+    // Obtain the Metal command queue:
+    // ------------------------------------------------------------
+    id<MTLCommandQueue> commandQueue = [deviceCache commandQueueWithRegistryID:destinationImage.deviceRegistryID
+                                                                   pixelFormat:[MetalDeviceCache MTLPixelFormatForImageTile:destinationImage]];
+
+    if (!commandQueue) {
+        NSString *errorMessage = @"FATAL ERROR: Failed to obtain a Metal command queue.";
         NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
         if (outError != NULL) {
             *outError = [NSError errorWithDomain:FxPlugErrorDomain
@@ -1557,303 +1689,80 @@ typedef void (^BRAWCompletionHandler)(void);
         }
         return NO;
     }
-    
+
     id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
+    if (!commandBuffer) {
+
+        //---------------------------------------------------------
+        // Return the command queue before aborting:
+        //---------------------------------------------------------
+        [deviceCache returnCommandQueueToCache:commandQueue];
+
+        NSString *errorMessage = @"FATAL ERROR: Failed to create a Metal command buffer.";
+        NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
+        if (outError != NULL) {
+            *outError = [NSError errorWithDomain:FxPlugErrorDomain
+                                            code:kFxError_CommandBufferCreationFailed
+                                        userInfo:@{ NSLocalizedDescriptionKey : errorMessage }];
+        }
+        return NO;
+    }
+
     commandBuffer.label = @"Gyroflow Toolbox Error Command Buffer";
     [commandBuffer enqueue];
-        
-    //---------------------------------------------------------
-    // Load the texture from our "Assets":
-    //---------------------------------------------------------
-    NSImage *nsImage = [NSImage imageNamed:errorMessageID];
-    CGImageRef image = [nsImage CGImageForProposedRect:NULL context:nil hints:nil];
 
-    if (image == NULL) {
-        NSString *errorMessage = [NSString stringWithFormat:@"FATAL ERROR: Failed to get the following asset from the asset catalog: %@", errorMessageID];
+    // ------------------------------------------------------------
+    // Scale the CIImage to fit within the output size:
+    // ------------------------------------------------------------
+    CGFloat aspectRatio = ciImage.extent.size.width / ciImage.extent.size.height;
+    CGFloat scaledWidth = outputSize.height * aspectRatio;
+    CGAffineTransform scaleTransform = CGAffineTransformMakeScale(scaledWidth / ciImage.extent.size.width,
+                                                                  outputSize.height / ciImage.extent.size.height);
+    CIImage *scaledCIImage = [ciImage imageByApplyingTransform:scaleTransform];
+
+    // ------------------------------------------------------------
+    // Translate to centre it horizontally:
+    // ------------------------------------------------------------
+    CGFloat translateX = (outputSize.width - scaledCIImage.extent.size.width) / 2;
+    CIImage *finalImage = [scaledCIImage imageByApplyingTransform:CGAffineTransformMakeTranslation(translateX, 0)];
+
+    // ------------------------------------------------------------
+    // Create a render destination from IOSurface:
+    // ------------------------------------------------------------
+    CIRenderDestination *renderDestination = [[CIRenderDestination alloc] initWithIOSurface:(__bridge IOSurface *)destinationIOSurface];
+    renderDestination.alphaMode = CIRenderDestinationAlphaUnpremultiplied;
+
+    // ------------------------------------------------------------
+    // Start rendering task to the destination:
+    // ------------------------------------------------------------
+    NSError *renderError = nil;
+    [ciContext startTaskToRender:finalImage toDestination:renderDestination error:&renderError];
+
+    if (renderError) {
+        //---------------------------------------------------------
+        // Return the command queue before aborting:
+        //---------------------------------------------------------
+        [deviceCache returnCommandQueueToCache:commandQueue];
+
+        NSString *errorMessage = [NSString stringWithFormat:@"ERROR: Failed to render error message image: %@", renderError.localizedDescription];
         NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
         if (outError != NULL) {
-            *outError = [NSError errorWithDomain:FxPlugErrorDomain
-                                            code:kFxError_CommandQueueWasNilDuringShowErrorMessage
-                                        userInfo:@{ NSLocalizedDescriptionKey : errorMessage }];
+            *outError = renderError;
         }
         return NO;
     }
 
-    //---------------------------------------------------------
-    // Get the image width and height:
-    //---------------------------------------------------------
-    size_t width = CGImageGetWidth(image);
-    size_t height = CGImageGetHeight(image);
-
-    //---------------------------------------------------------
-    // Create a bitmap context in RGBA format:
-    //---------------------------------------------------------
-    void *bitmapData = malloc(width * height * 4);
-    CGColorSpaceRef colorSpace = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
-    CGContextRef context = CGBitmapContextCreate(bitmapData, width, height, 8, width * 4, colorSpace, kCGImageAlphaPremultipliedLast | kCGBitmapByteOrder32Big);
-
-    //---------------------------------------------------------
-    // Draw the image into the context:
-    //---------------------------------------------------------
-    CGContextDrawImage(context, CGRectMake(0, 0, width, height), image);
-
-    //---------------------------------------------------------
-    // Now bitmapData contains the image data in RGBA format:
-    //---------------------------------------------------------
-    MTLTextureDescriptor *textureDescriptor = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:MTLPixelFormatRGBA8Unorm_sRGB width:width height:height mipmapped:NO];
-    id<MTLTexture> inputTexture = [commandQueue.device newTextureWithDescriptor:textureDescriptor];
-    [inputTexture replaceRegion:MTLRegionMake2D(0, 0, width, height) mipmapLevel:0 withBytes:bitmapData bytesPerRow:4 * width];
-    
-    //---------------------------------------------------------
-    // Cleanup:
-    //---------------------------------------------------------
-    CGContextRelease(context);
-    CGColorSpaceRelease(colorSpace);
-    free(bitmapData);
-
-    //---------------------------------------------------------
-    // Get the outputTexture from FxPlug:
-    //---------------------------------------------------------
-    id<MTLTexture> outputTexture = [destinationImage metalTextureForDevice:[deviceCache deviceWithRegistryID:destinationImage.deviceRegistryID]];
-    
-    //---------------------------------------------------------
-    // If square pixels, we'll manipulate the height and y
-    // axis manually:
-    //---------------------------------------------------------
-    float correctedHeight = outputHeight;
-    float differenceBetweenHeights = 0;
-    if (fullHeight == outputHeight) {
-        correctedHeight = ((float)inputTexture.height/(float)inputTexture.width) * outputWidth;
-        differenceBetweenHeights = (outputHeight - correctedHeight) / 2;
-    }
-    
-    //---------------------------------------------------------
-    // Use a "Metal Performance Shader" to scale the texture
-    // to the correct size. Note, we're using the full width
-    // and height, to compensate for non-square pixels:
-    //---------------------------------------------------------
-    id<MTLTexture> scaledInputTexture = nil;
-    if (fullHeight != outputHeight) {
-        
-        //---------------------------------------------------------
-        // Create a new Command Buffer for scale transform:
-        //---------------------------------------------------------
-        id<MTLCommandBuffer> scaleCommandBuffer = [commandQueue commandBuffer];
-        scaleCommandBuffer.label = @"Gyroflow Toolbox Scale Command Buffer";
-        [scaleCommandBuffer enqueue];
-        
-        //---------------------------------------------------------
-        // Create a new texture for the scaled image:
-        //---------------------------------------------------------
-        MTLTextureDescriptor *scaleTextureDescriptor = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:inputTexture.pixelFormat
-                                                                                                          width:fullWidth
-                                                                                                         height:fullHeight
-                                                                                                      mipmapped:NO];
-        
-        scaledInputTexture = [inputTexture.device newTextureWithDescriptor:scaleTextureDescriptor];
-        
-        //---------------------------------------------------------
-        // Work out how much to scale/re-position:
-        //---------------------------------------------------------
-        float scaleX        = (float)(fullWidth / inputTexture.width);
-        float scaleY        = (float)(fullHeight / inputTexture.height);
-        
-        if (scaleX > scaleY) {
-            scaleX = scaleY;
-        } else {
-            scaleY = scaleX;
-        }
-        
-        float translateX    = (float)((fullWidth - inputTexture.width * scaleX) / 2);
-        float translateY    = (float)((fullHeight - inputTexture.height * scaleY) / 2);
-        
-        MPSScaleTransform transform;
-        transform.scaleX        = scaleX;         // The horizontal scale factor.
-        transform.scaleY        = scaleY;         // The vertical scale factor.
-        transform.translateX    = translateX;     // The horizontal translation factor.
-        transform.translateY    = translateY;     // The vertical translation factor.
-        
-        //---------------------------------------------------------
-        // A filter that resizes and changes the aspect ratio of
-        // an image:
-        //---------------------------------------------------------
-        MPSImageBilinearScale *filter = [[[MPSImageBilinearScale alloc] initWithDevice:commandQueue.device] autorelease];
-        [filter setScaleTransform:&transform];
-        [filter encodeToCommandBuffer:scaleCommandBuffer sourceTexture:inputTexture destinationTexture:scaledInputTexture];
-        
-        //---------------------------------------------------------
-        // Commits the scale command buffer for execution:
-        //---------------------------------------------------------
-        [scaleCommandBuffer commit];
-    }
-
-    //---------------------------------------------------------
-    // Setup Render Pass:
-    //---------------------------------------------------------
-    MTLRenderPassColorAttachmentDescriptor* colorAttachmentDescriptor   = [[MTLRenderPassColorAttachmentDescriptor alloc] init];
-    colorAttachmentDescriptor.texture = outputTexture;
-    colorAttachmentDescriptor.clearColor = MTLClearColorMake(1.0, 1.0, 1.0, 1.0); // White
-    colorAttachmentDescriptor.loadAction = MTLLoadActionClear;
-    MTLRenderPassDescriptor* renderPassDescriptor = [MTLRenderPassDescriptor renderPassDescriptor];
-    renderPassDescriptor.colorAttachments [ 0 ] = colorAttachmentDescriptor;
-    id<MTLRenderCommandEncoder> commandEncoder = [commandBuffer renderCommandEncoderWithDescriptor:renderPassDescriptor];
-    
-    //---------------------------------------------------------
-    // Calculate the vertex coordinates and the texture
-    // coordinates:
-    //---------------------------------------------------------
-    float   textureLeft     = (destinationImage.tilePixelBounds.left - destinationImage.imagePixelBounds.left) / fullWidth;
-    float   textureRight    = (destinationImage.tilePixelBounds.right - destinationImage.imagePixelBounds.left) / fullWidth;
-    float   textureBottom   = (destinationImage.tilePixelBounds.bottom - destinationImage.imagePixelBounds.bottom) / fullHeight;
-    float   textureTop      = (destinationImage.tilePixelBounds.top - destinationImage.imagePixelBounds.bottom) / fullHeight;
-    
-    Vertex2D    vertices[]  = {
-        { {  outputWidth / 2.0f, -outputHeight / 2.0f }, { textureRight, textureTop } },
-        { { -outputWidth / 2.0f, -outputHeight / 2.0f }, { textureLeft, textureTop } },
-        { {  outputWidth / 2.0f,  outputHeight / 2.0f }, { textureRight, textureBottom } },
-        { { -outputWidth / 2.0f,  outputHeight / 2.0f }, { textureLeft, textureBottom } }
-    };
-    
-    //---------------------------------------------------------
-    // Setup our viewport:
-    //
-    // MTLViewport: A 3D rectangular region for the viewport
-    // clipping.
-    //---------------------------------------------------------
-    MTLViewport viewport = {
-        0, differenceBetweenHeights, outputWidth, correctedHeight, -1.0, 1.0
-    };
-    
-    //---------------------------------------------------------
-    // Sets the viewport used for transformations and clipping:
-    //---------------------------------------------------------
-    [commandEncoder setViewport:viewport];
-    
-    //---------------------------------------------------------
-    // Setup our Render Pipeline State.
-    //
-    // MTLRenderPipelineState: An object that contains graphics
-    // functions and configuration state to use in a render
-    // command.
-    //---------------------------------------------------------
-    id<MTLRenderPipelineState> pipelineState = [deviceCache pipelineStateWithRegistryID:sourceImages[0].deviceRegistryID
-                                                                            pixelFormat:pixelFormat];
-    
-    //---------------------------------------------------------
-    // Sets the current render pipeline state object:
-    //---------------------------------------------------------
-    [commandEncoder setRenderPipelineState:pipelineState];
-    
-    //---------------------------------------------------------
-    // Sets a block of data for the vertex shader:
-    //---------------------------------------------------------
-    [commandEncoder setVertexBytes:vertices
-                            length:sizeof(vertices)
-                           atIndex:BVI_Vertices];
-    
-    //---------------------------------------------------------
-    // Set the viewport size:
-    //---------------------------------------------------------
-    simd_uint2  viewportSize = {
-        (unsigned int)(outputWidth),
-        (unsigned int)(outputHeight)
-    };
-    
-    //---------------------------------------------------------
-    // Sets a block of data for the vertex shader:
-    //---------------------------------------------------------
-    [commandEncoder setVertexBytes:&viewportSize
-                            length:sizeof(viewportSize)
-                           atIndex:BVI_ViewportSize];
-    
-    //---------------------------------------------------------
-    // Sets a texture for the fragment function at an index
-    // in the texture argument table:
-    //---------------------------------------------------------
-    if (scaledInputTexture != nil) {
-        //---------------------------------------------------------
-        // Use our scaled input texture for non-square pixels:
-        //---------------------------------------------------------
-        [commandEncoder setFragmentTexture:scaledInputTexture
-                                   atIndex:BTI_InputImage];
-    } else {
-        //---------------------------------------------------------
-        // Use the data straight from the MTLBuffer for square
-        // pixels to avoid any extra processing:
-        //---------------------------------------------------------
-        [commandEncoder setFragmentTexture:inputTexture
-                                   atIndex:BTI_InputImage];
-    }
-    
-    //---------------------------------------------------------
-    // drawPrimitives: Encodes a command to render one instance
-    // of primitives using vertex data in contiguous array
-    // elements.
-    //
-    // MTLPrimitiveTypeTriangleStrip: For every three adjacent
-    // vertices, rasterize a triangle.
-    //---------------------------------------------------------
-    [commandEncoder drawPrimitives:MTLPrimitiveTypeTriangleStrip
-                       vertexStart:0
-                       vertexCount:4];
-    
-    //---------------------------------------------------------
-    // Declares that all command generation from the encoder
-    // is completed. After `endEncoding` is called, the
-    // command encoder has no further use. You cannot encode
-    // any other commands with this encoder.
-    //---------------------------------------------------------
-    [commandEncoder endEncoding];
-    
-    //---------------------------------------------------------
-    // Commits the command buffer for execution.
-    // After you call the commit method, the MTLDevice schedules
-    // and executes the commands in the command buffer. If you
-    // haven’t already enqueued the command buffer with a call
-    // to enqueue, calling this function also enqueues the
-    // command buffer. The GPU executes the command buffer
-    // after any command buffers enqueued before it on the same
-    // command queue.
-    //
-    // You can only commit a command buffer once. You can’t
-    // commit a command buffer if the command buffer has an
-    // active command encoder. Once you commit a command buffer,
-    // you may not encode additional commands into it, nor can
-    // you add a schedule or completion handler.
-    //---------------------------------------------------------
+    // ------------------------------------------------------------
+    // Commit the command buffer and wait for it to complete.
+    // ------------------------------------------------------------
     [commandBuffer commit];
-    
+    [commandBuffer waitUntilScheduled];
+
     //---------------------------------------------------------
-    // Blocks execution of the current thread until execution
-    // of the command buffer is completed.
-    //---------------------------------------------------------
-    [commandBuffer waitUntilCompleted];
-    
-    //---------------------------------------------------------
-    // Release the `colorAttachmentDescriptor` we created
-    // earlier:
-    //---------------------------------------------------------
-    [colorAttachmentDescriptor release];
-    
-    //---------------------------------------------------------
-    // Release the Input Texture:
-    //---------------------------------------------------------
-    if (inputTexture != nil) {
-        [inputTexture setPurgeableState:MTLPurgeableStateEmpty];
-        [inputTexture release];
-        inputTexture = nil;
-    }
-    if (scaledInputTexture != nil) {
-        [scaledInputTexture setPurgeableState:MTLPurgeableStateEmpty];
-        [scaledInputTexture release];
-        scaledInputTexture = nil;
-    }
-    
-    //---------------------------------------------------------
-    // Return the Command Queue back to the cache:
+    // Return the command queue before aborting:
     //---------------------------------------------------------
     [deviceCache returnCommandQueueToCache:commandQueue];
-    
+
     return YES;
 }
 
