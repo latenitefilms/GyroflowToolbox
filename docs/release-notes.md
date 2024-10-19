@@ -1,5 +1,20 @@
 # Release Notes
 
+### 1.2.0 (Build 21)
+
+#### 🎉 Released:
+- 19th October 2024
+
+#### 🔨 Improvements:
+- We've updated to the [latest](https://github.com/gyroflow/gyroflow/commit/cfe07140c0c922a2b188810fddc4a1638a6eb052) Gyroflow Core Renderer. HUGE thank you to the amazing [AdrianEddy](https://github.com/AdrianEddy) for all his ongoing help, assistance, genius and support!
+- 4606 lens profiles have been added from the hero Gyroflow project. Thanks to EVERYONE who has submitted lens profiles and another HUGE thank you to [AdrianEddy](https://github.com/AdrianEddy) for all the work that goes into managing them.
+
+#### 🐞 Bug Fixes:
+- Fixed a bug when using macOS Sequoia where the hero Gyroflow Toolbox application would fail to set the correct folders when trying to grant sandbox permissions when first setting up Gyroflow Toolbox. For example, it would default to the user's "Documents" folders, rather than the user's "Movies" folder. Thanks for reporting Roman Gaufman!
+- Re-designed how we render error messages in Final Cut Pro using Core Image and Metal. Hopefully this will fix random crashes some users are seeing on older versions of Final Cut Pro running on older Intel machines.
+
+---
+
 ### 1.1.5 (Build 20)
 
 #### 🎉 Released:
@@ -36,7 +51,6 @@
 - 6th September 2023
 
 #### 🐞 Bug Fixes:
-
 - Fixed a bug where the stabilisation wouldn't load correctly after importing a clip or Gyroflow Project into Final Cut Pro until after you modified a parameter or toggled the Stabilisation Overview. Thanks for reporting JoneyMacaroney and JLPG!
 - Fixed a bug where the Gyroflow Toolbox version information at the top of the Final Cut Pro Inspector was incorrect. Thanks for reporting JoneyMacaroney and JLPG!
 
@@ -48,7 +62,6 @@
 - 10th August 2023
 
 #### 🐞 Bug Fixes:
-
 - Updated to FxPlug v4.2.7, which offers improved stability and reliability.
 - Fixed a bug that could cause a memory leak. Thanks for reporting Денис Глушков!
 
@@ -60,7 +73,6 @@
 - 6th August 2023
 
 #### 🐞 Bug Fixes:
-
 - Fixed an issue where the Gyroflow Toolbox output could be incorrectly clipped when in a HDR project. Thanks for reporting Tumist! Thanks to AdrianEddy for fixing the issue in Gyroflow Core!
 - Fixed an issue where a Gyroflow Project could fail to reload correctly after restarting Final Cut Pro due to FxPlug4 incorrectly HTML decoding the string value. We solve this by now base64 encoding the Gyroflow Project in FxPlug4.
 
@@ -71,9 +83,7 @@
 #### 🎉 Released:
 - 4th August 2023
 
-
 #### 🎉 New Features:
-
 - This is the first update for Gyroflow Toolbox since its launch. We've listened to your feedback and have tried to make it easier, cleaner and faster to use. We've completely re-designed the interface in the Final Cut Pro Inspector, and have re-designed everything under-the-hood to make it faster. HUGE thank you to AdrianEddy for all his help, support and genius! AdrianEddy is the brains behind Gyroflow, and Gyroflow Toolbox wouldn't exist without him - so again, thank you!
 - You can now drag-and-drop media files from Final Cut Pro and Finder into the Inspector to load media into Gyroflow Toolbox. This includes BRAW Toolbox clips.
 - You can now drag-and-drop Gyroflow Project files from Finder into the Inspector to load Gyroflow Projects into Gyroflow Toolbox.
@@ -86,7 +96,6 @@
 - The "Launch Gyroflow" button now opens the active Gyroflow Project or Media File if an existing file has already been loaded into Gyroflow Toolbox.
 
 #### 🐞 Bug Fixes:
-
 - Fixed a bug where reloading the Gyroflow Project didn't do anything due to caching. Thanks for reporting richo!
 - Fixed a bug where the Lens Correction was scaling at a different scale compared to Gyroflow. Thanks for reporting lagezon!
 
