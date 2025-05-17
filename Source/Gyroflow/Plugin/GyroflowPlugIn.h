@@ -81,7 +81,17 @@
     // Cached Lens Profile Lookup:
     //---------------------------------------------------------
     NSDictionary *lensProfilesLookup;
+
+    //---------------------------------------------------------
+    // Cached Error Images:
+    //---------------------------------------------------------
+    NSMutableDictionary<NSString *, id>  *_cachedErrorImages;
 }
+
+//---------------------------------------------------------
+// A map from errorMessageID → CGImageRef (bridged to id)
+//---------------------------------------------------------
+@property (nonatomic, retain) NSMutableDictionary<NSString *, id> * _Nonnull cachedErrorImages;
 
 //---------------------------------------------------------
 // Progress Alert:

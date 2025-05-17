@@ -45,7 +45,24 @@ typedef void (^BRAWCompletionHandler)(void);
         NSLog(@"[Gyroflow Toolbox Renderer] --------------------------------- START OF NEW SESSION ---------------------------------");
         NSLog(@"[Gyroflow Toolbox Renderer] Version: %@ (%@)", version, build);
         NSLog(@"[Gyroflow Toolbox Renderer] applicationSupportDirectory: '%@'", applicationSupportDirectory);
-        
+
+        //---------------------------------------------------------
+        // Pre-load error messages:
+        //---------------------------------------------------------
+        _cachedErrorImages = [[NSMutableDictionary alloc] init];
+        for (NSString *errorID in @[ @"NoGyroflowProjectLoaded",
+                                     @"GyroflowCoreRenderError" ]) {
+            CGImageRef img = [self createCGImageForErrorID:errorID];
+            if (img) {
+                //---------------------------------------------------------
+                // bridge to id so we can store in NSDictionary:
+                //---------------------------------------------------------
+                self.cachedErrorImages[errorID] = (__bridge id)img;
+            } else {
+                NSLog(@"[Gyroflow Toolbox Renderer] WARNING: couldn’t preload error image '%@'", errorID);
+            }
+        }
+
         //---------------------------------------------------------
         // Start the Gyroflow Core Logger:
         //---------------------------------------------------------
@@ -122,9 +139,18 @@ typedef void (^BRAWCompletionHandler)(void);
             [url stopAccessingSecurityScopedResource];
         }
     }
-    
+
+    //---------------------------------------------------------
+    // Clean up cached error images:
+    //---------------------------------------------------------
+    for (id imgObj in _cachedErrorImages) {
+        CGImageRef img = (__bridge CGImageRef)imgObj;
+        if (img) CGImageRelease(img);
+    }
+    [_cachedErrorImages release];
+
     [super dealloc];
-    
+
     //NSLog(@"[Gyroflow Toolbox Renderer] Successfully deallocated!");
 }
 
@@ -196,7 +222,7 @@ typedef void (^BRAWCompletionHandler)(void);
         //             be supported by all hosts, so the plug-in should still check
         //             the colorInfo of its input and output images.
         //---------------------------------------------------------
-        kFxPropertyKey_DesiredProcessingColorInfo : [NSNumber numberWithInt:kFxImageColorInfo_RGB_LINEAR],
+        kFxPropertyKey_DesiredProcessingColorInfo : [NSNumber numberWithInt:kFxImageColorInfo_RGB_GAMMA_VIDEO],
     };
     return YES;
 }
@@ -1541,29 +1567,17 @@ typedef void (^BRAWCompletionHandler)(void);
                         outError:(NSError * _Nullable * _Nullable)outError
                     outputHeight:(float)outputHeight
                      outputWidth:(float)outputWidth
-                    sourceImages:(NSArray<FxImageTile *> * _Nonnull)sourceImages {
-
-    // ------------------------------------------------------------
-    // Load the PNG image from assets using NSImage:
-    // ------------------------------------------------------------
-    NSImage *nsImage = [NSImage imageNamed:errorMessageID];
-    if (!nsImage) {
-        NSString *errorMessage = [NSString stringWithFormat:@"FATAL ERROR: Failed to load asset: %@", errorMessageID];
-        NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
-        if (outError != NULL) {
-            *outError = [NSError errorWithDomain:FxPlugErrorDomain
-                                            code:kFxError_AssetLoadFailed
-                                        userInfo:@{ NSLocalizedDescriptionKey : errorMessage }];
-        }
-        return NO;
-    }
-
+                    sourceImages:(NSArray<FxImageTile *> * _Nonnull)sourceImages
+{
     //---------------------------------------------------------
     // Get CGImage from NSImage:
     //---------------------------------------------------------
-    CGImageRef cgImage = [nsImage CGImageForProposedRect:NULL context:nil hints:nil];
+    CGImageRef cgImage = (__bridge CGImageRef)self.cachedErrorImages[errorMessageID];
     if (!cgImage) {
-        NSString *errorMessage = [NSString stringWithFormat:@"FATAL ERROR: Unable to create CGImage from asset: %@", errorMessageID];
+        //---------------------------------------------------------
+        // Fail with error message:
+        //---------------------------------------------------------
+        NSString *errorMessage = [NSString stringWithFormat:@"FATAL ERROR: Unable to get CGImage from cache: %@", errorMessageID];
         NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
         if (outError != NULL) {
             *outError = [NSError errorWithDomain:FxPlugErrorDomain
@@ -1573,195 +1587,111 @@ typedef void (^BRAWCompletionHandler)(void);
         return NO;
     }
 
-    //---------------------------------------------------------
-    // Flip the image:
-    //---------------------------------------------------------
-    if (cgImage) {
-        //---------------------------------------------------------
-        // Create a CGContext to flip the image vertically:
-        //---------------------------------------------------------
-        CGSize imageSize = CGSizeMake(CGImageGetWidth(cgImage), CGImageGetHeight(cgImage));
-        CGContextRef bitmapContext = CGBitmapContextCreate(NULL, imageSize.width, imageSize.height, 8, 0, CGImageGetColorSpace(cgImage), kCGImageAlphaPremultipliedLast);
+    // ---------------------------------------------------------
+    // Flip image vertically to correct coordinate system:
+    // ---------------------------------------------------------
+    CGSize imgSize = CGSizeMake(CGImageGetWidth(cgImage), CGImageGetHeight(cgImage));
+    CGContextRef flipCtx = CGBitmapContextCreate(NULL,
+                                                 imgSize.width,
+                                                 imgSize.height,
+                                                 8,
+                                                 0,
+                                                 CGImageGetColorSpace(cgImage),
+                                                 kCGImageAlphaPremultipliedLast);
+    CGContextTranslateCTM(flipCtx, 0, imgSize.height);
+    CGContextScaleCTM(flipCtx, 1.0, -1.0);
+    CGContextDrawImage(flipCtx, CGRectMake(0, 0, imgSize.width, imgSize.height), cgImage);
+    CGImageRef flipped = CGBitmapContextCreateImage(flipCtx);
+    CGContextRelease(flipCtx);
 
-        //---------------------------------------------------------
-        // Apply a vertical flip transformation:
-        //---------------------------------------------------------
-        CGContextTranslateCTM(bitmapContext, 0, imageSize.height);
-        CGContextScaleCTM(bitmapContext, 1.0, -1.0);
+    // NOTE: we don't need to release `cgImage` here.
 
+    CIImage *errorCI = [CIImage imageWithCGImage:flipped];
+    CGImageRelease(flipped);
+    if (!errorCI) {
         //---------------------------------------------------------
-        // Draw the image into the flipped context:
+        // Fail with error message:
         //---------------------------------------------------------
-        CGContextDrawImage(bitmapContext, CGRectMake(0, 0, imageSize.width, imageSize.height), cgImage);
-
-        //---------------------------------------------------------
-        // Create a flipped CGImage:
-        //---------------------------------------------------------
-        CGImageRef flippedCGImage = CGBitmapContextCreateImage(bitmapContext);
-
-        //---------------------------------------------------------
-        // Release the context:
-        //---------------------------------------------------------
-        CGContextRelease(bitmapContext);
-
-        //---------------------------------------------------------
-        // Use flippedCGImage instead of cgImage:
-        //---------------------------------------------------------
-        cgImage = flippedCGImage;
-    }
-
-    // ------------------------------------------------------------
-    // Create a CIImage from the CGImage and apply transformations:
-    // ------------------------------------------------------------
-    CIImage *ciImage = [CIImage imageWithCGImage:cgImage];
-    if (!ciImage) {
-        NSString *errorMessage = [NSString stringWithFormat:@"FATAL ERROR: Failed to create CIImage from CGImage: %@", errorMessageID];
+        NSString *errorMessage = [NSString stringWithFormat:@"Failed to create CIImage."];
         NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
         if (outError != NULL) {
             *outError = [NSError errorWithDomain:FxPlugErrorDomain
                                             code:kFxError_ImageCreationFailed
-                                        userInfo:@{ NSLocalizedDescriptionKey : errorMessage }];
+                                        userInfo:@{NSLocalizedDescriptionKey:errorMessage}];
         }
         return NO;
     }
 
-    //---------------------------------------------------------
-    // Get destination IOSurface for Metal:
-    //---------------------------------------------------------
-    IOSurfaceRef destinationIOSurface = (__bridge IOSurfaceRef)(destinationImage.ioSurface);
-    if (!destinationIOSurface) {
-        NSString *errorMessage = @"FATAL ERROR: Failed to get IOSurface from destination image.";
-        NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
-        if (outError != NULL) {
-            *outError = [NSError errorWithDomain:FxPlugErrorDomain
-                                            code:kFxError_IOSurfaceCreationFailed
-                                        userInfo:@{ NSLocalizedDescriptionKey : errorMessage }];
-        }
-        return NO;
-    }
+    // ---------------------------------------------------------
+    // Compute square-pixel canvas via inversePixelTransform:
+    // ---------------------------------------------------------
+    FxRect imgBounds = destinationImage.imagePixelBounds;
+    FxMatrix44 *invTrans = [destinationImage inversePixelTransform];
+    FxPoint2D ll = { imgBounds.left, imgBounds.bottom };
+    FxPoint2D ur = { imgBounds.right, imgBounds.top };
+    FxPoint2D llSq = [invTrans transform2DPoint:ll];
+    FxPoint2D urSq = [invTrans transform2DPoint:ur];
+    CGFloat squareW = urSq.x - llSq.x;
+    CGFloat squareH = urSq.y - llSq.y;
 
-    CGSize outputSize = CGSizeMake(IOSurfaceGetWidth(destinationIOSurface), IOSurfaceGetHeight(destinationIOSurface));
+    // ---------------------------------------------------------
+    // Fit width, maintain aspect, center vertically:
+    // ---------------------------------------------------------
+    CGFloat imgW = errorCI.extent.size.width;
+    CGFloat scale = squareW / imgW;
+    CGFloat fittedH = errorCI.extent.size.height * scale;
+    CGFloat yOff = (squareH - fittedH) * 0.5;
+    CGAffineTransform fitXform = CGAffineTransformMakeScale(scale, scale);
+    CGAffineTransform centXform = CGAffineTransformMakeTranslation(0, yOff);
+    CIImage *fitted = [errorCI imageByApplyingTransform:CGAffineTransformConcat(fitXform, centXform)];
 
-    // ------------------------------------------------------------
-    // Obtain the Metal device through the MetalDeviceCache:
-    // ------------------------------------------------------------
-    MetalDeviceCache *deviceCache = [MetalDeviceCache deviceCache];
-    id<MTLDevice> metalDevice = [deviceCache deviceWithRegistryID:destinationImage.deviceRegistryID];
-    if (!metalDevice) {
-        NSString *errorMessage = @"FATAL ERROR: Failed to get Metal device from cache.";
-        NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
-        if (outError != NULL) {
-            *outError = [NSError errorWithDomain:FxPlugErrorDomain
-                                            code:kFxError_MetalDeviceNotFound
-                                        userInfo:@{ NSLocalizedDescriptionKey : errorMessage }];
-        }
-        return NO;
-    }
+    // ---------------------------------------------------------
+    // Fill the entire square-pixel canvas with white:
+    // ---------------------------------------------------------
+    CIImage *whiteBg = [[CIImage imageWithColor:
+                         [CIColor colorWithRed:1 green:1 blue:1 alpha:1]]
+                        imageByCroppingToRect:
+                            CGRectMake(0, 0, squareW, squareH)];
+    CIImage *comp = [fitted imageByCompositingOverImage:whiteBg];
 
-    // ------------------------------------------------------------
-    // Create a Metal-based CIContext for rendering:
-    // ------------------------------------------------------------
-    CIContext *ciContext = [CIContext contextWithMTLDevice:metalDevice];
-    if (!ciContext) {
-        NSString *errorMessage = @"FATAL ERROR: Failed to create CIContext.";
-        NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
-        if (outError != NULL) {
-            *outError = [NSError errorWithDomain:FxPlugErrorDomain
-                                            code:kFxError_CIContextCreationFailed
-                                        userInfo:@{ NSLocalizedDescriptionKey : errorMessage }];
-        }
-        return NO;
-    }
+    // ---------------------------------------------------------
+    // Map back to device pixels with forward transform:
+    // ---------------------------------------------------------
+    FxMatrix44 *fwdTrans = [destinationImage pixelTransform];
+    FxPoint2D dev00 = [fwdTrans transform2DPoint:(FxPoint2D){0,0}];
+    FxPoint2D dev10 = [fwdTrans transform2DPoint:(FxPoint2D){1,0}];
+    FxPoint2D dev01 = [fwdTrans transform2DPoint:(FxPoint2D){0,1}];
+    CGAffineTransform toDevice = CGAffineTransformMake(dev10.x - dev00.x,
+                                                       dev10.y - dev00.y,
+                                                       dev01.x - dev00.x,
+                                                       dev01.y - dev00.y,
+                                                       dev00.x,
+                                                       dev00.y);
+    CIImage *finalImage = [comp imageByApplyingTransform:toDevice];
 
-    // ------------------------------------------------------------
-    // Obtain the Metal command queue:
-    // ------------------------------------------------------------
-    id<MTLCommandQueue> commandQueue = [deviceCache commandQueueWithRegistryID:destinationImage.deviceRegistryID
-                                                                   pixelFormat:[MetalDeviceCache MTLPixelFormatForImageTile:destinationImage]];
-
-    if (!commandQueue) {
-        NSString *errorMessage = @"FATAL ERROR: Failed to obtain a Metal command queue.";
-        NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
-        if (outError != NULL) {
-            *outError = [NSError errorWithDomain:FxPlugErrorDomain
-                                            code:kFxError_CommandQueueWasNilDuringShowErrorMessage
-                                        userInfo:@{ NSLocalizedDescriptionKey : errorMessage }];
-        }
-        return NO;
-    }
-
-    id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
-    if (!commandBuffer) {
-
+    // ---------------------------------------------------------
+    // Render via Metal-backed CIContext:
+    // ---------------------------------------------------------
+    IOSurfaceRef surf = (__bridge IOSurfaceRef)destinationImage.ioSurface;
+    id<MTLDevice> device = [[MetalDeviceCache deviceCache] deviceWithRegistryID:destinationImage.deviceRegistryID];
+    CIContext *ciCtx = [CIContext contextWithMTLDevice:device];
+    CIRenderDestination *dest = [[CIRenderDestination alloc] initWithIOSurface:(__bridge IOSurface *)surf];
+    dest.alphaMode = CIRenderDestinationAlphaUnpremultiplied;
+    NSError *renderErr = nil;
+    [ciCtx startTaskToRender:finalImage toDestination:dest error:&renderErr];
+    if (renderErr) {
         //---------------------------------------------------------
-        // Return the command queue before aborting:
+        // Fail with error message:
         //---------------------------------------------------------
-        [deviceCache returnCommandQueueToCache:commandQueue];
-
-        NSString *errorMessage = @"FATAL ERROR: Failed to create a Metal command buffer.";
+        NSString *errorMessage = [NSString stringWithFormat:@"Failed to render due to: %@", renderErr.localizedDescription];
         NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
         if (outError != NULL) {
             *outError = [NSError errorWithDomain:FxPlugErrorDomain
-                                            code:kFxError_CommandBufferCreationFailed
-                                        userInfo:@{ NSLocalizedDescriptionKey : errorMessage }];
+                                            code:kFxError_ImageCreationFailed
+                                        userInfo:@{NSLocalizedDescriptionKey:errorMessage}];
         }
         return NO;
     }
-
-    commandBuffer.label = @"Gyroflow Toolbox Error Command Buffer";
-    [commandBuffer enqueue];
-
-    // ------------------------------------------------------------
-    // Scale the CIImage to fit within the output size:
-    // ------------------------------------------------------------
-    CGFloat aspectRatio = ciImage.extent.size.width / ciImage.extent.size.height;
-    CGFloat scaledWidth = outputSize.height * aspectRatio;
-    CGAffineTransform scaleTransform = CGAffineTransformMakeScale(scaledWidth / ciImage.extent.size.width,
-                                                                  outputSize.height / ciImage.extent.size.height);
-    CIImage *scaledCIImage = [ciImage imageByApplyingTransform:scaleTransform];
-
-    // ------------------------------------------------------------
-    // Translate to centre it horizontally:
-    // ------------------------------------------------------------
-    CGFloat translateX = (outputSize.width - scaledCIImage.extent.size.width) / 2;
-    CIImage *finalImage = [scaledCIImage imageByApplyingTransform:CGAffineTransformMakeTranslation(translateX, 0)];
-
-    // ------------------------------------------------------------
-    // Create a render destination from IOSurface:
-    // ------------------------------------------------------------
-    CIRenderDestination *renderDestination = [[CIRenderDestination alloc] initWithIOSurface:(__bridge IOSurface *)destinationIOSurface];
-    renderDestination.alphaMode = CIRenderDestinationAlphaUnpremultiplied;
-
-    // ------------------------------------------------------------
-    // Start rendering task to the destination:
-    // ------------------------------------------------------------
-    NSError *renderError = nil;
-    [ciContext startTaskToRender:finalImage toDestination:renderDestination error:&renderError];
-
-    if (renderError) {
-        //---------------------------------------------------------
-        // Return the command queue before aborting:
-        //---------------------------------------------------------
-        [deviceCache returnCommandQueueToCache:commandQueue];
-
-        NSString *errorMessage = [NSString stringWithFormat:@"ERROR: Failed to render error message image: %@", renderError.localizedDescription];
-        NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
-        if (outError != NULL) {
-            *outError = renderError;
-        }
-        return NO;
-    }
-
-    // ------------------------------------------------------------
-    // Commit the command buffer and wait for it to complete.
-    // ------------------------------------------------------------
-    [commandBuffer commit];
-    [commandBuffer waitUntilScheduled];
-
-    //---------------------------------------------------------
-    // Return the command queue before aborting:
-    //---------------------------------------------------------
-    [deviceCache returnCommandQueueToCache:commandQueue];
 
     return YES;
 }
@@ -5509,6 +5439,32 @@ typedef void (^BRAWCompletionHandler)(void);
 #pragma mark - Helpers
 //
 //---------------------------------------------------------
+
+//------------------------------------------------------------------------------
+// Helper to load a CGImageRef from the asset catalog:
+//------------------------------------------------------------------------------
+- (CGImageRef)createCGImageForErrorID:(NSString *)errorMessageID {
+    //---------------------------------------------------------
+    // `imageNamed:` will look in the compiled Assets.xcassets:
+    //---------------------------------------------------------
+    NSImage *img = [NSImage imageNamed:errorMessageID];
+    if (!img) return NULL;
+
+    //---------------------------------------------------------
+    // Ask NSImage for a CGImage:
+    //---------------------------------------------------------
+    NSRect imgRect = NSMakeRect(0, 0, img.size.width, img.size.height);
+    CGImageRef cgImg = [img CGImageForProposedRect:&imgRect
+                                           context:nil
+                                             hints:nil];
+    if (!cgImg) return NULL;
+
+    //---------------------------------------------------------
+    // Retain it so it survives past the autorelease pool:
+    //---------------------------------------------------------
+    CGImageRetain(cgImg);
+    return cgImg;
+}
 
 //---------------------------------------------------------
 // Get Lens Profile Names from Directory:
