@@ -34,13 +34,12 @@ links:
   target: blank
 
 - text: LateNite
-  link: /latenite
+  link: https://fcp.cafe/latenite/
   icon: light-bulb
+  target: blank
 
 footer:
   copyright: "&copy; Copyright {{ year }} LateNite Films Pty Ltd. All rights reserved."
-
-poweredByRetype: false
 
 edit:
   repo: "https://github.com/latenitefilms/GyroflowToolbox"
