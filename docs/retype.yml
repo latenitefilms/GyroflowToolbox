@@ -55,3 +55,8 @@ data:
 outbound:
   exclude:
     - github.com/latenitefilms/gyroflowtoolbox/
+
+scheme:
+  mode: dark
+
+poweredByRetype: false
