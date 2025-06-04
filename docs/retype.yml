@@ -13,14 +13,14 @@ links:
   link: /buy
   icon: desktop-download
 
+- text: Discord
+  link: https://ltnt.tv/discord
+  icon: comment-discussion
+  target: blank
+
 - text: Gyroflow Discord
   link: https://discord.gg/BBJ2UVAr2D
   icon: people
-  target: blank
-
-- text: CommandPost Discord
-  link: https://ltnt.tv/discord
-  icon: comment-discussion
   target: blank
 
 - text: Issues
