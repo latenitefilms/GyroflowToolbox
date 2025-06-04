@@ -1,10 +1,10 @@
 {
-  "name": "GoPro_HERO6 Black_Superview_NO-EIS_4k_16by9_3840x2160-23.98fps",
-  "note": "NO-EIS",
-  "calibrated_by": "木戈",
-  "camera_brand": "GoPro",
-  "camera_model": "HERO6 Black",
-  "lens_model": "Superview",
+  "name": "Sony_a7RII_Tamron 28-200 F/2.8-5.6 Di III RXD_28mm焦距_4k_16by9_3840x2160-25.00fps",
+  "note": "28mm焦距",
+  "calibrated_by": "moqianmei",
+  "camera_brand": "Sony",
+  "camera_model": "a7RII",
+  "lens_model": "Tamron 28-200 F/2.8-5.6 Di III RXD",
   "camera_setting": "",
   "calib_dimension": {
     "w": 3840,
@@ -23,22 +23,22 @@
   "input_horizontal_stretch": 1.0,
   "input_vertical_stretch": 1.0,
   "num_images": 15,
-  "fps": 23.976025,
+  "fps": 25.0,
   "crop": null,
   "official": false,
   "asymmetrical": false,
   "fisheye_params": {
-    "RMS_error": 1.7336281402926434,
+    "RMS_error": 0.47022620175736296,
     "camera_matrix": [
       [
-        1449.3731182654972,
+        3039.492996192101,
         0.0,
-        1900.42786367343
+        1930.7734253738872
       ],
       [
         0.0,
-        1461.080117272344,
-        1089.1749838728545
+        3038.9296089053923,
+        1065.3955380332338
       ],
       [
         0.0,
@@ -47,20 +47,20 @@
       ]
     ],
     "distortion_coeffs": [
-      0.05091847757442431,
-      0.02229062732072967,
-      -0.16969061267867727,
-      0.14491972159586364
+      0.24120552522958252,
+      0.34976147593000023,
+      -0.7019960401127738,
+      1.0112631768362117
     ],
     "radial_distortion_limit": null
   },
-  "identifier": "gopro-hero6black-super-3840x2160@23976-no-eis",
-  "calibrator_version": "1.5.3",
-  "date": "2023-10-18",
+  "identifier": "",
+  "calibrator_version": "1.5.4",
+  "date": "2024-10-16",
   "compatible_settings": [],
   "sync_settings": null,
   "distortion_model": null,
-  "digital_lens": "gopro_superview",
+  "digital_lens": null,
   "digital_lens_params": null,
   "interpolations": null,
   "focal_length": null,

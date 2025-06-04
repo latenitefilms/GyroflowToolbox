@@ -22,7 +22,7 @@ use std::sync::Mutex;                       // A mutual exclusion primitive usef
 //---------------------------------------------------------
 // Start writing log files to disk:
 //---------------------------------------------------------
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn startLogger(
     log_path: *const c_char,
 ) {
@@ -126,7 +126,7 @@ lazy_static! {
 ///
 /// assert_eq!(result, "OK");
 /// ```
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn getDefaultValues(
     gyroflow_project_data: *const c_char,
     fov: *mut f64,
@@ -218,7 +218,7 @@ pub extern "C" fn getDefaultValues(
 /// # Safety
 ///
 /// This function is marked as unsafe because it accepts a raw pointer as an argument. It is the caller's responsibility to ensure that the pointer is valid and points to a null-terminated string.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn getLensIdentifier(
     gyroflow_project_data: *const c_char,
 ) -> *const c_char {
@@ -291,7 +291,7 @@ pub extern "C" fn getLensIdentifier(
 /// # Safety
 ///
 /// This function is marked as unsafe because it accepts a raw pointer as an argument. It is the caller's responsibility to ensure that the pointer is valid and points to a null-terminated string.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn isLensProfileLoaded(
     gyroflow_project_data: *const c_char,
 ) -> *const c_char {
@@ -369,7 +369,7 @@ pub extern "C" fn isLensProfileLoaded(
 /// # Safety
 ///
 /// This function is marked as unsafe because it accepts a raw pointer as an argument. It is the caller's responsibility to ensure that the pointer is valid and points to a null-terminated string.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn doesGyroflowProjectContainStabilisationData(
     gyroflow_project_data: *const c_char,
 ) -> *const c_char {
@@ -466,7 +466,7 @@ pub extern "C" fn doesGyroflowProjectContainStabilisationData(
 ///
 /// * If the project contains accurate timestamps, returns a C-style string containing "YES".
 /// * If the project does not contain accurate timestamps, returns a C-style string containing an error message.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn hasAccurateTimestamps(
     gyroflow_project_data: *const c_char,
 ) -> *const c_char {
@@ -548,7 +548,7 @@ pub extern "C" fn hasAccurateTimestamps(
 /// # Returns
 ///
 /// A new Gyroflow Project or "FAIL".
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn loadLensProfile(
     gyroflow_project_data: *const c_char,
     lens_profile_path: *const c_char,
@@ -650,7 +650,7 @@ pub extern "C" fn loadLensProfile(
 /// # Returns
 ///
 /// A new Gyroflow Project or "FAIL".
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn loadPreset(
     gyroflow_project_data: *const c_char,
     preset_path: *const c_char,
@@ -746,7 +746,7 @@ pub extern "C" fn loadPreset(
 /// # Returns
 ///
 /// This function returns the size of the cache as a `u32`.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn trashCache() -> u32 {
     //---------------------------------------------------------
     // Trash the Cache:
@@ -769,7 +769,7 @@ pub extern "C" fn trashCache() -> u32 {
 /// # Returns
 ///
 /// This function returns the Gyroflow Project as a string or "FAIL".
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn importMediaFile(
     media_file_path: *const c_char,
 ) -> *const c_char {
@@ -859,7 +859,7 @@ pub extern "C" fn importMediaFile(
 /// # Returns
 ///
 /// This function returns "DONE" if successful, otherwise an error message. If successful, the output Metal Texture is stored in `out_mtl_tex`.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn processFrame(
     unique_identifier: *const c_char,
     width: u32,
