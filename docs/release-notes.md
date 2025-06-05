@@ -24,7 +24,7 @@
 
 ---
 
-### 1.2.0 (Build 21)
+## 1.2.0 (Build 21)
 
 **🎉 Released:**
 - 19th October 2024
@@ -39,7 +39,7 @@
 
 ---
 
-### 1.1.5 (Build 20)
+## 1.1.5 (Build 20)
 
 **🎉 Released:**
 - 25th June 2024
@@ -51,7 +51,7 @@
 
 ---
 
-### 1.1.4 (Build 18)
+## 1.1.4 (Build 18)
 
 **🎉 Released:**
 - 15th December 2023
@@ -69,7 +69,7 @@
 
 ---
 
-### 1.1.3 (Build 17)
+## 1.1.3 (Build 17)
 
 **🎉 Released:**
 - 6th September 2023
@@ -80,7 +80,7 @@
 
 ---
 
-### 1.1.2 (Build 16)
+## 1.1.2 (Build 16)
 
 **🎉 Released:**
 - 10th August 2023
@@ -91,7 +91,7 @@
 
 ---
 
-### 1.1.1 (Build 15)
+## 1.1.1 (Build 15)
 
 **🎉 Released:**
 - 6th August 2023
@@ -102,7 +102,7 @@
 
 ---
 
-### 1.1.0 (Build 14)
+## 1.1.0 (Build 14)
 
 **🎉 Released:**
 - 4th August 2023
@@ -125,7 +125,7 @@
 
 ---
 
-### 1.0.0 (Build 11)
+## 1.0.0 (Build 11)
 
 **🎉 Released:**
 - 1st January 2023
@@ -140,7 +140,7 @@ Thanks to everyone who helped beta test - especially [@JW144754](https://github.
 
 ---
 
-### 1.0.0-beta.9
+## 1.0.0-beta.9
 
 **🎉 Released:**
 - 30th December 2022
@@ -150,7 +150,7 @@ Thanks to everyone who helped beta test - especially [@JW144754](https://github.
 
 ---
 
-### 1.0.0-beta.8
+## 1.0.0-beta.8
 
 **🎉 Released:**
 - 30th December 2022
@@ -160,7 +160,7 @@ Thanks to everyone who helped beta test - especially [@JW144754](https://github.
 
 ---
 
-### 1.0.0-beta.7
+## 1.0.0-beta.7
 
 **🎉 Released:**
 - 30th December 2022
@@ -170,7 +170,7 @@ Thanks to everyone who helped beta test - especially [@JW144754](https://github.
 
 ---
 
-### 1.0.0-beta.6
+## 1.0.0-beta.6
 
 **🎉 Released:**
 - 30th December 2022
@@ -180,7 +180,7 @@ Thanks to everyone who helped beta test - especially [@JW144754](https://github.
 
 ---
 
-### 1.0.0-beta.5
+## 1.0.0-beta.5
 
 **🎉 Released:**
 - 30th December 2022
@@ -190,7 +190,7 @@ Thanks to everyone who helped beta test - especially [@JW144754](https://github.
 
 ---
 
-### 1.0.0-beta.4
+## 1.0.0-beta.4
 
 **🎉 Released:**
 - 29th December 2022
@@ -200,7 +200,7 @@ Thanks to everyone who helped beta test - especially [@JW144754](https://github.
 
 ---
 
-### 1.0.0-beta.3
+## 1.0.0-beta.3
 
 **🎉 Released:**
 - 22nd December 2022
@@ -212,7 +212,7 @@ Thanks to everyone who helped beta test - especially [@JW144754](https://github.
 
 ---
 
-### 1.0.0-beta.2
+## 1.0.0-beta.2
 
 **🎉 Released:**
 - 22nd December 2022
@@ -230,7 +230,7 @@ Thanks to everyone who helped beta test - especially [@JW144754](https://github.
 
 ---
 
-### 1.0.0-beta.1
+## 1.0.0-beta.1
 
 **🎉 Released:**
 - 21st December 2022
