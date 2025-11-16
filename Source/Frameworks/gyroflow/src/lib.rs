@@ -1091,7 +1091,7 @@ pub extern "C" fn processFrame(
        // Set the Horizon Lock:
        //---------------------------------------------------------
        if smoothing.horizon_lock.lock_enabled != (horizon_lock > 0.0) || smoothing.horizon_lock.horizonlockpercent != horizon_lock || smoothing.horizon_lock.horizonroll != horizon_roll {
-          smoothing.horizon_lock.set_horizon(horizon_lock, horizon_roll);
+          smoothing.horizon_lock.set_horizon(horizon_lock, horizon_roll, false, 0.0);
           params_changed = true;
        }
    }
