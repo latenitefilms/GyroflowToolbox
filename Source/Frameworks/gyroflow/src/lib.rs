@@ -900,6 +900,7 @@ pub extern "C" fn processFrame(
     // Have parameters changed:
     //---------------------------------------------------------
     let mut params_changed = false;
+    let mut rotation_changed = false;
 
     //---------------------------------------------------------
     // Get the Unique Identifier:
@@ -1074,6 +1075,7 @@ pub extern "C" fn processFrame(
        if params.video_rotation != video_rotation {
             params.video_rotation = video_rotation;
             params_changed = true;
+            rotation_changed = true;
        }
     }
 
@@ -1097,10 +1099,29 @@ pub extern "C" fn processFrame(
    }
 
    //---------------------------------------------------------
+   // If the rotation value has changed, make sure we set
+   // the manager's `output_size` and `set_size`:
+   //---------------------------------------------------------
+   if rotation_changed {
+      log::info!("[Gyroflow Toolbox Rust] Rotation changed, so triggering `output_size` and `set_size` again...");
+
+      let (input_w, input_h) = if (video_rotation.rem_euclid(180.0)).abs() == 90.0 {
+          // For 90 or 270 degrees, swap
+          (output_height, output_width)
+      } else {
+          (output_width, output_height)
+      };
+
+      manager.set_size(input_w, input_h);
+      manager.set_output_size(output_width, output_height);
+   }
+
+   //---------------------------------------------------------
    // If something has changed, Invalidate & Recompute, to
    // make sure everything is up-to-date:
    //---------------------------------------------------------
-   if params_changed {
+   if params_changed  {
+       log::info!("[Gyroflow Toolbox Rust] Parameters or rotation changed, so triggering Invalidate & Recompute...");
        manager.invalidate_smoothing();
        manager.recompute_blocking();
        manager.params.write().calculate_ramped_timestamps(&manager.keyframes.read(), false, false);
@@ -1116,18 +1137,18 @@ pub extern "C" fn processFrame(
    // Prepare the Metal Texture Image Buffers:
    //---------------------------------------------------------
    let mut buffers = Buffers {
-       output: BufferDescription {
-           size: (output_width, output_height, output_stride),
-           rect: None,
-           data: BufferSource::Metal { texture: out_mtl_tex as *mut metal::MTLTexture, command_queue: command_queue as *mut metal::MTLCommandQueue },
-           rotation: None,
-           texture_copy: true,
-       },
        input: BufferDescription {
            size: (output_width, output_height, input_stride),
            rect: None,
            data: BufferSource::Metal { texture: in_mtl_tex as *mut metal::MTLTexture, command_queue: command_queue as *mut metal::MTLCommandQueue },
            rotation: Some(input_rotation as f32),
+           texture_copy: true,
+       },
+       output: BufferDescription {
+           size: (output_width, output_height, output_stride),
+           rect: None,
+           data: BufferSource::Metal { texture: out_mtl_tex as *mut metal::MTLTexture, command_queue: command_queue as *mut metal::MTLCommandQueue },
+           rotation: None,
            texture_copy: true,
        }
    };
