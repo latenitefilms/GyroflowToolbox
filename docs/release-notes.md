@@ -1,5 +1,31 @@
 # Release Notes
 
+## 1.3.3 (Build 25)
+
+**🎉 Released:**
+- 4th January 2026
+
+**🔨 Improvements:**
+- Gyroflow Toolbox can now handle video files greater than 8192 pixels (as long as your GPU supports it). Thanks for reporting mhbsavant!
+- We've updated to the latest Gyroflow Core Renderer. HUGE thank you to the amazing [AdrianEddy](https://github.com/AdrianEddy) for all his ongoing help, assistance, genius and support!
+- 28 lens profiles have been updated from the hero Gyroflow project. Thanks to EVERYONE who has submitted lens profiles and another HUGE thank you to AdrianEddy for all the work that goes into managing them.
+
+---
+
+## 1.3.2 (Build 24)
+
+**🎉 Released:**
+- 18th November 2025
+
+**🐞 Bug Fix:**
+- Fixed a bug where vertical (9x16) clips would not stabilise correctly in Final Cut Pro. If you now set the **Input Rotation** and **Video Rotation** to `90` in Gyroflow Toolbox, things should now render correctly.
+
+**🔨 Improvements:**
+- We've updated to the latest Gyroflow Core Renderer. HUGE thank you to the amazing [AdrianEddy](https://github.com/AdrianEddy) for all his ongoing help, assistance, genius and support!
+- 6 lens profiles have been updated from the hero Gyroflow project. Thanks to EVERYONE who has submitted lens profiles and another HUGE thank you to [AdrianEddy](https://github.com/AdrianEddy) for all the work that goes into managing them.
+
+---
+
 ## 1.3.1 (Build 23)
 
 **🎉 Released:**

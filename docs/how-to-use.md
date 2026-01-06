@@ -36,7 +36,7 @@ There are also some formats, such as **GoPro**, **DJI**, **Insta360** (and even 
 
 ### Limitations
 
-_**You should always put the Gyroflow Toolbox effect on a clip inside a Compound Clip.**_
+_**You should always put the Gyroflow Toolbox effect on a clip INSIDE a Compound Clip with EXACTLY the same FRAME RATE and RESOLUTION.**_
 
 This is because you should only ever apply the Gyroflow Toolbox effect to an **entire clip** - the clip cannot be trimmed. Due to limitations in Final Cut Pro's FxPlug4 API - we currently can't determine the source start timecode of a clip. Because of this, the Gyroflow Toolbox effect should only be applied to a clip where the start of the clip hasn't been trimmed in the timeline (i.e. the clip you have in the timeline should show the first frame of the source clip). If you need to trim the start of this clip, you can use the full clip within a Compound Clip, then trim the Compound Clip as required.
 
@@ -89,7 +89,7 @@ You can then apply this effect to any clips that are supported by Gyroflow.
 
 ### Applying the Effect
 
-You should always put the Gyroflow Toolbox effect on a clip inside a Compound Clip (see [limitations above](#limitations)).
+You should always put the Gyroflow Toolbox effect on a clip INSIDE a Compound Clip (see [limitations above](#limitations)) with the EXACT same RESOLUTION and FRAME RATE.
 
 It will then look like this:
 
