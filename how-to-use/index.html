@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="3.11.0.820794754224">
+    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="3.11.0.821011314090">
 
     <!-- See retype.com -->
     <meta name="generator" content="Retype 3.11.0">
@@ -33,11 +33,11 @@
     <script data-cfasync="false">(function(){var cl=document.documentElement.classList,ls=localStorage.getItem("retype_scheme"),hd=cl.contains("dark"),hl=cl.contains("light"),wm=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;if(ls==="dark"||(!ls&&wm&&!hd&&!hl)){cl.remove("light");cl.add("dark")}else if(ls==="light"||(!ls&&!wm&&!hd&&!hl)){cl.remove("dark");cl.add("light")}})();</script>
 
     <link href="../static/favicon.ico" rel="icon">
-    <link href="../resources/css/retype.css?v=3.11.0.820794754224" rel="stylesheet">
+    <link href="../resources/css/retype.css?v=3.11.0.821011314090" rel="stylesheet">
 
-    <script data-cfasync="false" src="../resources/js/config.js?v=3.11.0.820794754224" data-turbo-eval="false" defer></script>
+    <script data-cfasync="false" src="../resources/js/config.js?v=3.11.0.821011314090" data-turbo-eval="false" defer></script>
     <script data-cfasync="false" src="../resources/js/retype.js?v=3.11.0" data-turbo-eval="false" defer></script>
-    <script id="lunr-js" data-cfasync="false" src="../resources/js/lunr.js?v=3.11.0.820794754224" data-turbo-eval="false" defer></script>
+    <script id="lunr-js" data-cfasync="false" src="../resources/js/lunr.js?v=3.11.0.821011314090" data-turbo-eval="false" defer></script>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <style>
@@ -385,7 +385,7 @@
         <span>Limitations</span>
     </h3>
 </doc-anchor-target>
-<p><em><strong>You should always put the Gyroflow Toolbox effect on a clip inside a Compound Clip.</strong></em></p>
+<p><em><strong>You should always put the Gyroflow Toolbox effect on a clip INSIDE a Compound Clip with EXACTLY the same FRAME RATE and RESOLUTION.</strong></em></p>
 <p>This is because you should only ever apply the Gyroflow Toolbox effect to an <strong>entire clip</strong> - the clip cannot be trimmed. Due to limitations in Final Cut Pro&#x27;s FxPlug4 API - we currently can&#x27;t determine the source start timecode of a clip. Because of this, the Gyroflow Toolbox effect should only be applied to a clip where the start of the clip hasn&#x27;t been trimmed in the timeline (i.e. the clip you have in the timeline should show the first frame of the source clip). If you need to trim the start of this clip, you can use the full clip within a Compound Clip, then trim the Compound Clip as required.</p>
 <p>We have been in contact with the Final Cut Pro team about this, and there&#x27;s currently no other better workaround or solution. This is discussed <a href="https://github.com/latenitefilms/GyroflowToolbox/issues/8">on GitHub</a> and we would appreciate it if you could let Apple know this is something you&#x27;d like to see addressed. You can reference our Apple Feedback Assistant ID: <strong>FB12043900</strong>.</p>
 <hr>
@@ -445,7 +445,7 @@
         <span>Applying the Effect</span>
     </h3>
 </doc-anchor-target>
-<p>You should always put the Gyroflow Toolbox effect on a clip inside a Compound Clip (see <doc-anchor-trigger to="#limitations">limitations above</doc-anchor-trigger>).</p>
+<p>You should always put the Gyroflow Toolbox effect on a clip INSIDE a Compound Clip (see <doc-anchor-trigger to="#limitations">limitations above</doc-anchor-trigger>) with the EXACT same RESOLUTION and FRAME RATE.</p>
 <p>It will then look like this:</p>
 <p><figure class="content-center">
     <img src="../static/07-install.png" alt="" class="rounded-image-rounded border-image-border border-image-border-width" />
