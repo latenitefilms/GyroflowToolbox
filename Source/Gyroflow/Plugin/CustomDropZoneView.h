@@ -8,15 +8,19 @@
 #import <Cocoa/Cocoa.h>
 #import <FxPlug/FxPlugSDK.h>
 
+@protocol CustomDropZoneViewParentPlugin <NSObject>
+- (void)importDroppedMedia:(NSData*)bookmarkData;
+- (void)importDroppedClip:(NSString*)fcpxmlString;
+@end
+
+
 @interface CustomDropZoneView : NSView <NSDraggingDestination>
 {
-    id<PROAPIAccessing> _apiManager;
-    id _parentPlugin;
-    int _buttonID;
+    __weak id<CustomDropZoneViewParentPlugin> _parentPlugin;
+    UInt32 _buttonID;
 }
 
-- (instancetype)initWithAPIManager:(id<PROAPIAccessing>)apiManager
-                 parentPlugin:(id)parentPlugin
-                     buttonID:(UInt32)buttonID
-                  buttonTitle:(NSString*)buttonTitle;
+- (instancetype)initWithParentPlugin:(id)parentPlugin
+                            buttonID:(UInt32)buttonID
+                         buttonTitle:(NSString*)buttonTitle;
 @end

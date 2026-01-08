@@ -47,17 +47,19 @@ typedef void (^BRAWCompletionHandler)(void);
         NSLog(@"[Gyroflow Toolbox Renderer] applicationSupportDirectory: '%@'", applicationSupportDirectory);
 
         //---------------------------------------------------------
+        // Setup Grant Sandbox Access Array:
+        //---------------------------------------------------------
+        self.grantSandboxAccessURLs = [NSMutableArray array];
+
+        //---------------------------------------------------------
         // Pre-load error messages:
         //---------------------------------------------------------
-        _cachedErrorImages = [[NSMutableDictionary alloc] init];
+        self.cachedErrorImages = [NSMutableDictionary dictionary];
         for (NSString *errorID in @[ @"NoGyroflowProjectLoaded",
                                      @"GyroflowCoreRenderError" ]) {
-            CGImageRef img = [self createCGImageForErrorID:errorID];
-            if (img) {
-                //---------------------------------------------------------
-                // bridge to id so we can store in NSDictionary:
-                //---------------------------------------------------------
-                self.cachedErrorImages[errorID] = (__bridge id)img;
+            id cgObj = [self errorCGImageObjectForID:errorID];
+            if (cgObj) {
+                self.cachedErrorImages[errorID] = cgObj;
             } else {
                 NSLog(@"[Gyroflow Toolbox Renderer] WARNING: couldn’t preload error image '%@'", errorID);
             }
@@ -81,15 +83,15 @@ typedef void (^BRAWCompletionHandler)(void);
         //---------------------------------------------------------
         // Build cache of all the Lens Profile Names:
         //---------------------------------------------------------
-        lensProfilesLookup = [self newLensProfileIdentifiersFromDirectory:lensProfilesPath];
-        
+        self.lensProfilesLookup = [self newLensProfileIdentifiersFromDirectory:lensProfilesPath];
+
         //NSLog(@"[Gyroflow Toolbox Renderer] lensProfilesLookup: %@", lensProfilesLookup);
         
         //---------------------------------------------------------
         // Cache the API Manager:
         //---------------------------------------------------------
-        _apiManager = newApiManager;
-        
+        self.apiManager = newApiManager;
+
         //---------------------------------------------------------
         // Restore any previous global bookmarks:
         //---------------------------------------------------------
@@ -121,7 +123,6 @@ typedef void (^BRAWCompletionHandler)(void);
                 }
             }
         }
-        [userDefaults release];
     }
     return self;
 }
@@ -139,17 +140,6 @@ typedef void (^BRAWCompletionHandler)(void);
             [url stopAccessingSecurityScopedResource];
         }
     }
-
-    //---------------------------------------------------------
-    // Clean up cached error images:
-    //---------------------------------------------------------
-    for (id imgObj in _cachedErrorImages) {
-        CGImageRef img = (__bridge CGImageRef)imgObj;
-        if (img) CGImageRelease(img);
-    }
-    [_cachedErrorImages release];
-
-    [super dealloc];
 
     //NSLog(@"[Gyroflow Toolbox Renderer] Successfully deallocated!");
 }
@@ -232,96 +222,56 @@ typedef void (^BRAWCompletionHandler)(void);
 //
 // Provides an NSView to be associated with the given
 // parameter.
-//
-// NOTE: It seems we need to cache the NSView, otherwise it
-// gets deallocated prematurely:
 //---------------------------------------------------------
 - (NSView*)createViewForParameterID:(UInt32)parameterID
 {
     if (parameterID == kCB_ImportGyroflowProject) {
-        NSView* view = [[CustomButtonView alloc] initWithAPIManager:_apiManager
-                                                       parentPlugin:self
-                                                           buttonID:kCB_ImportGyroflowProject
-                                                        buttonTitle:@"Import Gyroflow Project"];
-        importGyroflowProjectView = view;
-        return view;
+        return [[CustomButtonView alloc] initWithParentPlugin:self
+                                                     buttonID:kCB_ImportGyroflowProject
+                                                  buttonTitle:@"Import Gyroflow Project"];
     } else if (parameterID == kCB_ImportMediaFile) {
-        NSView* view = [[CustomButtonView alloc] initWithAPIManager:_apiManager
-                                                       parentPlugin:self
-                                                           buttonID:kCB_ImportMediaFile
-                                                        buttonTitle:@"Import Media File"];
-        importMediaFileView = view;
-        return view;
+        return [[CustomButtonView alloc] initWithParentPlugin:self
+                                                     buttonID:kCB_ImportMediaFile
+                                                  buttonTitle:@"Import Media File"];
     } else if (parameterID == kCB_ReloadGyroflowProject) {
-        NSView* view = [[CustomButtonView alloc] initWithAPIManager:_apiManager
-                                                       parentPlugin:self
-                                                           buttonID:kCB_ReloadGyroflowProject
-                                                        buttonTitle:@"Reload Gyroflow Project"];
-        reloadGyroflowProjectView = view;
-        return view;
+        return [[CustomButtonView alloc] initWithParentPlugin:self
+                                                     buttonID:kCB_ReloadGyroflowProject
+                                                  buttonTitle:@"Reload Gyroflow Project"];
     } else if (parameterID == kCB_ExportGyroflowProject) {
-        NSView* view = [[CustomButtonView alloc] initWithAPIManager:_apiManager
-                                                       parentPlugin:self
-                                                           buttonID:kCB_ExportGyroflowProject
-                                                        buttonTitle:@"Export Gyroflow Project"];
-        exportGyroflowProjectView = view;
-        return view;
+        return [[CustomButtonView alloc] initWithParentPlugin:self
+                                                     buttonID:kCB_ExportGyroflowProject
+                                                  buttonTitle:@"Export Gyroflow Project"];
     } else if (parameterID == kCB_LaunchGyroflow) {
-        NSView* view = [[CustomButtonView alloc] initWithAPIManager:_apiManager
-                                                       parentPlugin:self
-                                                           buttonID:kCB_LaunchGyroflow
-                                                        buttonTitle:@"Launch Gyroflow"];
-        launchGyroflowView = view;
-        return view;
+        return [[CustomButtonView alloc] initWithParentPlugin:self
+                                                     buttonID:kCB_LaunchGyroflow
+                                                  buttonTitle:@"Launch Gyroflow"];
     } else if (parameterID == kCB_LoadLastGyroflowProject) {
-        NSView* view = [[CustomButtonView alloc] initWithAPIManager:_apiManager
-                                                       parentPlugin:self
-                                                           buttonID:kCB_LoadLastGyroflowProject
-                                                        buttonTitle:@"Import Last Gyroflow Project"];
-        loadLastGyroflowProjectView = view;
-        return view;
+        return [[CustomButtonView alloc] initWithParentPlugin:self
+                                                     buttonID:kCB_LoadLastGyroflowProject
+                                                  buttonTitle:@"Import Last Gyroflow Project"];
     } else if (parameterID == kCB_DropZone) {
-        NSView* view = [[CustomDropZoneView alloc] initWithAPIManager:_apiManager
-                                                         parentPlugin:self
-                                                             buttonID:kCB_DropZone
-                                                          buttonTitle:@"Import Dropped Clip"];
-        dropZoneView = view;
-        return view;
+        return [[CustomDropZoneView alloc] initWithParentPlugin:self
+                                                       buttonID:kCB_DropZone
+                                                    buttonTitle:@"Import Dropped Clip"];
     } else if (parameterID == kCB_RevealInFinder) {
-        NSView* view = [[CustomButtonView alloc] initWithAPIManager:_apiManager
-                                                       parentPlugin:self
-                                                           buttonID:kCB_RevealInFinder
-                                                        buttonTitle:@"Reveal in Finder"];
-        revealInFinderView = view;
-        return view;
+        return [[CustomButtonView alloc] initWithParentPlugin:self
+                                                     buttonID:kCB_RevealInFinder
+                                                  buttonTitle:@"Reveal in Finder"];
     } else if (parameterID == kCB_LoadPresetLensProfile) {
-        NSView* view = [[CustomButtonView alloc] initWithAPIManager:_apiManager
-                                                       parentPlugin:self
-                                                           buttonID:kCB_LoadPresetLensProfile
-                                                        buttonTitle:@"Load Preset/Lens Profile"];
-        loadPresetLensProfileView = view;
-        return view;
+        return [[CustomButtonView alloc] initWithParentPlugin:self
+                                                     buttonID:kCB_LoadPresetLensProfile
+                                                  buttonTitle:@"Load Preset/Lens Profile"];
     } else if (parameterID == kCB_Header) {
-        
         NSRect frameRect = NSMakeRect(0, 0, 200, 324); // x y w h
-        NSView* view = [[HeaderView alloc] initWithFrame:frameRect];
-        
-        headerView = view;
-        return view;
+        return  [[HeaderView alloc] initWithFrame:frameRect];
     } else if (parameterID == kCB_OpenUserGuide) {
-        NSView* view = [[CustomButtonView alloc] initWithAPIManager:_apiManager
-                                                       parentPlugin:self
-                                                           buttonID:kCB_OpenUserGuide
-                                                        buttonTitle:@"Open User Guide"];
-        openUserGuideView = view;
-        return view;
+        return [[CustomButtonView alloc] initWithParentPlugin:self
+                                                     buttonID:kCB_OpenUserGuide
+                                                  buttonTitle:@"Open User Guide"];
     } else if (parameterID == kCB_Settings) {
-        NSView* view = [[CustomButtonView alloc] initWithAPIManager:_apiManager
-                                                       parentPlugin:self
-                                                           buttonID:kCB_Settings
-                                                        buttonTitle:@"Settings"];
-        settingsView = view;
-        return view;
+        return [[CustomButtonView alloc] initWithParentPlugin:self
+                                                     buttonID:kCB_Settings
+                                                  buttonTitle:@"Settings"];
     } else {
         NSLog(@"[Gyroflow Toolbox Renderer] BUG - createViewForParameterID requested a parameterID that we haven't allowed for: %u", (unsigned int)parameterID);
         return nil;
@@ -344,7 +294,7 @@ typedef void (^BRAWCompletionHandler)(void);
     //---------------------------------------------------------
     // Setup Parameter Creation API:
     //---------------------------------------------------------
-    id<FxParameterCreationAPI_v5> paramAPI = [_apiManager apiForProtocol:@protocol(FxParameterCreationAPI_v5)];
+    id<FxParameterCreationAPI_v5> paramAPI = [self.apiManager apiForProtocol:@protocol(FxParameterCreationAPI_v5)];
     if (paramAPI == nil)
     {
         if (error != nil)
@@ -1239,12 +1189,13 @@ typedef void (^BRAWCompletionHandler)(void);
             quality:(FxQuality)qualityLevel
               error:(NSError**)error
 {
+
     BOOL succeeded = NO;
-    
+
     //---------------------------------------------------------
     // Load the timing API:
     //---------------------------------------------------------
-    id<FxTimingAPI_v4> timingAPI = [_apiManager apiForProtocol:@protocol(FxTimingAPI_v4)];
+    id<FxTimingAPI_v4> timingAPI = [self.apiManager apiForProtocol:@protocol(FxTimingAPI_v4)];
     if (timingAPI == nil) {
         //---------------------------------------------------------
         // Show error message:
@@ -1259,11 +1210,11 @@ typedef void (^BRAWCompletionHandler)(void);
         }
         return NO;
     }
-    
+
     //---------------------------------------------------------
     // Load the Parameter Retrieval API:
     //---------------------------------------------------------
-    id<FxParameterRetrievalAPI_v6> paramGetAPI = [_apiManager apiForProtocol:@protocol(FxParameterRetrievalAPI_v6)];
+    id<FxParameterRetrievalAPI_v6> paramGetAPI = [self.apiManager apiForProtocol:@protocol(FxParameterRetrievalAPI_v6)];
     if (paramGetAPI == nil) {
         //---------------------------------------------------------
         // Show error message:
@@ -1278,33 +1229,33 @@ typedef void (^BRAWCompletionHandler)(void);
         }
         return NO;
     }
-    
+
     //---------------------------------------------------------
     // Create a new Parameters "holder":
     //---------------------------------------------------------
-    GyroflowParameters *params = [[[GyroflowParameters alloc] init] autorelease];
-    
+    GyroflowParameters *params = [[GyroflowParameters alloc] init];
+
     //---------------------------------------------------------
     // Get the frame to render:
     //---------------------------------------------------------
     CMTime timelineFrameDuration = kCMTimeZero;
     timelineFrameDuration = CMTimeMake( [timingAPI timelineFpsDenominatorForEffect:self],
                                        (int)[timingAPI timelineFpsNumeratorForEffect:self] );
-    
+
     CMTime timelineTime = kCMTimeZero;
     [timingAPI timelineTime:&timelineTime fromInputTime:renderTime];
-    
+
     CMTime startTimeOfInputToFilter = kCMTimeZero;
     [timingAPI startTimeForEffect:&startTimeOfInputToFilter];
-    
+
     CMTime startTimeOfInputToFilterInTimelineTime = kCMTimeZero;
     [timingAPI timelineTime:&startTimeOfInputToFilterInTimelineTime fromInputTime:startTimeOfInputToFilter];
-    
+
     Float64 timelineTimeMinusStartTimeOfInputToFilterNumerator = (Float64)timelineTime.value * (Float64)startTimeOfInputToFilterInTimelineTime.timescale - (Float64)startTimeOfInputToFilterInTimelineTime.value * (Float64)timelineTime.timescale;
     Float64 timelineTimeMinusStartTimeOfInputToFilterDenominator = (Float64)timelineTime.timescale * (Float64)startTimeOfInputToFilterInTimelineTime.timescale;
-    
+
     Float64 frame = ( ((Float64)timelineTimeMinusStartTimeOfInputToFilterNumerator / (Float64)timelineTimeMinusStartTimeOfInputToFilterDenominator) / ((Float64)timelineFrameDuration.value / (Float64)timelineFrameDuration.timescale) );
-    
+
     //---------------------------------------------------------
     // Calculate the Timestamp:
     //---------------------------------------------------------
@@ -1312,8 +1263,8 @@ typedef void (^BRAWCompletionHandler)(void);
     Float64 timelineFpsDenominator  = [timingAPI timelineFpsDenominatorForEffect:self];
     Float64 frameRate               = timelineFpsNumerator / timelineFpsDenominator;
     Float64 timestamp               = (frame / frameRate) * 1000000.0;
-    params.timestamp                = [[[NSNumber alloc] initWithFloat:timestamp] autorelease];
-    
+    params.timestamp                = [[NSNumber alloc] initWithFloat:timestamp];
+
     /*
      NSLog(@"---------------------------------");
      NSLog(@"timelineFrameDuration: %.2f seconds", CMTimeGetSeconds(timelineFrameDuration));
@@ -1329,29 +1280,29 @@ typedef void (^BRAWCompletionHandler)(void);
      NSLog(@"timestamp: %f", timestamp);
      NSLog(@"---------------------------------");
      */
-    
+
     //---------------------------------------------------------
     // Unique Identifier:
     //---------------------------------------------------------
     NSString *uniqueIdentifier;
     [paramGetAPI getStringParameterValue:&uniqueIdentifier fromParameter:kCB_UniqueIdentifier];
     params.uniqueIdentifier = uniqueIdentifier;
-    
+
     //NSLog(@"[Gyroflow Toolbox Renderer] Unique Identifier in Plugin State: %@", uniqueIdentifier);
-    
+
     //---------------------------------------------------------
     // Gyroflow Path:
     //---------------------------------------------------------
     NSString *gyroflowPath;
     [paramGetAPI getStringParameterValue:&gyroflowPath fromParameter:kCB_GyroflowProjectPath];
     params.gyroflowPath = gyroflowPath;
-    
+
     //---------------------------------------------------------
     // Gyroflow Data:
     //---------------------------------------------------------
     NSString *gyroflowData;
     [paramGetAPI getStringParameterValue:&gyroflowData fromParameter:kCB_GyroflowProjectData];
-        
+
     //---------------------------------------------------------
     // If the Gyroflow Project data is base64 encoded, try
     // to decode it first, otherwise pass the original string:
@@ -1361,98 +1312,88 @@ typedef void (^BRAWCompletionHandler)(void);
         NSString *decodedGyroflowData = [[NSString alloc] initWithData:base64EncodedData encoding:NSUTF8StringEncoding];
         if (decodedGyroflowData != nil) {
             params.gyroflowData = decodedGyroflowData;
-            
-            //---------------------------------------------------------
-            // Release memory:
-            //---------------------------------------------------------
-            [decodedGyroflowData release];
         }
-        
-        //---------------------------------------------------------
-        // Release memory:
-        //---------------------------------------------------------
-        [base64EncodedData release];
     } else {
         params.gyroflowData = gyroflowData;
     }
-    
+
     //---------------------------------------------------------
     // FOV:
     //---------------------------------------------------------
     double fov;
     [paramGetAPI getFloatValue:&fov fromParameter:kCB_FOV atTime:renderTime];
     params.fov = [NSNumber numberWithDouble:fov];
-    
+
     //---------------------------------------------------------
     // Smoothness:
     //---------------------------------------------------------
     double smoothness;
     [paramGetAPI getFloatValue:&smoothness fromParameter:kCB_Smoothness atTime:renderTime];
     params.smoothness = [NSNumber numberWithDouble:smoothness];
-    
+
     //---------------------------------------------------------
     // Lens Correction:
     //---------------------------------------------------------
     double lensCorrection;
     [paramGetAPI getFloatValue:&lensCorrection fromParameter:kCB_LensCorrection atTime:renderTime];
     params.lensCorrection = [NSNumber numberWithDouble:lensCorrection];
-    
+
     //---------------------------------------------------------
     // Horizon Lock:
     //---------------------------------------------------------
     double horizonLock;
     [paramGetAPI getFloatValue:&horizonLock fromParameter:kCB_HorizonLock atTime:renderTime];
     params.horizonLock = [NSNumber numberWithDouble:horizonLock];
-    
+
     //---------------------------------------------------------
     // Horizon Roll:
     //---------------------------------------------------------
     double horizonRoll;
     [paramGetAPI getFloatValue:&horizonRoll fromParameter:kCB_HorizonRoll atTime:renderTime];
     params.horizonRoll = [NSNumber numberWithDouble:horizonRoll];
-    
+
     //---------------------------------------------------------
     // Position Offset X:
     //---------------------------------------------------------
     double positionOffsetX;
     [paramGetAPI getFloatValue:&positionOffsetX fromParameter:kCB_PositionOffsetX atTime:renderTime];
     params.positionOffsetX = [NSNumber numberWithDouble:positionOffsetX];
-    
+
     //---------------------------------------------------------
     // Position Offset Y:
     //---------------------------------------------------------
     double positionOffsetY;
     [paramGetAPI getFloatValue:&positionOffsetY fromParameter:kCB_PositionOffsetY atTime:renderTime];
     params.positionOffsetY = [NSNumber numberWithDouble:positionOffsetY];
-    
+
     //---------------------------------------------------------
     // Input Rotation:
     //---------------------------------------------------------
     double inputRotation;
     [paramGetAPI getFloatValue:&inputRotation fromParameter:kCB_InputRotation atTime:renderTime];
     params.inputRotation = [NSNumber numberWithDouble:inputRotation];
-    
+
     //---------------------------------------------------------
     // Video Rotation:
     //---------------------------------------------------------
     double videoRotation;
     [paramGetAPI getFloatValue:&videoRotation fromParameter:kCB_VideoRotation atTime:renderTime];
     params.videoRotation = [NSNumber numberWithDouble:videoRotation];
-    
+
     //---------------------------------------------------------
     // FOV Overview:
     //---------------------------------------------------------
     BOOL fovOverview;
     [paramGetAPI getBoolValue:&fovOverview fromParameter:kCB_FieldOfViewOverview atTime:renderTime];
     params.fovOverview = [NSNumber numberWithBool:fovOverview];
-    
+
     //---------------------------------------------------------
     // Disable Gyroflow Stretch:
     //---------------------------------------------------------
     BOOL disableGyroflowStretch;
     [paramGetAPI getBoolValue:&disableGyroflowStretch fromParameter:kCB_DisableGyroflowStretch atTime:renderTime];
     params.disableGyroflowStretch = [NSNumber numberWithBool:disableGyroflowStretch];
-    
+
     //---------------------------------------------------------
     // Write the parameters to the pluginState as `NSData`:
     //---------------------------------------------------------
@@ -1471,9 +1412,9 @@ typedef void (^BRAWCompletionHandler)(void);
         }
         return NO;
     }
-    
+
     *pluginState = newPluginState;
-    
+
     if (*pluginState != nil) {
         succeeded = YES;
     } else {
@@ -1487,7 +1428,7 @@ typedef void (^BRAWCompletionHandler)(void);
                                  userInfo:@{ NSLocalizedDescriptionKey : errorMessage }];
         succeeded = NO;
     }
-    
+
     return succeeded;
 }
 
@@ -1591,13 +1532,14 @@ typedef void (^BRAWCompletionHandler)(void);
     // Flip image vertically to correct coordinate system:
     // ---------------------------------------------------------
     CGSize imgSize = CGSizeMake(CGImageGetWidth(cgImage), CGImageGetHeight(cgImage));
+    CGBitmapInfo info = kCGBitmapByteOrder32Host | (CGBitmapInfo)kCGImageAlphaPremultipliedLast;
     CGContextRef flipCtx = CGBitmapContextCreate(NULL,
                                                  imgSize.width,
                                                  imgSize.height,
                                                  8,
                                                  0,
                                                  CGImageGetColorSpace(cgImage),
-                                                 kCGImageAlphaPremultipliedLast);
+                                                 info);
     CGContextTranslateCTM(flipCtx, 0, imgSize.height);
     CGContextScaleCTM(flipCtx, 1.0, -1.0);
     CGContextDrawImage(flipCtx, CGRectMake(0, 0, imgSize.width, imgSize.height), cgImage);
@@ -1811,7 +1753,13 @@ typedef void (^BRAWCompletionHandler)(void);
     // Setup the Metal Device Cache:
     //---------------------------------------------------------
     MetalDeviceCache* deviceCache = [MetalDeviceCache deviceCache];
-    
+
+    //---------------------------------------------------------
+    // Use the Destination Metal Device for Gyroflow
+    // processing:
+    //---------------------------------------------------------
+    id<MTLDevice> metalDevice = [deviceCache deviceWithRegistryID:destinationImage.deviceRegistryID];
+
     //---------------------------------------------------------
     // Setup our input texture:
     //
@@ -1819,8 +1767,8 @@ typedef void (^BRAWCompletionHandler)(void);
     // rendering on the passed-in device. The returned texture
     // is autoreleased
     //---------------------------------------------------------
-    id<MTLTexture> inputTexture = [sourceImages[0] metalTextureForDevice:[deviceCache deviceWithRegistryID:sourceImages[0].deviceRegistryID]];
-    
+    id<MTLTexture> inputTexture = [sourceImages[0] metalTextureForDevice:metalDevice];
+
     //---------------------------------------------------------
     // Setup our output texture:
     //
@@ -1828,8 +1776,8 @@ typedef void (^BRAWCompletionHandler)(void);
     // rendering on the passed-in device. The returned texture
     // is autoreleased
     //---------------------------------------------------------
-    id<MTLTexture> outputTexture = [destinationImage metalTextureForDevice:[deviceCache deviceWithRegistryID:destinationImage.deviceRegistryID]];
-    
+    id<MTLTexture> outputTexture = [destinationImage metalTextureForDevice:metalDevice];
+
     //---------------------------------------------------------
     // Determine the Pixel Format:
     //---------------------------------------------------------
@@ -1883,37 +1831,35 @@ typedef void (^BRAWCompletionHandler)(void);
     //---------------------------------------------------------
     // Trigger the Gyroflow Rust Function:
     //---------------------------------------------------------
-    const char* result = processFrame(
-                                      xUniqueIdentifier,        // const char*
-                                      xWidth,                   // uint32_t
-                                      xHeight,                  // uint32_t
-                                      xPixelFormat,             // const char*
-                                      numberOfBytes,            // int
-                                      xPath,                    // const char*
-                                      xData,                    // const char*
-                                      xTimestamp,               // int64_t
-                                      xFOV,                     // double
-                                      xSmoothness,              // double
-                                      xLensCorrection,          // double
-                                      xHorizonLock,             // double
-                                      xHorizonRoll,             // double
-                                      xPositionOffsetX,         // double
-                                      xPositionOffsetY,         // double
-                                      xInputRotation,           // double
-                                      xVideoRotation,           // double
-                                      xFOVOverview,             // uint8_t
-                                      xDisableGyroflowStretch,  // uint8_t
-                                      inputTexture,             // MTLTexture
-                                      outputTexture,            // MTLTexture
-                                      NULL                      // MTLCommandQueue
-                                      );
-        
-    NSString *resultString = [NSString stringWithUTF8String: result];
-    
+    int ok = processFrame(
+                          xUniqueIdentifier,                    // const char*
+                          xWidth,                               // uint32_t
+                          xHeight,                              // uint32_t
+                          xPixelFormat,                         // const char*
+                          numberOfBytes,                        // int
+                          xPath,                                // const char*
+                          xData,                                // const char*
+                          xTimestamp,                           // int64_t
+                          xFOV,                                 // double
+                          xSmoothness,                          // double
+                          xLensCorrection,                      // double
+                          xHorizonLock,                         // double
+                          xHorizonRoll,                         // double
+                          xPositionOffsetX,                     // double
+                          xPositionOffsetY,                     // double
+                          xInputRotation,                       // double
+                          xVideoRotation,                       // double
+                          xFOVOverview,                         // uint8_t
+                          xDisableGyroflowStretch,              // uint8_t
+                          (__bridge void *)inputTexture,        // MTLTexture
+                          (__bridge void *)outputTexture,       // MTLTexture
+                          nil                                   // MTLCommandQueue
+                          );
+
     //---------------------------------------------------------
     // Gyroflow Core had an error, so abort:
     //---------------------------------------------------------
-    if (![resultString isEqualToString:@"DONE"]) {
+    if (!ok) {
         //---------------------------------------------------------
         // Show Error Message:
         //---------------------------------------------------------
@@ -1949,12 +1895,12 @@ typedef void (^BRAWCompletionHandler)(void);
         //---------------------------------------------------------
         // Create the menu:
         //---------------------------------------------------------
-        NSMenu *settingsMenu = [[[NSMenu alloc] initWithTitle:@"Settings"] autorelease];
+        NSMenu *settingsMenu = [[NSMenu alloc] initWithTitle:@"Settings"];
         
         //---------------------------------------------------------
         // Create the "Show Alerts" sub-menu:
         //---------------------------------------------------------
-        NSMenu *disableAlertSubMenu = [[[NSMenu alloc] initWithTitle:@"Disable Alerts"] autorelease];
+        NSMenu *disableAlertSubMenu = [[NSMenu alloc] initWithTitle:@"Disable Alerts"];
         
         //---------------------------------------------------------
         // "Show Alerts" Sub Menu Items:
@@ -1963,7 +1909,7 @@ typedef void (^BRAWCompletionHandler)(void);
             //---------------------------------------------------------
             // Load Preset/Lens Profile Success:
             //---------------------------------------------------------
-            NSMenuItem *suppressLoadPresetLensProfileSuccess   = [[[NSMenuItem alloc] initWithTitle:@"Load Preset/Lens Profile Success" action:@selector(toggleMenuItem:) keyEquivalent:@""] autorelease];
+            NSMenuItem *suppressLoadPresetLensProfileSuccess   = [[NSMenuItem alloc] initWithTitle:@"Load Preset/Lens Profile Success" action:@selector(toggleMenuItem:) keyEquivalent:@""];
             suppressLoadPresetLensProfileSuccess.identifier    = @"suppressLoadPresetLensProfileSuccess";
             suppressLoadPresetLensProfileSuccess.target        = self;
             suppressLoadPresetLensProfileSuccess.enabled       = YES;
@@ -1973,7 +1919,7 @@ typedef void (^BRAWCompletionHandler)(void);
             //---------------------------------------------------------
             // No Lens Profile Detected:
             //---------------------------------------------------------
-            NSMenuItem *suppressNoLensProfileDetected   = [[[NSMenuItem alloc] initWithTitle:@"No Lens Profile Detected" action:@selector(toggleMenuItem:) keyEquivalent:@""] autorelease];
+            NSMenuItem *suppressNoLensProfileDetected   = [[NSMenuItem alloc] initWithTitle:@"No Lens Profile Detected" action:@selector(toggleMenuItem:) keyEquivalent:@""];
             suppressNoLensProfileDetected.identifier    = @"suppressNoLensProfileDetected";
             suppressNoLensProfileDetected.target        = self;
             suppressNoLensProfileDetected.enabled       = YES;
@@ -1983,7 +1929,7 @@ typedef void (^BRAWCompletionHandler)(void);
             //---------------------------------------------------------
             // Request Sandbox Access:
             //---------------------------------------------------------
-            NSMenuItem *suppressRequestSandboxAccessAlert   = [[[NSMenuItem alloc] initWithTitle:@"Request Sandbox Access" action:@selector(toggleMenuItem:) keyEquivalent:@""] autorelease];
+            NSMenuItem *suppressRequestSandboxAccessAlert   = [[NSMenuItem alloc] initWithTitle:@"Request Sandbox Access" action:@selector(toggleMenuItem:) keyEquivalent:@""];
             suppressRequestSandboxAccessAlert.identifier    = @"suppressRequestSandboxAccessAlert";
             suppressRequestSandboxAccessAlert.target        = self;
             suppressRequestSandboxAccessAlert.enabled       = YES;
@@ -1993,7 +1939,7 @@ typedef void (^BRAWCompletionHandler)(void);
             //---------------------------------------------------------
             // Successfully Imported:
             //---------------------------------------------------------
-            NSMenuItem *suppressSuccessfullyImported   = [[[NSMenuItem alloc] initWithTitle:@"Successfully Imported" action:@selector(toggleMenuItem:) keyEquivalent:@""] autorelease];
+            NSMenuItem *suppressSuccessfullyImported   = [[NSMenuItem alloc] initWithTitle:@"Successfully Imported" action:@selector(toggleMenuItem:) keyEquivalent:@""];
             suppressSuccessfullyImported.identifier    = @"suppressSuccessfullyImported";
             suppressSuccessfullyImported.target        = self;
             suppressSuccessfullyImported.enabled       = YES;
@@ -2003,7 +1949,7 @@ typedef void (^BRAWCompletionHandler)(void);
             //---------------------------------------------------------
             // Successfully Reloaded:
             //---------------------------------------------------------
-            NSMenuItem *suppressSuccessfullyReloaded   = [[[NSMenuItem alloc] initWithTitle:@"Successfully Reloaded" action:@selector(toggleMenuItem:) keyEquivalent:@""] autorelease];
+            NSMenuItem *suppressSuccessfullyReloaded   = [[NSMenuItem alloc] initWithTitle:@"Successfully Reloaded" action:@selector(toggleMenuItem:) keyEquivalent:@""];
             suppressSuccessfullyReloaded.identifier    = @"suppressSuccessfullyReloaded";
             suppressSuccessfullyReloaded.target        = self;
             suppressSuccessfullyReloaded.enabled       = YES;
@@ -2014,7 +1960,7 @@ typedef void (^BRAWCompletionHandler)(void);
         //---------------------------------------------------------
         // Add "Show Alerts" Sub Menu:
         //---------------------------------------------------------
-        NSMenuItem *disableAlertSubMenuItem = [[[NSMenuItem alloc] initWithTitle:@"Disabled Alerts" action:nil keyEquivalent:@""] autorelease];
+        NSMenuItem *disableAlertSubMenuItem = [[NSMenuItem alloc] initWithTitle:@"Disabled Alerts" action:nil keyEquivalent:@""];
         [disableAlertSubMenuItem setSubmenu:disableAlertSubMenu];
         [settingsMenu addItem:disableAlertSubMenuItem];
         
@@ -2053,7 +1999,7 @@ typedef void (^BRAWCompletionHandler)(void);
         //---------------------------------------------------------
         // Show Log File in Finder:
         //---------------------------------------------------------
-        NSMenuItem *showLogFileInFinder    = [[[NSMenuItem alloc] initWithTitle:@"Show Log Files in Finder" action:@selector(showLogFileInFinder:) keyEquivalent:@""] autorelease];
+        NSMenuItem *showLogFileInFinder    = [[NSMenuItem alloc] initWithTitle:@"Show Log Files in Finder" action:@selector(showLogFileInFinder:) keyEquivalent:@""];
         showLogFileInFinder.target         = self;
         showLogFileInFinder.enabled        = YES;
         [settingsMenu addItem:showLogFileInFinder];
@@ -2061,7 +2007,7 @@ typedef void (^BRAWCompletionHandler)(void);
         //---------------------------------------------------------
         // Reset Settings:
         //---------------------------------------------------------
-        NSMenuItem *resetSettings       = [[[NSMenuItem alloc] initWithTitle:@"Reset All Settings" action:@selector(resetSettings:) keyEquivalent:@""] autorelease];
+        NSMenuItem *resetSettings       = [[NSMenuItem alloc] initWithTitle:@"Reset All Settings" action:@selector(resetSettings:) keyEquivalent:@""];
         resetSettings.target            = self;
         resetSettings.enabled           = YES;
         [settingsMenu addItem:resetSettings];
@@ -2186,9 +2132,6 @@ typedef void (^BRAWCompletionHandler)(void);
         
         [userDefaults setObject:newGlobalBookmarks forKey:@"globalBookmarks"];
         
-        [userDefaults release];
-        [newGlobalBookmarks release];
-        
         NSLog(@"[Gyroflow Toolbox Renderer] Created new security-scoped bookmark: %@", [url path]);
     }
 }
@@ -2201,8 +2144,6 @@ typedef void (^BRAWCompletionHandler)(void);
     NSUserDefaults *userDefaults = [[NSUserDefaults alloc] init];
     NSArray *emptyArray = [NSArray new];
     [userDefaults setObject:emptyArray forKey:@"globalBookmarks"];
-    [emptyArray release];
-    [userDefaults release];
     
     [self showAlertWithMessage:@"Sandbox Access Reset" info:@"All previously granted sandbox access has been revoked.\n\nYou will need to restart Final Cut Pro for this to take affect."];
 }
@@ -2248,7 +2189,7 @@ typedef void (^BRAWCompletionHandler)(void);
     //---------------------------------------------------------
     // Load the Custom Parameter Action API:
     //---------------------------------------------------------
-    id<FxCustomParameterActionAPI_v4> actionAPI = [_apiManager apiForProtocol:@protocol(FxCustomParameterActionAPI_v4)];
+    id<FxCustomParameterActionAPI_v4> actionAPI = [self.apiManager apiForProtocol:@protocol(FxCustomParameterActionAPI_v4)];
     if (actionAPI == nil) {
         //---------------------------------------------------------
         // Show Error Message:
@@ -2267,7 +2208,7 @@ typedef void (^BRAWCompletionHandler)(void);
     //---------------------------------------------------------
     // Load the Parameter Retrieval API:
     //---------------------------------------------------------
-    id<FxParameterRetrievalAPI_v6> paramGetAPI = [_apiManager apiForProtocol:@protocol(FxParameterRetrievalAPI_v6)];
+    id<FxParameterRetrievalAPI_v6> paramGetAPI = [self.apiManager apiForProtocol:@protocol(FxParameterRetrievalAPI_v6)];
     if (paramGetAPI == nil) {
         //---------------------------------------------------------
         // Stop Action API:
@@ -2309,17 +2250,7 @@ typedef void (^BRAWCompletionHandler)(void);
         NSString *decodedGyroflowData = [[NSString alloc] initWithData:base64EncodedData encoding:NSUTF8StringEncoding];
         if (decodedGyroflowData != nil) {
             gyroflowProjectData = [NSString stringWithString:decodedGyroflowData];
-            
-            //---------------------------------------------------------
-            // Release memory:
-            //---------------------------------------------------------
-            [decodedGyroflowData release];
         }
-        
-        //---------------------------------------------------------
-        // Release memory:
-        //---------------------------------------------------------
-        [base64EncodedData release];
     }
     
     //---------------------------------------------------------
@@ -2411,7 +2342,7 @@ typedef void (^BRAWCompletionHandler)(void);
     //---------------------------------------------------------
     // Load the Custom Parameter Action API:
     //---------------------------------------------------------
-    id<FxCustomParameterActionAPI_v4> actionAPI = [_apiManager apiForProtocol:@protocol(FxCustomParameterActionAPI_v4)];
+    id<FxCustomParameterActionAPI_v4> actionAPI = [self.apiManager apiForProtocol:@protocol(FxCustomParameterActionAPI_v4)];
     if (actionAPI == nil) {
         //---------------------------------------------------------
         // Show Error Message:
@@ -2430,7 +2361,7 @@ typedef void (^BRAWCompletionHandler)(void);
     //---------------------------------------------------------
     // Load the Parameter Retrieval API:
     //---------------------------------------------------------
-    id<FxParameterRetrievalAPI_v6> paramGetAPI = [_apiManager apiForProtocol:@protocol(FxParameterRetrievalAPI_v6)];
+    id<FxParameterRetrievalAPI_v6> paramGetAPI = [self.apiManager apiForProtocol:@protocol(FxParameterRetrievalAPI_v6)];
     if (paramGetAPI == nil) {
         //---------------------------------------------------------
         // Stop Action API:
@@ -2449,7 +2380,7 @@ typedef void (^BRAWCompletionHandler)(void);
     //---------------------------------------------------------
     // Load the Parameter Set API:
     //---------------------------------------------------------
-    id<FxParameterSettingAPI_v5> paramSetAPI = [_apiManager apiForProtocol:@protocol(FxParameterSettingAPI_v5)];
+    id<FxParameterSettingAPI_v5> paramSetAPI = [self.apiManager apiForProtocol:@protocol(FxParameterSettingAPI_v5)];
     if (paramSetAPI == nil)
     {
         //---------------------------------------------------------
@@ -2481,17 +2412,7 @@ typedef void (^BRAWCompletionHandler)(void);
         NSString *decodedGyroflowData = [[NSString alloc] initWithData:base64EncodedData encoding:NSUTF8StringEncoding];
         if (decodedGyroflowData != nil) {
             gyroflowProjectData = [NSString stringWithString:decodedGyroflowData];
-            
-            //---------------------------------------------------------
-            // Release memory:
-            //---------------------------------------------------------
-            [decodedGyroflowData release];
         }
-        
-        //---------------------------------------------------------
-        // Release memory:
-        //---------------------------------------------------------
-        [base64EncodedData release];
     }
     
     //NSLog(@"[Gyroflow Toolbox Renderer] gyroflowProjectData: %@", gyroflowProjectData);
@@ -2517,7 +2438,8 @@ typedef void (^BRAWCompletionHandler)(void);
     NSString *loadedLensIdentifierInGyroflowProjectString = nil;
     const char* loadedLensIdentifierInGyroflowProject = getLensIdentifier([gyroflowProjectData UTF8String]);
     loadedLensIdentifierInGyroflowProjectString = [NSString stringWithUTF8String:loadedLensIdentifierInGyroflowProject];
-    
+    if (loadedLensIdentifierInGyroflowProject) freeCString((char *)loadedLensIdentifierInGyroflowProject);
+
     //---------------------------------------------------------
     // Get the Lens Profiles path:
     //---------------------------------------------------------
@@ -2532,7 +2454,7 @@ typedef void (^BRAWCompletionHandler)(void);
         
         //NSLog(@"[Gyroflow Toolbox Renderer] Try to match the Lens Identifier with a JSON file");
               
-        NSString *path = lensProfilesLookup[loadedLensIdentifierInGyroflowProjectString];
+        NSString *path = self.lensProfilesLookup[loadedLensIdentifierInGyroflowProjectString];
         //NSLog(@"[Gyroflow Toolbox Renderer] lensProfilesLookup path: %@", path);
         
         if (path != nil) {
@@ -2612,6 +2534,7 @@ typedef void (^BRAWCompletionHandler)(void);
                                                  [filePath UTF8String]
                                                  );
         loadResultString = [NSString stringWithUTF8String: loadResult];
+        if (loadResult) freeCString((char *)loadResult);
         isJSON = YES;
     } else {
         //---------------------------------------------------------
@@ -2622,6 +2545,7 @@ typedef void (^BRAWCompletionHandler)(void);
                                             [filePath UTF8String]
                                             );
         loadResultString = [NSString stringWithUTF8String: loadResult];
+        if (loadResult) freeCString((char *)loadResult);
     }
     
     //---------------------------------------------------------
@@ -2680,21 +2604,16 @@ typedef void (^BRAWCompletionHandler)(void);
         
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     if (![defaults boolForKey:@"suppressLoadPresetLensProfileSuccess"]) {
-        NSAlert *alert                  = [[[NSAlert alloc] init] autorelease];
+        NSAlert *alert                  = [[NSAlert alloc] init];
         alert.icon                      = [NSImage imageNamed:@"GyroflowToolbox"];
         alert.alertStyle                = NSAlertStyleInformational;
         alert.messageText               = @"Successfully Imported!";
         alert.informativeText           = message;
         alert.showsSuppressionButton    = YES;
-        [alert beginSheetModalForWindow:loadLastGyroflowProjectView.window completionHandler:^(NSModalResponse result) {
+        [alert beginSheetModalForWindow:NSApp.windows.firstObject completionHandler:^(NSModalResponse result) {
             if ([alert suppressionButton].state == NSControlStateValueOn) {
                 [[NSUserDefaults standardUserDefaults] setBool:YES forKey:@"suppressLoadPresetLensProfileSuccess"];
             }
-            
-            //---------------------------------------------------------
-            // Close the alert:
-            //---------------------------------------------------------
-            [alert.window orderOut:nil];
         }];
     }
     
@@ -2711,7 +2630,7 @@ typedef void (^BRAWCompletionHandler)(void);
     //---------------------------------------------------------
     // Load the Custom Parameter Action API:
     //---------------------------------------------------------
-    id<FxCustomParameterActionAPI_v4> actionAPI = [_apiManager apiForProtocol:@protocol(FxCustomParameterActionAPI_v4)];
+    id<FxCustomParameterActionAPI_v4> actionAPI = [self.apiManager apiForProtocol:@protocol(FxCustomParameterActionAPI_v4)];
     if (actionAPI == nil) {
         //---------------------------------------------------------
         // Show Error Message:
@@ -2730,7 +2649,7 @@ typedef void (^BRAWCompletionHandler)(void);
     //---------------------------------------------------------
     // Load the Parameter Retrieval API:
     //---------------------------------------------------------
-    id<FxParameterRetrievalAPI_v6> paramGetAPI = [_apiManager apiForProtocol:@protocol(FxParameterRetrievalAPI_v6)];
+    id<FxParameterRetrievalAPI_v6> paramGetAPI = [self.apiManager apiForProtocol:@protocol(FxParameterRetrievalAPI_v6)];
     if (paramGetAPI == nil) {
         //---------------------------------------------------------
         // Stop Action API:
@@ -2780,7 +2699,7 @@ typedef void (^BRAWCompletionHandler)(void);
     //---------------------------------------------------------
     // Load the Custom Parameter Action API:
     //---------------------------------------------------------
-    id<FxCustomParameterActionAPI_v4> actionAPI = [_apiManager apiForProtocol:@protocol(FxCustomParameterActionAPI_v4)];
+    id<FxCustomParameterActionAPI_v4> actionAPI = [self.apiManager apiForProtocol:@protocol(FxCustomParameterActionAPI_v4)];
     if (actionAPI == nil) {
         //---------------------------------------------------------
         // Show Error Message:
@@ -2799,7 +2718,7 @@ typedef void (^BRAWCompletionHandler)(void);
     //---------------------------------------------------------
     // Load the Parameter Retrieval API:
     //---------------------------------------------------------
-    id<FxParameterRetrievalAPI_v6> paramGetAPI = [_apiManager apiForProtocol:@protocol(FxParameterRetrievalAPI_v6)];
+    id<FxParameterRetrievalAPI_v6> paramGetAPI = [self.apiManager apiForProtocol:@protocol(FxParameterRetrievalAPI_v6)];
     if (paramGetAPI == nil) {
         //---------------------------------------------------------
         // Stop Action API:
@@ -2884,8 +2803,8 @@ typedef void (^BRAWCompletionHandler)(void);
         //---------------------------------------------------------
         // Decode the Base64 bookmark data:
         //---------------------------------------------------------
-        NSData *decodedBookmark = [[[NSData alloc] initWithBase64EncodedString:encodedBookmark
-                                                                       options:0] autorelease];
+        NSData *decodedBookmark = [[NSData alloc] initWithBase64EncodedString:encodedBookmark
+                                                                      options:0];
         
         //---------------------------------------------------------
         // Resolve the decoded bookmark data into a
@@ -2991,7 +2910,7 @@ typedef void (^BRAWCompletionHandler)(void);
     //---------------------------------------------------------
     // Load the Custom Parameter Action API:
     //---------------------------------------------------------
-    id<FxCustomParameterActionAPI_v4> actionAPI = [_apiManager apiForProtocol:@protocol(FxCustomParameterActionAPI_v4)];
+    id<FxCustomParameterActionAPI_v4> actionAPI = [self.apiManager apiForProtocol:@protocol(FxCustomParameterActionAPI_v4)];
     if (actionAPI == nil) {
         //---------------------------------------------------------
         // Show error message:
@@ -3010,7 +2929,7 @@ typedef void (^BRAWCompletionHandler)(void);
     //---------------------------------------------------------
     // Load the Parameter Retrieval API:
     //---------------------------------------------------------
-    id<FxParameterRetrievalAPI_v6> paramGetAPI = [_apiManager apiForProtocol:@protocol(FxParameterRetrievalAPI_v6)];
+    id<FxParameterRetrievalAPI_v6> paramGetAPI = [self.apiManager apiForProtocol:@protocol(FxParameterRetrievalAPI_v6)];
     if (paramGetAPI == nil) {
         //---------------------------------------------------------
         // Show error message:
@@ -3260,9 +3179,9 @@ typedef void (^BRAWCompletionHandler)(void);
             //---------------------------------------------------------
             // Decode the Base64 bookmark data:
             //---------------------------------------------------------
-            NSData *decodedBookmark = [[[NSData alloc] initWithBase64EncodedString:mediaBookmarkDataString
-                                                                           options:0] autorelease];
-            
+            NSData *decodedBookmark = [[NSData alloc] initWithBase64EncodedString:mediaBookmarkDataString
+                                                                          options:0];
+
             //---------------------------------------------------------
             // Resolve the decoded bookmark data into a
             // security-scoped URL:
@@ -3295,6 +3214,8 @@ typedef void (^BRAWCompletionHandler)(void);
         //---------------------------------------------------------
         const char* hasData = doesGyroflowProjectContainStabilisationData([selectedGyroflowProjectData UTF8String]);
         NSString *hasDataResult = [NSString stringWithUTF8String: hasData];
+        if (hasData) freeCString((char *)hasData);
+
         //NSLog(@"[Gyroflow Toolbox Renderer] doesGyroflowProjectContainStabilisationData: %@", hasDataResult);
         if (hasDataResult == nil || ![hasDataResult isEqualToString:@"YES"]) {
             NSString *errorMessage = @"The Gyroflow file you imported doesn't seem to contain any gyro data.\n\nPlease try exporting from Gyroflow again using the 'Export project file (including gyro data)' option.";
@@ -3319,7 +3240,7 @@ typedef void (^BRAWCompletionHandler)(void);
         //---------------------------------------------------------
         // Load the Parameter Set API:
         //---------------------------------------------------------
-        id<FxParameterSettingAPI_v5> paramSetAPI = [_apiManager apiForProtocol:@protocol(FxParameterSettingAPI_v5)];
+        id<FxParameterSettingAPI_v5> paramSetAPI = [self.apiManager apiForProtocol:@protocol(FxParameterSettingAPI_v5)];
         if (paramSetAPI == nil)
         {
             NSString *errorMessage = @"Unable to retrieve 'FxParameterSettingAPI_v5'.\n\nThis shouldn't happen, so it's probably a bug.";
@@ -3382,8 +3303,8 @@ typedef void (^BRAWCompletionHandler)(void);
     //---------------------------------------------------------
     // Decode the Base64 bookmark data:
     //---------------------------------------------------------
-    NSData *decodedBookmark = [[[NSData alloc] initWithBase64EncodedString:encodedBookmark
-                                                                   options:0] autorelease];
+    NSData *decodedBookmark = [[NSData alloc] initWithBase64EncodedString:encodedBookmark
+                                                                  options:0];
     
     //---------------------------------------------------------
     // Resolve the decoded bookmark data into a
@@ -3420,7 +3341,7 @@ typedef void (^BRAWCompletionHandler)(void);
     //---------------------------------------------------------
     // Load the Parameter Set API:
     //---------------------------------------------------------
-    id<FxParameterSettingAPI_v5> paramSetAPI = [_apiManager apiForProtocol:@protocol(FxParameterSettingAPI_v5)];
+    id<FxParameterSettingAPI_v5> paramSetAPI = [self.apiManager apiForProtocol:@protocol(FxParameterSettingAPI_v5)];
     if (paramSetAPI == nil) {
         //---------------------------------------------------------
         // Show an error message:
@@ -3500,21 +3421,17 @@ typedef void (^BRAWCompletionHandler)(void);
 - (void)showSuccessfullyReloadedAlert {
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     if (![defaults boolForKey:@"suppressSuccessfullyReloaded"]) {
-        NSAlert *alert                  = [[[NSAlert alloc] init] autorelease];
+        NSAlert *alert                  = [[NSAlert alloc] init];
         alert.icon                      = [NSImage imageNamed:@"GyroflowToolbox"];
         alert.alertStyle                = NSAlertStyleInformational;
         alert.messageText               = @"Successfully Reloaded!";
         alert.informativeText           = @"The Gyroflow Project has been successfully reloaded from disk.";
         alert.showsSuppressionButton    = YES;
-        [alert beginSheetModalForWindow:loadLastGyroflowProjectView.window completionHandler:^(NSModalResponse result) {
+
+        [alert beginSheetModalForWindow:NSApp.windows.firstObject completionHandler:^(NSModalResponse result) {
             if ([alert suppressionButton].state == NSControlStateValueOn) {
                 [[NSUserDefaults standardUserDefaults] setBool:YES forKey:@"suppressSuccessfullyReloaded"];
             }
-            
-            //---------------------------------------------------------
-            // Close the alert:
-            //---------------------------------------------------------
-            [alert.window orderOut:nil];
         }];
     }
 }
@@ -3616,7 +3533,7 @@ typedef void (^BRAWCompletionHandler)(void);
     NSURL *url = nil;
     
     NSError *error;
-    NSXMLDocument *xmlDoc = [[[NSXMLDocument alloc] initWithXMLString:fcpxmlString options:0 error:&error] autorelease];
+    NSXMLDocument *xmlDoc = [[NSXMLDocument alloc] initWithXMLString:fcpxmlString options:0 error:&error];
     
     //---------------------------------------------------------
     // Abort if there's an error processing the XML document:
@@ -3635,7 +3552,7 @@ typedef void (^BRAWCompletionHandler)(void);
         
         //NSLog(@"[Gyroflow Toolbox Renderer] It's a BRAW clip!");
         
-        BRAWToolboxXMLReader *reader = [[[BRAWToolboxXMLReader alloc] init] autorelease];
+        BRAWToolboxXMLReader *reader = [[BRAWToolboxXMLReader alloc] init];
         NSDictionary *result = [reader readXML:fcpxmlString];
         
         if (![result isKindOfClass:[NSDictionary class]]) {
@@ -3716,19 +3633,13 @@ typedef void (^BRAWCompletionHandler)(void);
     //---------------------------------------------------------
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     if (![defaults boolForKey:@"suppressRequestSandboxAccessAlert"]) {
-        NSAlert *alert                  = [[[NSAlert alloc] init] autorelease];
+        NSAlert *alert                  = [[NSAlert alloc] init];
         alert.icon                      = [NSImage imageNamed:@"GyroflowToolbox"];
         alert.alertStyle                = NSAlertStyleInformational;
         alert.messageText               = @"Permission Required";
         alert.informativeText           = @"Gyroflow Toolbox requires explicit permission to access your Gyroflow Preferences, so that it can determine the last opened project.\n\nPlease click 'Grant Access' on the next Open Folder window to continue.";
         alert.showsSuppressionButton    = YES;
-        [alert beginSheetModalForWindow:loadLastGyroflowProjectView.window completionHandler:^(NSModalResponse result) {
-            
-            //---------------------------------------------------------
-            // Close the alert:
-            //---------------------------------------------------------
-            [alert.window orderOut:nil];
-            
+        [alert beginSheetModalForWindow:NSApp.windows.firstObject completionHandler:^(NSModalResponse result) {
             if ([alert suppressionButton].state == NSControlStateValueOn) {
                 [[NSUserDefaults standardUserDefaults] setBool:YES forKey:@"suppressRequestSandboxAccessAlert"];
             }
@@ -3759,7 +3670,7 @@ typedef void (^BRAWCompletionHandler)(void);
     [panel setPrompt:@"Grant Access"];
     [panel setMessage:@"Please click 'Grant Access' to allow access to the Gyroflow Preferences file:"];
     
-    [panel beginSheetModalForWindow:loadLastGyroflowProjectView.window completionHandler:^(NSModalResponse result){
+    [panel beginSheetModalForWindow:NSApp.windows.firstObject completionHandler:^(NSModalResponse result){
         if (result != NSModalResponseOK) {
             return;
         }
@@ -3796,8 +3707,7 @@ typedef void (^BRAWCompletionHandler)(void);
         
         NSUserDefaults *userDefaults = [[NSUserDefaults alloc] init];
         [userDefaults setObject:bookmark forKey:@"gyroFlowPreferencesBookmarkData"];
-        [userDefaults release];
-        
+
         [url stopAccessingSecurityScopedResource];
         
         [self readLastProjectFromGyroflowPreferencesFile];
@@ -3810,7 +3720,6 @@ typedef void (^BRAWCompletionHandler)(void);
 - (BOOL)canReadGyroflowPreferencesFile {
     NSUserDefaults *userDefaults = [[NSUserDefaults alloc] init];
     NSData *gyroFlowPreferencesBookmarkData = [userDefaults dataForKey:@"gyroFlowPreferencesBookmarkData"];
-    [userDefaults release];
     
     if (gyroFlowPreferencesBookmarkData == nil) {
         return NO;
@@ -3864,7 +3773,6 @@ typedef void (^BRAWCompletionHandler)(void);
     
     NSUserDefaults *userDefaults = [[NSUserDefaults alloc] init];
     NSData *gyroFlowPreferencesBookmarkData = [userDefaults dataForKey:@"gyroFlowPreferencesBookmarkData"];
-    [userDefaults release];
     
     if (gyroFlowPreferencesBookmarkData == nil) {
         NSString *errorMessage = @"Failed to access Gyroflow's Preferences file.";
@@ -3941,21 +3849,16 @@ typedef void (^BRAWCompletionHandler)(void);
 - (void)showSuccessfullyImportedAlert {
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     if (![defaults boolForKey:@"suppressSuccessfullyImported"]) {
-        NSAlert *alert                  = [[[NSAlert alloc] init] autorelease];
+        NSAlert *alert                  = [[NSAlert alloc] init];
         alert.icon                      = [NSImage imageNamed:@"GyroflowToolbox"];
         alert.alertStyle                = NSAlertStyleInformational;
         alert.messageText               = @"Successfully Imported!";
         alert.informativeText           = @"The Gyroflow Project has been successfully imported into Final Cut Pro.\n\nYou can now adjust the parameters as required via the Video Inspector.";
         alert.showsSuppressionButton    = YES;
-        [alert beginSheetModalForWindow:loadLastGyroflowProjectView.window completionHandler:^(NSModalResponse result) {
+        [alert beginSheetModalForWindow:NSApp.windows.firstObject completionHandler:^(NSModalResponse result) {
             if ([alert suppressionButton].state == NSControlStateValueOn) {
                 [[NSUserDefaults standardUserDefaults] setBool:YES forKey:@"suppressSuccessfullyImported"];
             }
-            
-            //---------------------------------------------------------
-            // Close the alert:
-            //---------------------------------------------------------
-            [alert.window orderOut:nil];
         }];
     }
 }
@@ -3991,7 +3894,7 @@ typedef void (^BRAWCompletionHandler)(void);
     //---------------------------------------------------------
     // Read setting from User Defaults:
     //---------------------------------------------------------
-    NSUserDefaults *userDefaults = [[[NSUserDefaults alloc] init] autorelease];
+    NSUserDefaults *userDefaults = [[NSUserDefaults alloc] init];
     NSString *brawToolboxDocumentBookmarkData = [userDefaults stringForKey:@"brawToolboxDocumentBookmarkData"];
     
     //---------------------------------------------------------
@@ -4004,8 +3907,8 @@ typedef void (^BRAWCompletionHandler)(void);
     //---------------------------------------------------------
     // Decode the Base64 bookmark data:
     //---------------------------------------------------------
-    NSData *decodedBookmark = [[[NSData alloc] initWithBase64EncodedString:brawToolboxDocumentBookmarkData
-                                                              options:0] autorelease];
+    NSData *decodedBookmark = [[NSData alloc] initWithBase64EncodedString:brawToolboxDocumentBookmarkData
+                                                                  options:0];
 
     //---------------------------------------------------------
     // Abort:
@@ -4058,20 +3961,15 @@ typedef void (^BRAWCompletionHandler)(void);
     //---------------------------------------------------------
     // Show an alert:
     //---------------------------------------------------------
-    NSAlert *alert          = [[[NSAlert alloc] init] autorelease];
+    NSAlert *alert          = [[NSAlert alloc] init];
     alert.icon              = [NSImage imageNamed:@"GyroflowToolbox"];
     alert.alertStyle        = NSAlertStyleInformational;
     alert.messageText       = @"Gyroflow Toolbox Requires Permission";
     alert.informativeText   = @"To make it easier to import BRAW Toolbox clips into Gyroflow Toolbox, you'll need to grant Gyroflow Toolbox sandbox access to a BRAW Toolbox helper file.\n\nOn the next panel, please select 'Grant Access' to continue.";
-    [alert beginSheetModalForWindow:importMediaFileView.window completionHandler:^(NSModalResponse result){
-        
+    [alert beginSheetModalForWindow:NSApp.windows.firstObject completionHandler:^(NSModalResponse result){
+
         //NSLog(@"[Gyroflow Toolbox Renderer] NSModalResponse result: %ld", (long)result);
-        
-        //---------------------------------------------------------
-        // Close the alert:
-        //---------------------------------------------------------
-        [alert.window orderOut:nil];
-        
+
         //---------------------------------------------------------
         // Attempt to get access to the BRAW Toolbox document:
         //---------------------------------------------------------
@@ -4106,7 +4004,7 @@ typedef void (^BRAWCompletionHandler)(void);
         [panel setCanSelectHiddenExtension:YES];
         [panel setAppearance:[NSAppearance appearanceNamed:NSAppearanceNameVibrantDark]];
         
-        [panel beginSheetModalForWindow:importMediaFileView.window completionHandler:^(NSModalResponse openPanelResult){
+        [panel beginSheetModalForWindow:NSApp.windows.firstObject completionHandler:^(NSModalResponse openPanelResult){
             //---------------------------------------------------------
             // Abort if cancelled clicked:
             //---------------------------------------------------------
@@ -4178,7 +4076,7 @@ typedef void (^BRAWCompletionHandler)(void);
             // Same the encoded bookmark for next time:
             //---------------------------------------------------------
             NSString *base64EncodedBookmark = [bookmark base64EncodedStringWithOptions:0];
-            NSUserDefaults *userDefaults = [[[NSUserDefaults alloc] init] autorelease];
+            NSUserDefaults *userDefaults = [[NSUserDefaults alloc] init];
             [userDefaults setObject:base64EncodedBookmark forKey:@"brawToolboxDocumentBookmarkData"];
             
             //---------------------------------------------------------
@@ -4248,7 +4146,7 @@ typedef void (^BRAWCompletionHandler)(void);
         //---------------------------------------------------------
         // Read setting from User Defaults:
         //---------------------------------------------------------
-        NSUserDefaults *userDefaults = [[[NSUserDefaults alloc] init] autorelease];
+        NSUserDefaults *userDefaults = [[NSUserDefaults alloc] init];
         NSString *brawToolboxDocumentBookmarkData = [userDefaults stringForKey:@"brawToolboxDocumentBookmarkData"];
         
         //---------------------------------------------------------
@@ -4267,8 +4165,8 @@ typedef void (^BRAWCompletionHandler)(void);
         //---------------------------------------------------------
         // Decode the Base64 bookmark data:
         //---------------------------------------------------------
-        NSData *decodedBookmark = [[[NSData alloc] initWithBase64EncodedString:brawToolboxDocumentBookmarkData
-                                                                  options:0] autorelease];
+        NSData *decodedBookmark = [[NSData alloc] initWithBase64EncodedString:brawToolboxDocumentBookmarkData
+                                                                      options:0];
 
         //---------------------------------------------------------
         // Make sure decodedBookmark is valid::
@@ -4334,8 +4232,8 @@ typedef void (^BRAWCompletionHandler)(void);
     // Resolve the decoded BRAW Toolbox bookmark data into a
     // security-scoped URL:
     //---------------------------------------------------------
-    NSData *decodedBookmarkData = [[[NSData alloc] initWithBase64EncodedString:bookmarkDataString
-                                                                       options:0] autorelease];
+    NSData *decodedBookmarkData = [[NSData alloc] initWithBase64EncodedString:bookmarkDataString
+                                                                      options:0];
     
     NSError *brawBookmarkError  = nil;
     BOOL isStale                = NO;
@@ -4524,11 +4422,11 @@ typedef void (^BRAWCompletionHandler)(void);
     //---------------------------------------------------------
     // Show a Progress Alert:
     //---------------------------------------------------------
-    NSProgressIndicator *progressIndicator = [[[NSProgressIndicator alloc] initWithFrame:NSMakeRect(0.0f, 0.0f, 20.0f, 20.0f)] autorelease];
+    NSProgressIndicator *progressIndicator = [[NSProgressIndicator alloc] initWithFrame:NSMakeRect(0.0f, 0.0f, 20.0f, 20.0f)];
     progressIndicator.style = NSProgressIndicatorStyleSpinning;
     [progressIndicator startAnimation:self];
 
-    self.progressAlert = [[[NSAlert alloc] init] autorelease];
+    self.progressAlert = [[NSAlert alloc] init];
     [self.progressAlert setMessageText:@"Processing Gyroflow Data"];
     [self.progressAlert setInformativeText:@"Please stand by while we prepare things for Final Cut Pro..."];
     [self.progressAlert setAlertStyle:NSAlertStyleInformational];
@@ -4537,8 +4435,8 @@ typedef void (^BRAWCompletionHandler)(void);
     [self.progressAlert addButtonWithTitle:@"Cancel"];
     NSButton *button =  [[self.progressAlert buttons] objectAtIndex:0];
     [button setHidden:YES];
-    [self.progressAlert beginSheetModalForWindow:loadLastGyroflowProjectView.window completionHandler:nil];
-    
+    [self.progressAlert beginSheetModalForWindow:NSApp.windows.firstObject completionHandler:nil];
+
     //---------------------------------------------------------
     // Give the Progress Alert 0.1 seconds to show:
     //---------------------------------------------------------
@@ -4552,7 +4450,7 @@ typedef void (^BRAWCompletionHandler)(void);
         //---------------------------------------------------------
         // Load the Custom Parameter Action API:
         //---------------------------------------------------------
-        id<FxCustomParameterActionAPI_v4> actionAPI = [_apiManager apiForProtocol:@protocol(FxCustomParameterActionAPI_v4)];
+        id<FxCustomParameterActionAPI_v4> actionAPI = [self.apiManager apiForProtocol:@protocol(FxCustomParameterActionAPI_v4)];
         if (actionAPI == nil) {
             //---------------------------------------------------------
             // Trigger the Completion Handler:
@@ -4657,6 +4555,8 @@ typedef void (^BRAWCompletionHandler)(void);
         //---------------------------------------------------------
         const char* hasData = doesGyroflowProjectContainStabilisationData([selectedGyroflowProjectData UTF8String]);
         NSString *hasDataResult = [NSString stringWithUTF8String: hasData];
+        if (hasData) freeCString((char *)hasData);
+
         //NSLog(@"[Gyroflow Toolbox Renderer] hasDataResult: %@", hasDataResult);
         if (hasDataResult == nil || ![hasDataResult isEqualToString:@"YES"]) {
             //---------------------------------------------------------
@@ -4702,6 +4602,8 @@ typedef void (^BRAWCompletionHandler)(void);
                                                               );
         
         NSString *getDefaultValuesResultString = [NSString stringWithUTF8String:getDefaultValuesResult];
+        if (getDefaultValuesResult) freeCString((char *)getDefaultValuesResult);
+
         //NSLog(@"[Gyroflow Toolbox Renderer] getDefaultValuesResult: %@", getDefaultValuesResultString);
         
         //---------------------------------------------------------
@@ -4712,7 +4614,7 @@ typedef void (^BRAWCompletionHandler)(void);
         //---------------------------------------------------------
         // Load the Parameter Set API:
         //---------------------------------------------------------
-        id<FxParameterSettingAPI_v5> paramSetAPI = [_apiManager apiForProtocol:@protocol(FxParameterSettingAPI_v5)];
+        id<FxParameterSettingAPI_v5> paramSetAPI = [self.apiManager apiForProtocol:@protocol(FxParameterSettingAPI_v5)];
         if (paramSetAPI == nil)
         {
             //---------------------------------------------------------
@@ -4921,11 +4823,11 @@ typedef void (^BRAWCompletionHandler)(void);
     //---------------------------------------------------------
     // Show a Progress Alert:
     //---------------------------------------------------------
-    NSProgressIndicator *progressIndicator = [[[NSProgressIndicator alloc] initWithFrame:NSMakeRect(0.0f, 0.0f, 20.0f, 20.0f)] autorelease];
+    NSProgressIndicator *progressIndicator = [[NSProgressIndicator alloc] initWithFrame:NSMakeRect(0.0f, 0.0f, 20.0f, 20.0f)];
     progressIndicator.style = NSProgressIndicatorStyleSpinning;
     [progressIndicator startAnimation:self];
 
-    self.progressAlert = [[[NSAlert alloc] init] autorelease];
+    self.progressAlert = [[NSAlert alloc] init];
     [self.progressAlert setMessageText:@"Processing Gyroflow Data"];
     [self.progressAlert setInformativeText:@"Please stand by while we prepare things for Final Cut Pro..."];
     [self.progressAlert setAlertStyle:NSAlertStyleInformational];
@@ -4934,8 +4836,8 @@ typedef void (^BRAWCompletionHandler)(void);
     [self.progressAlert addButtonWithTitle:@"Cancel"];
     NSButton *button =  [[self.progressAlert buttons] objectAtIndex:0];
     [button setHidden:YES];
-    [self.progressAlert beginSheetModalForWindow:loadLastGyroflowProjectView.window completionHandler:nil];
-    
+    [self.progressAlert beginSheetModalForWindow:NSApp.windows.firstObject completionHandler:nil];
+
     //---------------------------------------------------------
     // Give the Progress Alert 0.1 seconds to show:
     //---------------------------------------------------------
@@ -4976,6 +4878,8 @@ typedef void (^BRAWCompletionHandler)(void);
                                                    );
         
         NSString *gyroflowProject = [NSString stringWithUTF8String: importResult];
+        if (importResult) freeCString((char *)importResult);
+
         //NSLog(@"[Gyroflow Toolbox Renderer] gyroflowProject: %@", gyroflowProject);
             
         //---------------------------------------------------------
@@ -5001,7 +4905,7 @@ typedef void (^BRAWCompletionHandler)(void);
         //---------------------------------------------------------
         // Load the Custom Parameter Action API:
         //---------------------------------------------------------
-        id<FxCustomParameterActionAPI_v4> actionAPI = [_apiManager apiForProtocol:@protocol(FxCustomParameterActionAPI_v4)];
+        id<FxCustomParameterActionAPI_v4> actionAPI = [self.apiManager apiForProtocol:@protocol(FxCustomParameterActionAPI_v4)];
         if (actionAPI == nil) {
             //---------------------------------------------------------
             // Close the Progress Alert:
@@ -5044,6 +4948,8 @@ typedef void (^BRAWCompletionHandler)(void);
         
         const char* doesHaveAccurateTimestamps = hasAccurateTimestamps([gyroflowProject UTF8String]);
         NSString *doesHaveAccurateTimestampsString = [NSString stringWithUTF8String:doesHaveAccurateTimestamps];
+        if (doesHaveAccurateTimestamps) freeCString((char *)doesHaveAccurateTimestamps);
+
         //NSLog(@"[Gyroflow Toolbox Renderer] doesHaveAccurateTimestamps: %@", doesHaveAccurateTimestampsString);
         
         if (doesHaveAccurateTimestampsString == nil || ![doesHaveAccurateTimestampsString isEqualToString:@"YES"]) {
@@ -5068,6 +4974,8 @@ typedef void (^BRAWCompletionHandler)(void);
         if (!requiresGyroflowLaunch) {
             const char* hasData = doesGyroflowProjectContainStabilisationData([gyroflowProject UTF8String]);
             NSString *hasDataResult = [NSString stringWithUTF8String: hasData];
+            if (hasData) freeCString((char *)hasData);
+
             NSLog(@"[Gyroflow Toolbox Renderer] hasDataResult: %@", hasDataResult);
             if (hasDataResult == nil || ![hasDataResult isEqualToString:@"YES"]) {
                 //---------------------------------------------------------
@@ -5202,6 +5110,8 @@ typedef void (^BRAWCompletionHandler)(void);
         );
         
         NSString *getDefaultValuesResultString = [NSString stringWithUTF8String:getDefaultValuesResult];
+        if (getDefaultValuesResult) freeCString((char *)getDefaultValuesResult);
+
         //NSLog(@"[Gyroflow Toolbox Renderer] getDefaultValuesResult: %@", getDefaultValuesResultString);
                 
         //---------------------------------------------------------
@@ -5212,7 +5122,7 @@ typedef void (^BRAWCompletionHandler)(void);
         //---------------------------------------------------------
         // Load the Parameter Set API:
         //---------------------------------------------------------
-        id<FxParameterSettingAPI_v5> paramSetAPI = [_apiManager apiForProtocol:@protocol(FxParameterSettingAPI_v5)];
+        id<FxParameterSettingAPI_v5> paramSetAPI = [self.apiManager apiForProtocol:@protocol(FxParameterSettingAPI_v5)];
         if (paramSetAPI == nil)
         {
             //---------------------------------------------------------
@@ -5352,6 +5262,8 @@ typedef void (^BRAWCompletionHandler)(void);
         //---------------------------------------------------------
         const char* lensProfileLoaded = isLensProfileLoaded([gyroflowProject UTF8String]);
         NSString *isLensProfileLoaded = [NSString stringWithUTF8String:lensProfileLoaded];
+        if (lensProfileLoaded) freeCString((char *)lensProfileLoaded);
+
         //NSLog(@"[Gyroflow Toolbox Renderer] isLensProfileLoaded: %@", isLensProfileLoaded);
         if (isLensProfileLoaded == nil || ![isLensProfileLoaded isEqualToString:@"YES"]) {
             //---------------------------------------------------------
@@ -5364,18 +5276,13 @@ typedef void (^BRAWCompletionHandler)(void);
             //---------------------------------------------------------
             NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
             if (![defaults boolForKey:@"suppressNoLensProfileDetected"]) {
-                NSAlert *alert                  = [[[NSAlert alloc] init] autorelease];
+                NSAlert *alert                  = [[NSAlert alloc] init];
                 alert.icon                      = [NSImage imageNamed:@"GyroflowToolbox"];
                 alert.alertStyle                = NSAlertStyleInformational;
                 alert.messageText               = @"No Lens Profile Detected";
                 alert.informativeText           = @"A lens profile could not be automatically detected from the supplied video file.\n\nYou will be prompted to select an appropriate Lens Profile in the next panel.";
                 alert.showsSuppressionButton    = YES;
-                [alert beginSheetModalForWindow:loadLastGyroflowProjectView.window completionHandler:^(NSModalResponse result) {
-                    //---------------------------------------------------------
-                    // Close the alert:
-                    //---------------------------------------------------------
-                    [alert.window orderOut:nil];
-                    
+                [alert beginSheetModalForWindow:NSApp.windows.firstObject completionHandler:^(NSModalResponse result) {
                     if ([alert suppressionButton].state == NSControlStateValueOn) {
                         [[NSUserDefaults standardUserDefaults] setBool:YES forKey:@"suppressNoLensProfileDetected"];
                     }
@@ -5443,27 +5350,16 @@ typedef void (^BRAWCompletionHandler)(void);
 //------------------------------------------------------------------------------
 // Helper to load a CGImageRef from the asset catalog:
 //------------------------------------------------------------------------------
-- (CGImageRef)createCGImageForErrorID:(NSString *)errorMessageID {
-    //---------------------------------------------------------
-    // `imageNamed:` will look in the compiled Assets.xcassets:
-    //---------------------------------------------------------
+- (id)errorCGImageObjectForID:(NSString *)errorMessageID
+{
     NSImage *img = [NSImage imageNamed:errorMessageID];
-    if (!img) return NULL;
+    if (!img) return nil;
 
-    //---------------------------------------------------------
-    // Ask NSImage for a CGImage:
-    //---------------------------------------------------------
-    NSRect imgRect = NSMakeRect(0, 0, img.size.width, img.size.height);
-    CGImageRef cgImg = [img CGImageForProposedRect:&imgRect
-                                           context:nil
-                                             hints:nil];
-    if (!cgImg) return NULL;
+    NSRect r = NSMakeRect(0, 0, img.size.width, img.size.height);
+    CGImageRef cg = [img CGImageForProposedRect:&r context:nil hints:nil];
+    if (!cg) return nil;
 
-    //---------------------------------------------------------
-    // Retain it so it survives past the autorelease pool:
-    //---------------------------------------------------------
-    CGImageRetain(cgImg);
-    return cgImg;
+    return CFBridgingRelease(CGImageRetain(cg));
 }
 
 //---------------------------------------------------------
@@ -5503,7 +5399,7 @@ typedef void (^BRAWCompletionHandler)(void);
         }
     }
     
-    return [result copy];
+    return result;
 }
 
 //---------------------------------------------------------
@@ -5623,7 +5519,7 @@ void runOnMainQueueWithoutDeadlocking(void (^block)(void)) {
 //---------------------------------------------------------
 - (void)showAlertWithMessage:(NSString*)message info:(NSString*)info {
     runOnMainQueueWithoutDeadlocking(^{
-        NSAlert *alert          = [[[NSAlert alloc] init] autorelease];
+        NSAlert *alert          = [[NSAlert alloc] init];
         alert.icon              = [NSImage imageNamed:@"GyroflowToolbox"];
         alert.alertStyle        = NSAlertStyleInformational;
         alert.messageText       = message;
@@ -5638,7 +5534,7 @@ void runOnMainQueueWithoutDeadlocking(void (^block)(void)) {
 //---------------------------------------------------------
 - (void)showAsyncAlertWithMessage:(NSString*)message info:(NSString*)info {
     dispatch_async(dispatch_get_main_queue(), ^{
-        NSAlert *alert          = [[[NSAlert alloc] init] autorelease];
+        NSAlert *alert          = [[NSAlert alloc] init];
         alert.icon              = [NSImage imageNamed:@"GyroflowToolbox"];
         alert.alertStyle        = NSAlertStyleInformational;
         alert.messageText       = message;

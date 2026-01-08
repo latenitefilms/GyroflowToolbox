@@ -8,15 +8,17 @@
 #import <Cocoa/Cocoa.h>
 #import <FxPlug/FxPlugSDK.h>
 
+@protocol CustomButtonViewParentPlugin <NSObject>
+- (void)customButtonViewPressed:(UInt32)buttonID;
+@end
+
 @interface CustomButtonView : NSView
 {
-    id<PROAPIAccessing> _apiManager;
-    id _parentPlugin;
-    int _buttonID;
+    __weak id<CustomButtonViewParentPlugin> _parentPlugin;
+    UInt32 _buttonID;
 }
 
-- (instancetype)initWithAPIManager:(id<PROAPIAccessing>)apiManager
-                 parentPlugin:(id)parentPlugin
-                     buttonID:(UInt32)buttonID
-                  buttonTitle:(NSString*)buttonTitle;
+- (instancetype)initWithParentPlugin:(id)parentPlugin
+                            buttonID:(UInt32)buttonID
+                         buttonTitle:(NSString*)buttonTitle;
 @end

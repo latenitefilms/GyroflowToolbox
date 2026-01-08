@@ -11,9 +11,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface HeaderView : NSView
 
-@property (assign) IBOutlet NSView *view;
+@property (nonatomic, weak) IBOutlet NSView *view;
 
-@property (assign) IBOutlet NSTextField *versionString;
+@property (nonatomic, weak) IBOutlet NSTextField *versionString;
 
 @end
 

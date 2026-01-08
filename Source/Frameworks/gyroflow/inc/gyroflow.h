@@ -19,7 +19,7 @@ void startLogger(
 //---------------------------------------------------------
 // Process a frame:
 //---------------------------------------------------------
-const char* processFrame(
+int processFrame(
     const char*                 unique_identifier,
     uint32_t                    width,
     uint32_t                    height,
@@ -117,4 +117,7 @@ const char* getLensIdentifier(
     const char*                 gyroflow_project_data
 );
 
-
+//---------------------------------------------------------
+// Free C String:
+//---------------------------------------------------------
+void freeCString(char *s);

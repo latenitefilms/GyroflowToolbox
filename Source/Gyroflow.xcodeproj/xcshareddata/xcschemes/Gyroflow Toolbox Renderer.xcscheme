@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "1330"
-   version = "1.3">
+   LastUpgradeVersion = "2610"
+   version = "1.7">
    <BuildAction
       parallelizeBuildables = "YES"
-      buildImplicitDependencies = "YES">
+      buildImplicitDependencies = "YES"
+      buildArchitectures = "Automatic">
       <BuildActionEntries>
          <BuildActionEntry
             buildForTesting = "YES"
@@ -14,9 +15,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "2239AB0C2943F8F600028B77"
-               BuildableName = "Gyroflow Toolbox.app"
-               BlueprintName = "Wrapper Application"
+               BlueprintIdentifier = "2239AB172943F8F600028B77"
+               BuildableName = "Gyroflow Toolbox Renderer.pluginkit"
+               BlueprintName = "Gyroflow Toolbox Renderer"
                ReferencedContainer = "container:Gyroflow.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -26,30 +27,20 @@
       buildConfiguration = "Debug"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
-      shouldUseLaunchSchemeArgsEnv = "YES">
-      <Testables>
-      </Testables>
+      shouldUseLaunchSchemeArgsEnv = "YES"
+      shouldAutocreateTestPlan = "YES">
    </TestAction>
    <LaunchAction
-      buildConfiguration = "Release"
+      buildConfiguration = "Debug"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
+      enableAddressSanitizer = "YES"
       launchStyle = "0"
       useCustomWorkingDirectory = "NO"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
       allowLocationSimulation = "YES">
-      <BuildableProductRunnable
-         runnableDebuggingMode = "0">
-         <BuildableReference
-            BuildableIdentifier = "primary"
-            BlueprintIdentifier = "2239AB0C2943F8F600028B77"
-            BuildableName = "Gyroflow Toolbox.app"
-            BlueprintName = "Wrapper Application"
-            ReferencedContainer = "container:Gyroflow.xcodeproj">
-         </BuildableReference>
-      </BuildableProductRunnable>
       <AdditionalOptions>
          <AdditionalOption
             key = "NSZombieEnabled"
@@ -64,16 +55,15 @@
       savedToolIdentifier = ""
       useCustomWorkingDirectory = "NO"
       debugDocumentVersioning = "YES">
-      <BuildableProductRunnable
-         runnableDebuggingMode = "0">
+      <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "2239AB0C2943F8F600028B77"
-            BuildableName = "Gyroflow Toolbox.app"
-            BlueprintName = "Wrapper Application"
+            BlueprintIdentifier = "2239AB172943F8F600028B77"
+            BuildableName = "Gyroflow Toolbox Renderer.pluginkit"
+            BlueprintName = "Gyroflow Toolbox Renderer"
             ReferencedContainer = "container:Gyroflow.xcodeproj">
          </BuildableReference>
-      </BuildableProductRunnable>
+      </MacroExpansion>
    </ProfileAction>
    <AnalyzeAction
       buildConfiguration = "Debug">

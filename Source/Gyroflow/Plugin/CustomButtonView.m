@@ -15,10 +15,9 @@
 //---------------------------------------------------------
 // Initialize:
 //---------------------------------------------------------
-- (instancetype)initWithAPIManager:(id<PROAPIAccessing>)apiManager
-                      parentPlugin:(id)parentPlugin
-                          buttonID:(UInt32)buttonID
-                       buttonTitle:(NSString*)buttonTitle
+- (instancetype)initWithParentPlugin:(id)parentPlugin
+                            buttonID:(UInt32)buttonID
+                         buttonTitle:(NSString*)buttonTitle
 {
     int buttonWidth = 200;
     int buttonHeight = 32;
@@ -28,8 +27,6 @@
     
     if (self != nil)
     {
-        _apiManager = apiManager;
-        
         //---------------------------------------------------------
         // Cache the parent plugin & button ID:
         //---------------------------------------------------------
@@ -60,23 +57,7 @@
 // Triggered when the button is pressed:
 //---------------------------------------------------------
 - (void)buttonPressed {
-    #pragma clang diagnostic push
-    #pragma clang diagnostic ignored "-Wobjc-method-access"
     [_parentPlugin customButtonViewPressed:_buttonID];
-    #pragma clang diagnostic pop
-
-}
-
-//---------------------------------------------------------
-// Deallocates the memory occupied by the receiver:
-//---------------------------------------------------------
-- (void)dealloc
-{
-    if (_button) {
-        [_button release];
-    }
- 
-    [super dealloc];
 }
 
 //---------------------------------------------------------

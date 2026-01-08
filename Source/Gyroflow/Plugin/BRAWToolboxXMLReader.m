@@ -58,15 +58,4 @@
     }
 }
 
-//---------------------------------------------------------
-// Dealloc:
-//---------------------------------------------------------
-- (void)dealloc {
-    [_currentElement release];
-    [_filePath release];
-    [_bookmarkData release];
-    
-    [super dealloc];
-}
-
 @end

@@ -21,10 +21,9 @@
 //---------------------------------------------------------
 // Initialize:
 //---------------------------------------------------------
-- (instancetype)initWithAPIManager:(id<PROAPIAccessing>)apiManager
-                      parentPlugin:(id)parentPlugin
-                          buttonID:(UInt32)buttonID
-                       buttonTitle:(NSString*)buttonTitle
+- (instancetype)initWithParentPlugin:(id)parentPlugin
+                            buttonID:(UInt32)buttonID
+                         buttonTitle:(NSString*)buttonTitle
 {
     int buttonWidth = 200;
     int buttonHeight = 32;
@@ -34,8 +33,6 @@
     
     if (self != nil)
     {
-        _apiManager = apiManager;
-        
         NSArray *sortedPasteboardTypes = @[NSPasteboardTypeFileURL, @"com.apple.finalcutpro.xml.v1-11", @"com.apple.finalcutpro.xml.v1-10", @"com.apple.finalcutpro.xml.v1-9", @"com.apple.finalcutpro.xml", @"com.apple.flexo.proFFPasteboardUTI"];
         [self registerForDraggedTypes:sortedPasteboardTypes];
         
@@ -115,10 +112,7 @@
             }
             
             dispatch_async(dispatch_get_main_queue(), ^{
-                #pragma clang diagnostic push
-                #pragma clang diagnostic ignored "-Wobjc-method-access"
-                [_parentPlugin importDroppedMedia:bookmarkData];
-                #pragma clang diagnostic pop
+                [self->_parentPlugin importDroppedMedia:bookmarkData];
             });
             
             _dragIsOver = false;
@@ -140,10 +134,7 @@
                 //NSLog(@"[Gyroflow Toolbox Renderer] Dropped Final Cut Pro data: %@", finalCutProData);
 
                 dispatch_async(dispatch_get_main_queue(), ^{
-                    #pragma clang diagnostic push
-                    #pragma clang diagnostic ignored "-Wobjc-method-access"
-                    [_parentPlugin importDroppedClip:finalCutProData];
-                    #pragma clang diagnostic pop
+                    [self->_parentPlugin importDroppedClip:finalCutProData];
                 });
 
                 _dragIsOver = false;
@@ -163,18 +154,6 @@
 - (void)draggingExited:(nullable id <NSDraggingInfo>)sender {
     _dragIsOver = false;
     [self needsDisplay];
-}
-
-//---------------------------------------------------------
-// Deallocates the memory occupied by the receiver:
-//---------------------------------------------------------
-- (void)dealloc
-{
-    if (_button) {
-        [_button release];
-    }
- 
-    [super dealloc];
 }
 
 //---------------------------------------------------------

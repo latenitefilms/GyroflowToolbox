@@ -8,41 +8,41 @@
 #import "HeaderView.h"
 #import <Foundation/Foundation.h>
 
+@interface HeaderView ()
+@property (nonatomic, strong) NSArray *topLevelObjects;
+@end
 
 @implementation HeaderView
-
-- (NSString *)getAppVersionAndBuildNumber {
-    NSDictionary *infoDictionary = [[NSBundle mainBundle] infoDictionary];
-    
-    // Get the version number:
-    NSString *version = [infoDictionary objectForKey:@"CFBundleShortVersionString"];
-    
-    // Get the build number:
-    NSString *build = [infoDictionary objectForKey:@"CFBundleVersion"];
-    
-    // Construct the string:
-    NSString *versionAndBuildString = [NSString stringWithFormat:@"v%@ (Build %@)", version, build];
-    
-    return versionAndBuildString;
-}
 
 - (instancetype)initWithFrame:(NSRect)frame
 {
     self = [super initWithFrame:frame];
     if (self) {
-        if (![[NSBundle mainBundle] loadNibNamed:@"HeaderView" owner:self topLevelObjects:nil]) {
-            NSLog(@"[Gyroflow Toolbox Renderer] ERROR - Failed to load HeaderView.xib");
+        NSBundle *bundle = [NSBundle bundleForClass:self.class];
+
+        NSArray *objects = nil;
+        if (![bundle loadNibNamed:@"HeaderView" owner:self topLevelObjects:&objects]) {
+            NSLog(@"Failed to load HeaderView.xib");
+            return self;
         }
-        [self.view setFrame:[self bounds]];
-        [self addSubview:self.view];
-                
-        self.versionString.stringValue = [self getAppVersionAndBuildNumber];
+        self.topLevelObjects = objects; // keep strong refs
+
+        NSView *content = self.view;
+        content.frame = self.bounds;
+        content.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
+        [self addSubview:content];
+
+        self.versionString.stringValue = [self getAppVersionAndBuildNumberFromBundle:bundle];
     }
     return self;
 }
 
-- (void)drawRect:(NSRect)dirtyRect {
-    [super drawRect:dirtyRect];
+- (NSString *)getAppVersionAndBuildNumberFromBundle:(NSBundle *)bundle
+{
+    NSDictionary *info = bundle.infoDictionary;
+    NSString *version = info[@"CFBundleShortVersionString"] ?: @"?";
+    NSString *build   = info[@"CFBundleVersion"] ?: @"?";
+    return [NSString stringWithFormat:@"v%@ (Build %@)", version, build];
 }
 
 @end

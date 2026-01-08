@@ -19,7 +19,7 @@
 //---------------------------------------------------------
 - (void)showErrorAlertWithMessage:(NSString*)message info:(NSString*)info
 {
-    NSAlert *alert = [[[NSAlert alloc] init] autorelease];
+    NSAlert *alert          = [[NSAlert alloc] init];
     alert.alertStyle        = NSAlertStyleCritical;
     alert.messageText       = message;
     alert.informativeText   = info;
@@ -32,7 +32,7 @@
 //---------------------------------------------------------
 - (void)showAlertWithMessage:(NSString*)message info:(NSString*)info
 {
-    NSAlert *alert = [[[NSAlert alloc] init] autorelease];
+    NSAlert *alert          = [[NSAlert alloc] init];
     alert.alertStyle        = NSAlertStyleInformational;
     alert.messageText       = message;
     alert.informativeText   = info;
@@ -65,7 +65,7 @@
 // Movies folder:
 //---------------------------------------------------------
 - (NSURL*)getURLOfWriteableMoviesFolder {
-    NSUserDefaults *userDefaults = [[[NSUserDefaults alloc] init] autorelease];
+    NSUserDefaults *userDefaults = [[NSUserDefaults alloc] init];
     NSData *moviesBookmarkData = [userDefaults dataForKey:@"moviesBookmarkData"];
     
     if (moviesBookmarkData == nil) {
@@ -241,7 +241,7 @@
         NSLog(@"[Gyroflow Toolbox] Bookmark created successfully for: %@", [url path]);
     }
     
-    NSUserDefaults *userDefaults = [[[NSUserDefaults alloc] init] autorelease];
+    NSUserDefaults *userDefaults = [[NSUserDefaults alloc] init];
     [userDefaults setObject:bookmark forKey:@"moviesBookmarkData"];
     
     //---------------------------------------------------------
@@ -267,7 +267,7 @@
         //---------------------------------------------------------
         // Show popup with instructions:
         //---------------------------------------------------------
-        NSAlert *alert = [[[NSAlert alloc] init] autorelease];
+        NSAlert *alert          = [[NSAlert alloc] init];
         alert.alertStyle        = NSAlertStyleInformational;
         alert.messageText       = @"Permission Required";
         alert.informativeText   = @"Gyroflow Toolbox requires explicit permission to access your '~/Movies' folder, to install the Gyroflow Toolbox Final Cut Pro effect.\n\nPlease ensure your '~/Movies' folder is selected on the next Open Folder window to continue.";
@@ -313,7 +313,7 @@
     //---------------------------------------------------------
     // Check to see if Motion Template is already installed:
     //---------------------------------------------------------
-    NSUserDefaults *userDefaults = [[[NSUserDefaults alloc] init] autorelease];
+    NSUserDefaults *userDefaults = [[NSUserDefaults alloc] init];
     NSData *moviesBookmarkData = [userDefaults dataForKey:@"moviesBookmarkData"];
     
     if (moviesBookmarkData == nil) {

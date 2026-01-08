@@ -858,14 +858,14 @@ pub extern "C" fn importMediaFile(
 ///
 /// # Returns
 ///
-/// This function returns "DONE" if successful, otherwise an error message. If successful, the output Metal Texture is stored in `out_mtl_tex`.
+/// This function returns 1 if successful, otherwise 0. If successful, the output Metal Texture is stored in `out_mtl_tex`.
 #[unsafe(no_mangle)]
 pub extern "C" fn processFrame(
     unique_identifier: *const c_char,
     width: u32,
     height: u32,
     pixel_format: *const c_char,
-    number_of_bytes: i8,
+    number_of_bytes: std::ffi::c_int,
     path: *const c_char,
     data: *const c_char,
     timestamp: i64,
@@ -883,7 +883,7 @@ pub extern "C" fn processFrame(
     in_mtl_tex: *mut std::ffi::c_void,
     out_mtl_tex: *mut std::ffi::c_void,
     command_queue: *mut std::ffi::c_void,
-) -> *const c_char {
+) -> std::ffi::c_int {
     //---------------------------------------------------------
     // Setting our NSLog Logger (only once):
     //---------------------------------------------------------
@@ -1142,14 +1142,14 @@ pub extern "C" fn processFrame(
            rect: None,
            data: BufferSource::Metal { texture: in_mtl_tex as *mut metal::MTLTexture, command_queue: command_queue as *mut metal::MTLCommandQueue },
            rotation: Some(input_rotation as f32),
-           texture_copy: true,
+           texture_copy: false,
        },
        output: BufferDescription {
            size: (output_width, output_height, output_stride),
            rect: None,
            data: BufferSource::Metal { texture: out_mtl_tex as *mut metal::MTLTexture, command_queue: command_queue as *mut metal::MTLCommandQueue },
            rotation: None,
-           texture_copy: true,
+           texture_copy: false,
        }
    };
 
@@ -1172,20 +1172,23 @@ pub extern "C" fn processFrame(
         e => {
             log::error!("[Gyroflow Toolbox Rust] Unsupported pixel format: {:?}", pixel_format_string);
             log::error!("[Gyroflow Toolbox Rust] Error during stabilization: {:?}", e);
-            let error_msg = format!("{}", e);
-            let result = CString::new(error_msg).unwrap();
-            return result.into_raw()
+            return 0
        }
    };
 
    //---------------------------------------------------------
    // Output the Stabilization result to the Console:
    //---------------------------------------------------------
-   log::debug!("[Gyroflow Toolbox Rust] stabilization_result: {:?}", &_stabilization_result);
+   //log::debug!("[Gyroflow Toolbox Rust] stabilization_result: {:?}", &_stabilization_result);
 
    //---------------------------------------------------------
-   // Return "DONE":
+   // Success:
    //---------------------------------------------------------
-   let result = CString::new("DONE").unwrap();
-   return result.into_raw()
+   return 1
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn freeCString(s: *mut c_char) {
+    if s.is_null() { return; }
+    unsafe { let _ = CString::from_raw(s); } // drops and frees
 }
