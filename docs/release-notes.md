@@ -1,5 +1,16 @@
 # Release Notes
 
+## 1.3.4 (Build 26)
+
+**🎉 Released:**
+- 22nd January 2026
+
+**🔨 Improvements:**
+- Updated the Gyroflow Toolbox application icon for macOS Tahoe. Thanks [Matthew Skiles](https://matthewskiles.com)!
+- We've simplified the code under-the-hood for improved performance and better memory management.
+
+---
+
 ## 1.3.3 (Build 25)
 
 **🎉 Released:**
