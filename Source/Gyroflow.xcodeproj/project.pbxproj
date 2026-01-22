@@ -33,6 +33,7 @@
 		22BED1C42A5D6805000562A3 /* CustomDropZoneView.m in Sources */ = {isa = PBXBuildFile; fileRef = 22BED1C22A5D6805000562A3 /* CustomDropZoneView.m */; };
 		22C25B1D2A7B4AB700BB135B /* BRAWToolboxXMLReader.m in Sources */ = {isa = PBXBuildFile; fileRef = 22C25B1C2A7B4AB700BB135B /* BRAWToolboxXMLReader.m */; };
 		22DAC75F2953B1A7001F2E06 /* GyroflowDocument.icns in Resources */ = {isa = PBXBuildFile; fileRef = 22DAC75E2953B1A7001F2E06 /* GyroflowDocument.icns */; };
+		22DE8FF02F21D88000A13409 /* Gyroflow Toolbox.icon in Resources */ = {isa = PBXBuildFile; fileRef = 22DE8FEF2F21D88000A13409 /* Gyroflow Toolbox.icon */; };
 		22F73D712A6009AA00A6F326 /* HeaderView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 22F73D702A6009AA00A6F326 /* HeaderView.xib */; };
 		22F73D742A600B3A00A6F326 /* HeaderView.m in Sources */ = {isa = PBXBuildFile; fileRef = 22F73D732A600B3A00A6F326 /* HeaderView.m */; };
 		22F73D782A6030BB00A6F326 /* Lens Profiles in Resources */ = {isa = PBXBuildFile; fileRef = 22F73D772A6030BB00A6F326 /* Lens Profiles */; };
@@ -125,6 +126,7 @@
 		22C25B1B2A7B4AB700BB135B /* BRAWToolboxXMLReader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BRAWToolboxXMLReader.h; sourceTree = "<group>"; };
 		22C25B1C2A7B4AB700BB135B /* BRAWToolboxXMLReader.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = BRAWToolboxXMLReader.m; sourceTree = "<group>"; };
 		22DAC75E2953B1A7001F2E06 /* GyroflowDocument.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = GyroflowDocument.icns; sourceTree = "<group>"; };
+		22DE8FEF2F21D88000A13409 /* Gyroflow Toolbox.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = "Gyroflow Toolbox.icon"; sourceTree = "<group>"; };
 		22E4989F29492E8100580F67 /* Cargo.toml */ = {isa = PBXFileReference; lastKnownFileType = text; name = Cargo.toml; path = Frameworks/gyroflow/Cargo.toml; sourceTree = SOURCE_ROOT; };
 		22F73D6F2A5FF9A000A6F326 /* SandboxEntitlements.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SandboxEntitlements.entitlements; sourceTree = "<group>"; };
 		22F73D702A6009AA00A6F326 /* HeaderView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = HeaderView.xib; sourceTree = "<group>"; };
@@ -283,6 +285,7 @@
 		228E9E11294E813900B2571E /* Extras */ = {
 			isa = PBXGroup;
 			children = (
+				22DE8FEF2F21D88000A13409 /* Gyroflow Toolbox.icon */,
 				22DAC75E2953B1A7001F2E06 /* GyroflowDocument.icns */,
 				2239AB332943F8F600028B77 /* Info.plist */,
 				2239AB352943F8F600028B77 /* InfoPlist.strings */,
@@ -437,6 +440,7 @@
 			files = (
 				22DAC75F2953B1A7001F2E06 /* GyroflowDocument.icns in Resources */,
 				2239AB6D2945471500028B77 /* Motion Templates in Resources */,
+				22DE8FF02F21D88000A13409 /* Gyroflow Toolbox.icon in Resources */,
 				2239AB372943F8F600028B77 /* InfoPlist.strings in Resources */,
 				224321B629615B0C00EA591A /* Assets.xcassets in Resources */,
 				2239AB3C2943F8F600028B77 /* MainMenu.xib in Resources */,
@@ -766,7 +770,7 @@
 		2239AB542943F8F600028B77 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = "Gyroflow Toolbox";
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CODE_SIGN_ENTITLEMENTS = "Gyroflow/Wrapper Application/SandboxEntitlements.entitlements";
 				CODE_SIGN_STYLE = Automatic;
@@ -786,7 +790,7 @@
 		2239AB552943F8F600028B77 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = "Gyroflow Toolbox";
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CODE_SIGN_ENTITLEMENTS = "Gyroflow/Wrapper Application/SandboxEntitlements.entitlements";
 				CODE_SIGN_STYLE = Automatic;
