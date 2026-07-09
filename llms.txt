@@ -1,0 +1,17 @@
+﻿# Gyroflow Toolbox
+
+> Allows you to import Gyroflow Projects into Apple's Final Cut Pro.
+
+- [Gyroflow Toolbox](https://gyroflowtoolbox.fcp.cafe/readme.md): Gyroflow Toolbox
+- [Buy on Mac App Store](https://gyroflowtoolbox.fcp.cafe/buy.md): Gyroflow Toolbox is a one-time payment of USD$9.99.
+- [Educational Pricing](https://gyroflowtoolbox.fcp.cafe/educational.md): Educational institutions can get a 50% discount when they purchase 20 or more copies through Apple School Manager.
+- [System Requirements](https://gyroflowtoolbox.fcp.cafe/system-requirements.md): Gyroflow Toolbox requires Final Cut Pro 10.6.5 or later, on macOS Monterey 12.6 or later.
+- [Installation](https://gyroflowtoolbox.fcp.cafe/installation.md): Gyroflow Toolbox allows you to take the stabilised data from Gyroflow and use it within Final Cut Pro as an effect.
+- [How To Use](https://gyroflowtoolbox.fcp.cafe/how-to-use.md): Gyroflow is a free and open source third-party application that can stabilise your video by using motion data from a gyroscope and optionally an accelerometer.
+- [Support](https://gyroflowtoolbox.fcp.cafe/support.md): Gyroflow has fantastic documentation that is regularly updated.
+- [Frequently Asked Questions](https://gyroflowtoolbox.fcp.cafe/faq.md): When I first created BRAW Toolbox, one of the questions I was constantly asked was if I could support BRAW's built-in gyro stabilisation.
+- [Troubleshooting](https://gyroflowtoolbox.fcp.cafe/troubleshooting.md): This is the most common support issue we get. Basically...
+- [Release Notes](https://gyroflowtoolbox.fcp.cafe/release-notes.md): 🎉 Released:
+- [Credits](https://gyroflowtoolbox.fcp.cafe/credits.md): Gyroflow Toolbox has been thrown together by Chris Hocking at LateNite Films.
+- [Privacy Policy](https://gyroflowtoolbox.fcp.cafe/privacy.md): This is the privacy policy for the Gyroflow Toolbox, macOS Application that is available on the macOS App Store and TestFlight.
+- [License](https://gyroflowtoolbox.fcp.cafe/license.md): All the code within this repository is licensed under MIT.
