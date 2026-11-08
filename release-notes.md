@@ -1,5 +1,17 @@
 # Release Notes
 
+## 1.3.5 (Build 27)
+
+**🎉 Released:**
+- 9th July 2026
+
+**🔨 Improvements:**
+- We've updated to the latest Gyroflow Core Renderer. HUGE thank you to the amazing [AdrianEddy](https://github.com/AdrianEddy) for all his ongoing help, assistance, genius and support!
+- 16 lens profiles have been updated from the hero Gyroflow project. Thanks to EVERYONE who has submitted lens profiles and another HUGE thank you to AdrianEddy for all the work that goes into managing them.
+- Updated to FxPlug `v4.3.5`.
+
+---
+
 ## 1.3.4 (Build 26)
 
 **🎉 Released:**
