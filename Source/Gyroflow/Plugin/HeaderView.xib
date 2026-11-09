@@ -38,7 +38,7 @@
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <textFieldCell key="cell" id="jDS-PO-Tuh">
                         <font key="font" metaFont="smallSystem"/>
-                        <string key="title">Most Sony, GoPro (Hero 8+), DJI, BRAW R3D and Insta360 clips will be automatically synced. Some other cameras, will require launching Gyroflow to synchronise.</string>
+                        <string key="title">Most Sony, GoPro (Hero 8+), DJI, BRAW, R3D and Insta360 clips will be automatically synced. Some other cameras may require launching Gyroflow to synchronise.</string>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                         <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                     </textFieldCell>

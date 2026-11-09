@@ -4638,7 +4638,10 @@ void runOnMainQueueWithoutDeadlocking(void (^block)(void)) {
     });
 }
 
-// FxPlug calls these on its background analysis worker; no UI or rendering work is dispatched.
+//---------------------------------------------------------
+// FxPlug calls these on its background analysis worker.
+// No UI or rendering work is dispatched.
+//---------------------------------------------------------
 - (BOOL)desiredAnalysisTimeRange:(CMTimeRange *)desiredRange forInputWithTimeRange:(CMTimeRange)inputRange error:(NSError **)error {
     return [self.analysis desiredAnalysisTimeRange:desiredRange forInputWithTimeRange:inputRange error:error];
 }
