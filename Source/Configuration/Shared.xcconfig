@@ -1,5 +1,5 @@
 HARDCODED_DEVELOPER_ID=Developer ID Application: LateNite Films Pty Ltd
 HARDCODED_COPYRIGHT=Copyright © LateNite Films Pty Ltd 2022-2026. All Rights Reserved.
-HARDCODED_VERSION=1.3.5
-HARDCODED_BUILD=27 // Preparing for v1.3.5 (Build 27)
+HARDCODED_VERSION=1.4.0
+HARDCODED_BUILD=28 // Gyroflow Toolbox v1.4.0 (Build 28)
 FXPLUG_DEVELOPER_DIR=/Library/Developer
