@@ -54,6 +54,7 @@ python3 Scripts/sync_parameters.py
 ./Scripts/test_compatibility.sh
 ./Scripts/test_metal.sh
 ./Scripts/test_analysis_image.sh
+./Scripts/test_analysis_actions.sh
 python3 Scripts/test_presets.py --clip 'LLM Resources/Test Clips/GoPro Hero 6.MP4'
 python3 Scripts/test_analysis.py
 python3 Scripts/test_analysis.py --gmflow
@@ -71,6 +72,11 @@ rotation, cancellation and repeated session release.
 `test_media_render.py` renders their MP4 frames through the shipping Metal ABI.
 The compatibility suite checks v1.3.5 archives, C layouts, parameter IDs, effect
 UUIDs and published Motion channels.
+
+`test_analysis_actions.sh` runs the production Objective-C action and analysis
+code against a host double that exposes APIs only inside a custom-view action
+or analysis callback. It checks all three analysis buttons, current and legacy
+API lookup, interrupted cleanup, host errors and balanced action scopes.
 
 The Motion parameter generator locates additive controls by their IDs. It never
 adds XML comments and refuses to overwrite unrelated controls between them.

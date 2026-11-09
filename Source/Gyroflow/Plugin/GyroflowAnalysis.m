@@ -70,10 +70,17 @@ NSDictionary *GyroflowBridgeResult(const char *response, NSError **error) {
     cancelToolboxAnalysis(self.session);
 }
 
+/// Request the current protocol first, matching Apple's FxBrightnessAnalysis example.
+/// Resolve it inside each host action or analysis callback rather than retaining a context-bound API.
+- (id<FxAnalysisAPI>)analysisAPI {
+    id<FxAnalysisAPI> api = [self.plugin.apiManager apiForProtocol:@protocol(FxAnalysisAPI_v2)];
+    return api ?: [self.plugin.apiManager apiForProtocol:@protocol(FxAnalysisAPI)];
+}
+
 - (BOOL)startMode:(NSString *)mode project:(NSString *)project originalProject:(NSString *)original
       parameters:(NSString *)parameters error:(NSError **)error {
-    id<FxAnalysisAPI> api = [self.plugin.apiManager apiForProtocol:@protocol(FxAnalysisAPI)];
-    if (!api) return GyroflowAnalysisError(error, @"This host does not provide background analysis.");
+    id<FxAnalysisAPI> api = [self analysisAPI];
+    if (!api) return GyroflowAnalysisError(error, @"Gyroflow Toolbox could not access background analysis for this effect. Please try again.");
     FxAnalysisState state = [api analysisStateForEffect];
     if (state == kFxAnalysisState_AnalysisRequested || state == kFxAnalysisState_AnalysisStarted)
         return GyroflowAnalysisError(error, @"This clip is already being analysed.");
@@ -94,6 +101,7 @@ NSDictionary *GyroflowBridgeResult(const char *response, NSError **error) {
         [self.lock lock];
         [self releaseAnalysisResources];
         [self.lock unlock];
+        if (error && !*error) GyroflowAnalysisError(error, @"Background analysis could not be started. Please try again.");
     }
     return started;
 }
@@ -213,12 +221,14 @@ NSDictionary *GyroflowBridgeResult(const char *response, NSError **error) {
 - (BOOL)cleanupAnalysis:(NSError **)error {
     [self.lock lock];
     @try {
-        id<FxAnalysisAPI> api = [self.plugin.apiManager apiForProtocol:@protocol(FxAnalysisAPI)];
+        if (self.cancelled || self.failed || !self.session) return YES;
+        id<FxAnalysisAPI> api = [self analysisAPI];
+        if (!api) return GyroflowAnalysisError(error, @"Gyroflow Toolbox could not check whether analysis completed. The existing stabilisation has been kept.");
         FxAnalysisState state = [api analysisStateForEffect];
         BOOL interrupted = state == kFxAnalysisState_AnalysisInterrupted;
         BOOL reachedEnd = CMTIME_IS_NUMERIC(self.lastFrameTime) &&
             CMTimeCompare(CMTimeAdd(self.lastFrameTime, self.frameDuration), CMTimeRangeGetEnd(self.range)) >= 0;
-        if (self.cancelled || self.failed || interrupted || !self.session) return YES;
+        if (interrupted) return YES;
         if (!reachedEnd && state != kFxAnalysisState_AnalysisCompleted)
             return GyroflowAnalysisError(error, @"Analysis stopped before reaching the end of the clip. The existing stabilisation has been kept.");
         NSDictionary *result = GyroflowBridgeResult(finishToolboxAnalysis(self.session), error);

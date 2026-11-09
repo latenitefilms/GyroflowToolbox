@@ -11,6 +11,7 @@ FOUNDATION_EXPORT BOOL GyroflowAnalysisError(NSError **error, NSString *message)
 /// Thin FxPlug lifecycle and Metal image adapter. Rust owns analysis, presets and project data.
 @interface GyroflowAnalysis : NSObject <FxAnalyzer>
 - (instancetype)initWithPlugin:(GyroflowPlugIn *)plugin;
+/// Custom Inspector views must call this before ending their FxCustomParameterActionAPI action.
 - (BOOL)startMode:(NSString *)mode project:(NSString *)project originalProject:(NSString *)original
       parameters:(NSString *)parameters error:(NSError **)error;
 - (void)cancel;

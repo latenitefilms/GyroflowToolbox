@@ -63,7 +63,7 @@
     id<FxCustomParameterActionAPI_v4> action = [self.apiManager apiForProtocol:@protocol(FxCustomParameterActionAPI_v4)];
     if (!action) { [self presentToolboxMessage:@"Unable to Change Settings" detail:@"The host's parameter action API is unavailable."]; return; }
     NSError *error = nil;
-    NSString *analysisMode = nil, *analysisSource = nil;
+    NSString *analysisMode = nil;
     GyroflowParameters *parameters = nil;
     [action startAction:self];
     @try {
@@ -141,7 +141,9 @@
             if (!result) return;
         }
         if (analysisMode) {
-            analysisSource = result[@"project"];
+            // A custom view's host context ends with endAction:. Queue analysis while it is active.
+            [self.analysis startMode:analysisMode project:result[@"project"] originalProject:parameters.gyroflowData
+                parameters:parameters.parameterValues error:&error];
         } else if (result[@"project"]) {
             if ([self commitToolboxProject:result[@"project"] expectedProject:parameters.gyroflowData refreshControls:refresh error:&error]) {
                 [self applyToolboxControlValues:result[@"controls"]];
@@ -153,11 +155,8 @@
         }
     } @finally {
         [action endAction:self];
-        if (error) [self presentToolboxMessage:@"Unable to Complete Operation" detail:error.localizedDescription];
-    }
-    if (analysisSource && ![self.analysis startMode:analysisMode project:analysisSource originalProject:parameters.gyroflowData
-        parameters:parameters.parameterValues error:&error]) {
-        [self presentToolboxMessage:@"Unable to Start Analysis" detail:error.localizedDescription];
+        if (error) [self presentToolboxMessage:analysisMode ? @"Unable to Start Analysis" : @"Unable to Complete Operation"
+            detail:error.localizedDescription];
     }
 }
 @end
