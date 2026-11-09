@@ -1,0 +1,307 @@
+[
+  {
+    "method": "startParameterSubGroup",
+    "name": "Gyroflow Toolbox",
+    "parameterID": "kCB_TopSection",
+    "parameterFlags": "kFxParameterFlag_DEFAULT"
+  },
+  {
+    "method": "addCustomParameterWithName",
+    "name": "",
+    "parameterID": "kCB_Header",
+    "defaultValue": "@0",
+    "parameterFlags": "kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE"
+  },
+  {
+    "method": "addCustomParameterWithName",
+    "name": "",
+    "parameterID": "kCB_OpenUserGuide",
+    "defaultValue": "@0",
+    "parameterFlags": "kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE"
+  },
+  {
+    "method": "endParameterSubGroup",
+    "name": ""
+  },
+  {
+    "method": "startParameterSubGroup",
+    "name": "Import",
+    "parameterID": "kCB_ImportSection",
+    "parameterFlags": "kFxParameterFlag_DEFAULT"
+  },
+  {
+    "method": "addCustomParameterWithName",
+    "name": "Drop Clip Here \u27a1",
+    "parameterID": "kCB_DropZone",
+    "defaultValue": "@0",
+    "parameterFlags": "kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE"
+  },
+  {
+    "method": "addCustomParameterWithName",
+    "name": "",
+    "parameterID": "kCB_ImportGyroflowProject",
+    "defaultValue": "@0",
+    "parameterFlags": "kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE"
+  },
+  {
+    "method": "addCustomParameterWithName",
+    "name": "",
+    "parameterID": "kCB_LoadLastGyroflowProject",
+    "defaultValue": "@0",
+    "parameterFlags": "kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE"
+  },
+  {
+    "method": "addCustomParameterWithName",
+    "name": "",
+    "parameterID": "kCB_ImportMediaFile",
+    "defaultValue": "@0",
+    "parameterFlags": "kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE"
+  },
+  {
+    "method": "addCustomParameterWithName",
+    "name": "",
+    "parameterID": "kCB_LoadPresetLensProfile",
+    "defaultValue": "@0",
+    "parameterFlags": "kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE"
+  },
+  {
+    "method": "endParameterSubGroup",
+    "name": ""
+  },
+  {
+    "method": "startParameterSubGroup",
+    "name": "Gyroflow Parameters",
+    "parameterID": "kCB_GyroflowParameters",
+    "parameterFlags": "kFxParameterFlag_DEFAULT"
+  },
+  {
+    "method": "addFloatSliderWithName",
+    "name": "FOV",
+    "parameterID": "kCB_FOV",
+    "defaultValue": "1.000",
+    "parameterMin": "0.100",
+    "parameterMax": "3.000",
+    "sliderMin": "0.100",
+    "sliderMax": "3.000",
+    "delta": "0.001",
+    "parameterFlags": "kFxParameterFlag_DEFAULT"
+  },
+  {
+    "method": "addFloatSliderWithName",
+    "name": "Smoothness",
+    "parameterID": "kCB_Smoothness",
+    "defaultValue": "0.500",
+    "parameterMin": "0.010",
+    "parameterMax": "3.000",
+    "sliderMin": "0.010",
+    "sliderMax": "3.000",
+    "delta": "0.001",
+    "parameterFlags": "kFxParameterFlag_DEFAULT"
+  },
+  {
+    "method": "addFloatSliderWithName",
+    "name": "Lens Correction",
+    "parameterID": "kCB_LensCorrection",
+    "defaultValue": "100.0",
+    "parameterMin": "0.0",
+    "parameterMax": "100.0",
+    "sliderMin": "0.0",
+    "sliderMax": "100.0",
+    "delta": "0.1",
+    "parameterFlags": "kFxParameterFlag_DEFAULT"
+  },
+  {
+    "method": "addFloatSliderWithName",
+    "name": "Horizon Lock",
+    "parameterID": "kCB_HorizonLock",
+    "defaultValue": "0.0",
+    "parameterMin": "0.0",
+    "parameterMax": "100.0",
+    "sliderMin": "0.0",
+    "sliderMax": "100.0",
+    "delta": "0.1",
+    "parameterFlags": "kFxParameterFlag_DEFAULT"
+  },
+  {
+    "method": "addFloatSliderWithName",
+    "name": "Horizon Roll",
+    "parameterID": "kCB_HorizonRoll",
+    "defaultValue": "0.0",
+    "parameterMin": "-100.0",
+    "parameterMax": "100.0",
+    "sliderMin": "-100.0",
+    "sliderMax": "100.0",
+    "delta": "0.1",
+    "parameterFlags": "kFxParameterFlag_DEFAULT"
+  },
+  {
+    "method": "addFloatSliderWithName",
+    "name": "Position Offset X",
+    "parameterID": "kCB_PositionOffsetX",
+    "defaultValue": "0.0",
+    "parameterMin": "-100.0",
+    "parameterMax": "100.0",
+    "sliderMin": "-100.0",
+    "sliderMax": "100.0",
+    "delta": "0.1",
+    "parameterFlags": "kFxParameterFlag_DEFAULT"
+  },
+  {
+    "method": "addFloatSliderWithName",
+    "name": "Position Offset Y",
+    "parameterID": "kCB_PositionOffsetY",
+    "defaultValue": "0.0",
+    "parameterMin": "-100.0",
+    "parameterMax": "100.0",
+    "sliderMin": "-100.0",
+    "sliderMax": "100.0",
+    "delta": "0.1",
+    "parameterFlags": "kFxParameterFlag_DEFAULT"
+  },
+  {
+    "method": "addFloatSliderWithName",
+    "name": "Input Rotation",
+    "parameterID": "kCB_InputRotation",
+    "defaultValue": "0.0",
+    "parameterMin": "-360.0",
+    "parameterMax": "360.0",
+    "sliderMin": "-360.0",
+    "sliderMax": "360.0",
+    "delta": "0.1",
+    "parameterFlags": "kFxParameterFlag_DEFAULT"
+  },
+  {
+    "method": "addFloatSliderWithName",
+    "name": "Video Rotation",
+    "parameterID": "kCB_VideoRotation",
+    "defaultValue": "0.0",
+    "parameterMin": "-360.0",
+    "parameterMax": "360.0",
+    "sliderMin": "-360.0",
+    "sliderMax": "360.0",
+    "delta": "0.1",
+    "parameterFlags": "kFxParameterFlag_DEFAULT"
+  },
+  {
+    "method": "endParameterSubGroup",
+    "name": ""
+  },
+  {
+    "method": "startParameterSubGroup",
+    "name": "Tools",
+    "parameterID": "kCB_ToolsSection",
+    "parameterFlags": "kFxParameterFlag_DEFAULT"
+  },
+  {
+    "method": "addToggleButtonWithName",
+    "name": "Stabilisation Overview",
+    "parameterID": "kCB_FieldOfViewOverview",
+    "defaultValue": "NO",
+    "parameterFlags": "kFxParameterFlag_DEFAULT | kFxParameterFlag_NOT_ANIMATABLE"
+  },
+  {
+    "method": "addToggleButtonWithName",
+    "name": "Disable Gyroflow Stretch",
+    "parameterID": "kCB_DisableGyroflowStretch",
+    "defaultValue": "NO",
+    "parameterFlags": "kFxParameterFlag_DEFAULT | kFxParameterFlag_NOT_ANIMATABLE"
+  },
+  {
+    "method": "endParameterSubGroup",
+    "name": ""
+  },
+  {
+    "method": "startParameterSubGroup",
+    "name": "File Management",
+    "parameterID": "kCB_FileManagementSection",
+    "parameterFlags": "kFxParameterFlag_DEFAULT"
+  },
+  {
+    "method": "addCustomParameterWithName",
+    "name": "",
+    "parameterID": "kCB_ReloadGyroflowProject",
+    "defaultValue": "@0",
+    "parameterFlags": "kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE"
+  },
+  {
+    "method": "addCustomParameterWithName",
+    "name": "",
+    "parameterID": "kCB_LaunchGyroflow",
+    "defaultValue": "@0",
+    "parameterFlags": "kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE"
+  },
+  {
+    "method": "addCustomParameterWithName",
+    "name": "",
+    "parameterID": "kCB_ExportGyroflowProject",
+    "defaultValue": "@0",
+    "parameterFlags": "kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE"
+  },
+  {
+    "method": "addCustomParameterWithName",
+    "name": "",
+    "parameterID": "kCB_RevealInFinder",
+    "defaultValue": "@0",
+    "parameterFlags": "kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE"
+  },
+  {
+    "method": "addCustomParameterWithName",
+    "name": "",
+    "parameterID": "kCB_Settings",
+    "defaultValue": "@0",
+    "parameterFlags": "kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE"
+  },
+  {
+    "method": "addStringParameterWithName",
+    "name": "Loaded Gyroflow Project",
+    "parameterID": "kCB_LoadedGyroflowProject",
+    "defaultValue": "@\"NOTHING LOADED\"",
+    "parameterFlags": "kFxParameterFlag_DISABLED | kFxParameterFlag_NOT_ANIMATABLE"
+  },
+  {
+    "method": "endParameterSubGroup",
+    "name": ""
+  },
+  {
+    "method": "addStringParameterWithName",
+    "name": "Unique Identifier",
+    "parameterID": "kCB_UniqueIdentifier",
+    "defaultValue": "@\"\"",
+    "parameterFlags": "kFxParameterFlag_HIDDEN | kFxParameterFlag_NOT_ANIMATABLE"
+  },
+  {
+    "method": "addStringParameterWithName",
+    "name": "Gyroflow Project Path",
+    "parameterID": "kCB_GyroflowProjectPath",
+    "defaultValue": "@\"\"",
+    "parameterFlags": "kFxParameterFlag_HIDDEN | kFxParameterFlag_NOT_ANIMATABLE"
+  },
+  {
+    "method": "addStringParameterWithName",
+    "name": "Gyroflow Project Bookmark Data",
+    "parameterID": "kCB_GyroflowProjectBookmarkData",
+    "defaultValue": "@\"\"",
+    "parameterFlags": "kFxParameterFlag_HIDDEN | kFxParameterFlag_NOT_ANIMATABLE"
+  },
+  {
+    "method": "addStringParameterWithName",
+    "name": "Gyroflow Project Data",
+    "parameterID": "kCB_GyroflowProjectData",
+    "defaultValue": "@\"\"",
+    "parameterFlags": "kFxParameterFlag_HIDDEN | kFxParameterFlag_NOT_ANIMATABLE"
+  },
+  {
+    "method": "addStringParameterWithName",
+    "name": "Media Path",
+    "parameterID": "kCB_MediaPath",
+    "defaultValue": "@\"\"",
+    "parameterFlags": "kFxParameterFlag_HIDDEN | kFxParameterFlag_NOT_ANIMATABLE"
+  },
+  {
+    "method": "addStringParameterWithName",
+    "name": "Media Bookmark Data",
+    "parameterID": "kCB_MediaBookmarkData",
+    "defaultValue": "@\"\"",
+    "parameterFlags": "kFxParameterFlag_HIDDEN | kFxParameterFlag_NOT_ANIMATABLE"
+  }
+]

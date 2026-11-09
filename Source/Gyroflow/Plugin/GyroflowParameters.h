@@ -31,4 +31,11 @@
 @property (nonatomic, strong, nullable) NSNumber *fovOverview;
 @property (nonatomic, strong, nullable) NSNumber *disableGyroflowStretch;
 
+/// Versioned Rust options transported with a render request; absent in v1.3.5 archives.
+@property (nonatomic, copy, nullable) NSData *renderOptions;
+/// Immutable Core animation snapshot; render workers never call the host's parameter APIs.
+@property (nonatomic, copy, nullable) NSString *hostKeyframes;
+/// Complete Rust-defined inspector payload; absent in older saved render states.
+@property (nonatomic, copy, nullable) NSString *parameterValues;
+
 @end

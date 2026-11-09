@@ -1,879 +1,533 @@
-//! # Gyroflow Toolbox: Rust Interface
+//! Stable C ABI between the FxPlug host and Gyroflow Core.
 //!
-//! This module allows for communication between the Gyroflow Toolbox Objective-C FxPlug4 code and the `gyroflow_core` Rust library.
+//! Returned strings belong to Rust and must be released with `freeCString`.
+//! The v1.3.5 entry points and calling conventions remain available.
 
-//---------------------------------------------------------
-// Local name bindings:
-//---------------------------------------------------------
-use gyroflow_core::{StabilizationManager, stabilization::*};
-use gyroflow_core::gpu::{ BufferDescription, BufferSource, Buffers };
+mod animation;
+mod cache;
+mod controls;
+mod geometry;
+mod parameters;
+mod project;
+mod render;
 
-use once_cell::sync::OnceCell;              // Provides two new cell-like types, unsync::OnceCell and sync::OnceCell
-use lazy_static::*;                         // A macro for declaring lazily evaluated statics
-use lru::LruCache;                          // A LRU cache implementation
-use nalgebra::Vector4;                      // Allows us to use `Vector4`
-use std::ffi::CStr;                         // Allows us to use `CStr`
-use std::ffi::CString;                      // Allows us to use `CString`
-use std::os::raw::c_char;                   // Allows us to use `*const c_uchar`
-use std::sync::Arc;                         // Adds Atomic Reference Count support
-use std::sync::atomic::AtomicBool;          // The AtomicBool type is a type of atomic variable that can be used in concurrent (multi-threaded) contexts.
-use std::sync::Mutex;                       // A mutual exclusion primitive useful for protecting shared data
+pub use render::RenderOptions;
 
-//---------------------------------------------------------
-// Start writing log files to disk:
-//---------------------------------------------------------
-#[unsafe(no_mangle)]
-pub extern "C" fn startLogger(
-    log_path: *const c_char,
-) {
-    log_panics::init();
+use gyroflow_core::StabilizationManager;
+use std::ffi::{CStr, CString, c_char, c_int, c_void};
+use std::panic::{AssertUnwindSafe, catch_unwind};
+use std::sync::{Mutex, Once};
 
-    log::error!("[Gyroflow Toolbox Rust] Starting Rust Logger...");
-    log::error!("[Gyroflow Toolbox Rust] log path: {:?}", log_path);
+/// Lens profiles are shared until an explicit cache purge, independently of logging.
+static LENS_DATABASE: Mutex<Option<StabilizationManager>> = Mutex::new(None);
 
-    let log_path_pointer = unsafe { CStr::from_ptr(log_path) };
-    let log_path_string = log_path_pointer.to_string_lossy();
+#[derive(Debug)]
+enum BridgeError {
+    InvalidInput(&'static str),
+    Core(gyroflow_core::GyroflowCoreError),
+    Io(std::io::Error),
+    Filesystem(gyroflow_core::filesystem::FilesystemError),
+    Utf8(std::str::Utf8Error),
+    Json(serde_json::Error),
+    Panic,
+}
 
-    let log_config = [ "mp4parse", "wgpu", "naga", "akaze", "ureq", "rustls", "ofx" ]
-        .into_iter()
-        .fold(simplelog::ConfigBuilder::new(), |mut cfg, x| { cfg.add_filter_ignore_str(x); cfg })
-        .build();
-
-    if let Ok(file_log) = std::fs::File::create(log_path_string.as_ref()) {
-        let _ = simplelog::WriteLogger::init(log::LevelFilter::Debug, log_config, file_log);
+impl std::fmt::Display for BridgeError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::InvalidInput(message) => formatter.write_str(message),
+            Self::Core(error) => error.fmt(formatter),
+            Self::Io(error) => error.fmt(formatter),
+            Self::Filesystem(error) => error.fmt(formatter),
+            Self::Utf8(error) => error.fmt(formatter),
+            Self::Json(error) => error.fmt(formatter),
+            Self::Panic => formatter.write_str("Gyroflow operation panicked"),
+        }
     }
+}
+impl From<gyroflow_core::GyroflowCoreError> for BridgeError {
+    fn from(error: gyroflow_core::GyroflowCoreError) -> Self {
+        Self::Core(error)
+    }
+}
+impl From<std::io::Error> for BridgeError {
+    fn from(error: std::io::Error) -> Self {
+        Self::Io(error)
+    }
+}
+impl From<gyroflow_core::filesystem::FilesystemError> for BridgeError {
+    fn from(error: gyroflow_core::filesystem::FilesystemError) -> Self {
+        Self::Filesystem(error)
+    }
+}
+impl From<std::str::Utf8Error> for BridgeError {
+    fn from(error: std::str::Utf8Error) -> Self {
+        Self::Utf8(error)
+    }
+}
+impl From<serde_json::Error> for BridgeError {
+    fn from(error: serde_json::Error) -> Self {
+        Self::Json(error)
+    }
+}
+type BridgeResult<Value> = Result<Value, BridgeError>;
 
-    //---------------------------------------------------------
-    // Load the Lens Profiles:
-    //---------------------------------------------------------
-    let stab = StabilizationManager::default();
-    stab.lens_profile_db.write().load_all();
-    let mut lock = MANAGER_CACHE.lock().unwrap();
-    lock.put("lens-profiles".into(), Arc::new(stab));
+/// Returns a generated C header containing the stable parameter identifiers. Free with `freeCString`.
+#[unsafe(export_name = "getParameterConstants")]
+pub extern "C" fn parameter_constants() -> *const c_char {
+    ffi_string(|| Ok(parameters::constants()))
 }
 
-// This code block defines a lazy static variable called `MANAGER_CACHE` that is a `Mutex`-protected LRU cache of `StabilizationManager` instances.
-//
-// The `lazy_static!` macro is used to ensure that the variable is initialized only once, and only when it is first accessed.
-//
-// The `Mutex` is used to ensure that the cache can be safely accessed from multiple threads.
-//
-// The `LruCache` is used to limit the size of the cache to 8 items.
-//
-// # Example
-//
-// ```rust
-// use gyroflow::MANAGER_CACHE;
-//
-// let cache = MANAGER_CACHE.lock().unwrap();
-// let manager = cache.get("my_pixel_format").unwrap();
-// ```
-lazy_static! {
-    static ref MANAGER_CACHE: Mutex<LruCache<String, Arc<StabilizationManager>>> = Mutex::new(LruCache::new(std::num::NonZeroUsize::new(8).unwrap()));
-}
-
-/// This function retrieves default values from a Gyroflow Project.
-///
-/// # Arguments
-///
-/// * `gyroflow_project_data` - A pointer to the Gyroflow Project data.
-/// * `fov` - A pointer to the field of view value.
-/// * `smoothness` - A pointer to the smoothness value.
-/// * `lens_correction` - A pointer to the lens correction value.
-/// * `horizon_lock` - A pointer to the horizon lock value.
-/// * `horizon_roll` - A pointer to the horizon roll value.
-/// * `position_offset_x` - A pointer to the position offset x value.
-/// * `position_offset_y` - A pointer to the position offset y value.
-/// * `video_rotation` - A pointer to the video rotation value.
+/// Validates a complete inspector payload and writes its versioned render options. Returns 1 on success.
 ///
 /// # Safety
+/// Input must be a live C string; output must be null or an aligned writable `RenderOptions` until return.
+#[unsafe(export_name = "getOptionsFromParameters")]
+pub unsafe extern "C" fn options_from_parameters(
+    data: *const c_char,
+    options: *mut RenderOptions,
+) -> c_int {
+    ffi_status(|| {
+        if options.is_null() || !options.is_aligned() {
+            return Err(BridgeError::InvalidInput("invalid options output"));
+        }
+        // SAFETY: The caller supplies readable input and a valid output allocation.
+        let values = render::InspectorValues::parse(unsafe { input_string(data)? })?;
+        // SAFETY: Checked alignment and nullability; allocation validity belongs to the caller.
+        unsafe {
+            options.write(values.options);
+        }
+        Ok(())
+    })
+}
+
+/// Renders a complete Rust-defined inspector payload, returning 1 only when Metal processing succeeds.
 ///
-/// This function is marked as unsafe because it takes a raw pointer as an argument.
-/// The caller must ensure that the pointer is valid and that the data it points to is valid and correctly aligned.
+/// # Safety
+/// Strings must be valid until return. Textures must be live, distinct Metal textures matching the
+/// declared dimensions and format, on the same device, without concurrent writers. Queue may be null.
+#[unsafe(export_name = "processFrameWithParameters")]
+pub unsafe extern "C" fn process_frame_with_parameters(
+    identifier: *const c_char,
+    width: u32,
+    height: u32,
+    format: *const c_char,
+    component_bytes: c_int,
+    path: *const c_char,
+    data: *const c_char,
+    timestamp: i64,
+    parameters: *const c_char,
+    keyframes: *const c_char,
+    input_texture: *mut c_void,
+    output_texture: *mut c_void,
+    command_queue: *mut c_void,
+) -> c_int {
+    ffi_status(|| {
+        // SAFETY: The host owns all borrowed strings and textures throughout this synchronous call.
+        let frame = unsafe {
+            let values = render::InspectorValues::parse(input_string(parameters)?)?;
+            render::Frame {
+                identifier: input_string(identifier)?,
+                path: input_string(path)?,
+                data: input_string(data)?,
+                width,
+                height,
+                timestamp,
+                format: render::PixelFormat::parse(input_string(format)?, component_bytes)?,
+                settings: values.settings,
+                options: values.options,
+                disable_stretch: values.disable_stretch,
+                host_keyframes: if keyframes.is_null() {
+                    None
+                } else {
+                    Some(input_string(keyframes)?)
+                },
+                input_texture,
+                output_texture,
+                command_queue,
+            }
+        };
+        frame.validate()?;
+        render::process(frame)
+    })
+}
+
+fn boundary<Value>(operation: impl FnOnce() -> BridgeResult<Value>) -> BridgeResult<Value> {
+    // Only the C boundary catches panics. Poisoned renderer locks are never recovered.
+    catch_unwind(AssertUnwindSafe(operation)).unwrap_or(Err(BridgeError::Panic))
+}
+fn ffi_string(operation: impl FnOnce() -> BridgeResult<String>) -> *const c_char {
+    let value = match boundary(operation) {
+        Ok(value) => value,
+        Err(error) => {
+            log::error!("Gyroflow Toolbox: {error}");
+            "FAIL".to_owned()
+        }
+    };
+    CString::new(value)
+        .unwrap_or_else(|_| c"FAIL".to_owned())
+        .into_raw()
+}
+fn ffi_status(operation: impl FnOnce() -> BridgeResult<()>) -> c_int {
+    match boundary(operation) {
+        Ok(()) => 1,
+        Err(error) => {
+            log::error!("Gyroflow Toolbox: {error}");
+            0
+        }
+    }
+}
+
+/// # Safety
+/// Non-null pointers must reference a NUL-terminated allocation valid for the returned lifetime.
+unsafe fn input_string<'input>(pointer: *const c_char) -> BridgeResult<&'input str> {
+    if pointer.is_null() {
+        return Err(BridgeError::InvalidInput("null string argument"));
+    }
+    // SAFETY: The FFI caller guarantees the string allocation and its lifetime.
+    Ok(unsafe { CStr::from_ptr(pointer) }.to_str()?)
+}
+fn new_manager() -> StabilizationManager {
+    let mut database = LENS_DATABASE.lock().expect("lens database mutex poisoned");
+    let shared = database.get_or_insert_with(|| {
+        let manager = StabilizationManager::default();
+        manager.lens_profile_db.write().load_all();
+        manager
+    });
+    StabilizationManager {
+        lens_profile_db: std::sync::Arc::clone(&shared.lens_profile_db),
+        ..StabilizationManager::default()
+    }
+}
+
+fn release_lens_database() {
+    let retired = LENS_DATABASE
+        .lock()
+        .expect("lens database mutex poisoned")
+        .take();
+    drop(retired);
+}
+
+/// Returns inspector values for the additional Core controls as an owned JSON object, or "FAIL".
 ///
-/// # Returns
+/// # Safety
+/// `data` must be null or a valid NUL-terminated project string until return.
+#[unsafe(export_name = "getEngineControlDefaults")]
+pub unsafe extern "C" fn engine_control_defaults(data: *const c_char) -> *const c_char {
+    ffi_string(|| {
+        // SAFETY: The caller guarantees the input allocation.
+        let source = unsafe { input_string(data)? };
+        let values = project::inspect(source, |manager| {
+            let mut values = controls::defaults(manager);
+            if let Some(rotation) = project::input_rotation(source, manager) {
+                values["170"] = rotation.into();
+            }
+            values
+        })?;
+        Ok(serde_json::to_string(&values)?)
+    })
+}
+
+/// Exports inspector settings and animation as a portable Gyroflow project, or owned "FAIL".
 ///
-/// A pointer to a C-style string containing either "OK" or a failure string.
+/// # Safety
+/// Strings must be valid until return. Options must be null or an aligned readable `RenderOptions`.
+#[unsafe(export_name = "exportConfiguredProject")]
+pub unsafe extern "C" fn export_configured_project(
+    data: *const c_char,
+    snapshot: *const c_char,
+    options: *const RenderOptions,
+) -> *const c_char {
+    ffi_string(|| {
+        if options.is_null() || !options.is_aligned() {
+            return Err(BridgeError::InvalidInput("invalid export options"));
+        }
+        // SAFETY: The caller supplies live C strings and a readable options allocation.
+        unsafe {
+            render::export_project(input_string(data)?, input_string(snapshot)?, options.read())
+        }
+    })
+}
+
+/// Starts optional file logging once per renderer process.
 ///
-/// # Example
+/// # Safety
+/// `log_path` must be null or a valid NUL-terminated UTF-8 path during this call.
+#[unsafe(export_name = "startLogger")]
+pub unsafe extern "C" fn start_logger(log_path: *const c_char) {
+    static LOGGER: Once = Once::new();
+    let _ = ffi_status(|| {
+        // SAFETY: Guaranteed by this entry point's caller.
+        let path = unsafe { input_string(log_path)? };
+        LOGGER.call_once(|| {
+            log_panics::init();
+            let mut config = simplelog::ConfigBuilder::new();
+            for target in ["mp4parse", "wgpu", "naga", "akaze", "ureq", "rustls"] {
+                config.add_filter_ignore_str(target);
+            }
+            if let Ok(file) = std::fs::File::create(path) {
+                let _ = simplelog::WriteLogger::init(log::LevelFilter::Info, config.build(), file);
+            }
+        });
+        Ok(())
+    });
+}
+
+/// Reads legacy inspector defaults, preserving their v1.3.5 units.
 ///
-/// ```rust
-/// use gyroflow::getDefaultValues;
+/// Returns an owned "OK" or "FAIL"; outputs remain untouched on failure.
 ///
-/// let gyroflow_project_data = "Gyroflow Project Data".as_ptr() as *const c_char;
-/// let fov: *mut f64 = std::ptr::null_mut();
-/// let smoothness: *mut f64 = std::ptr::null_mut();
-/// let lens_correction: *mut f64 = std::ptr::null_mut();
-/// let horizon_lock: *mut f64 = std::ptr::null_mut();
-/// let horizon_roll: *mut f64 = std::ptr::null_mut();
-/// let position_offset_x: *mut f64 = std::ptr::null_mut();
-/// let position_offset_y: *mut f64 = std::ptr::null_mut();
-/// let video_rotation: *mut f64 = std::ptr::null_mut();
-///
-/// let result = unsafe {
-///     getDefaultValues(
-///         gyroflow_project_data,
-///         fov,
-///         smoothness,
-///         lens_correction,
-///         horizon_lock,
-///         horizon_roll,
-///         position_offset_x,
-///         position_offset_y,
-///         video_rotation,
-///     )
-/// };
-///
-/// assert_eq!(result, "OK");
-/// ```
-#[unsafe(no_mangle)]
-pub extern "C" fn getDefaultValues(
-    gyroflow_project_data: *const c_char,
+/// # Safety
+/// Input must be null or a valid C string. Outputs must be null or distinct, aligned,
+/// writable doubles, with all allocations valid until return.
+#[unsafe(export_name = "getDefaultValues")]
+pub unsafe extern "C" fn default_values(
+    data: *const c_char,
     fov: *mut f64,
     smoothness: *mut f64,
     lens_correction: *mut f64,
     horizon_lock: *mut f64,
     horizon_roll: *mut f64,
-    position_offset_x: *mut f64,
-    position_offset_y: *mut f64,
+    position_x: *mut f64,
+    position_y: *mut f64,
     video_rotation: *mut f64,
 ) -> *const c_char {
-    //---------------------------------------------------------
-    // Convert the Gyroflow Project data to a `&str`:
-    //---------------------------------------------------------
-    let gyroflow_project_data_pointer = unsafe { CStr::from_ptr(gyroflow_project_data) };
-    let gyroflow_project_data_string = gyroflow_project_data_pointer.to_string_lossy();
-
-    let mut stab = StabilizationManager::default();
-    {
-        //---------------------------------------------------------
-        // Find first lens profile database with loaded profiles:
-        //---------------------------------------------------------
-        let lock = MANAGER_CACHE.lock().unwrap();
-        for (_, v) in lock.iter() {
-            if v.lens_profile_db.read().loaded {
-                stab.lens_profile_db = v.lens_profile_db.clone();
-                break;
-            }
+    ffi_string(|| {
+        let outputs = [
+            fov,
+            smoothness,
+            lens_correction,
+            horizon_lock,
+            horizon_roll,
+            position_x,
+            position_y,
+            video_rotation,
+        ];
+        if outputs
+            .iter()
+            .any(|pointer| pointer.is_null() || !pointer.is_aligned())
+        {
+            return Err(BridgeError::InvalidInput(
+                "invalid default-value output pointer",
+            ));
         }
-    }
-
-    //---------------------------------------------------------
-    // Import the `gyroflow_project_data_string`:
-    //---------------------------------------------------------
-    let blocking = true;
-    let cancel_flag = Arc::new(AtomicBool::new(false));
-    let mut is_preset = false;
-    match stab.import_gyroflow_data(
-        gyroflow_project_data_string.as_bytes(),
-        blocking,
-        None,
-        |_|(),
-        cancel_flag,
-        &mut is_preset,
-        true
-    ) {
-        Ok(_) => {
-
-            unsafe {
-                let params = stab.params.read();
-                let smoothing = stab.smoothing.read();
-
-                *fov = params.fov;
-                *smoothness = smoothing.current().get_parameter("smoothness");
-                *lens_correction = params.lens_correction_amount * 100.0;
-                *horizon_lock = smoothing.horizon_lock.horizonlockpercent;
-                *horizon_roll = smoothing.horizon_lock.horizonroll;
-                *position_offset_x = params.adaptive_zoom_center_offset.0;
-                *position_offset_y = params.adaptive_zoom_center_offset.1;
-                *video_rotation = params.video_rotation;
-            }
-
-            let result = CString::new("OK").unwrap();
-            return result.into_raw()
-        },
-        Err(e) => {
-            //---------------------------------------------------------
-            // An error has occurred:
-            //---------------------------------------------------------
-            log::error!("[Gyroflow Toolbox Rust] Error importing gyroflow data: {:?}", e);
-
-            let error_msg = format!("{}", e);
-            let result = CString::new(error_msg).unwrap();
-            return result.into_raw()
-        },
-    }
+        // SAFETY: The caller owns the input for this call.
+        let values = project::inspect(unsafe { input_string(data)? }, |manager| {
+            let parameters = manager.params.read();
+            let smoothing = manager.smoothing.read();
+            [
+                parameters.fov,
+                smoothing.current().get_parameter("smoothness"),
+                parameters.lens_correction_amount * 100.0,
+                smoothing.horizon_lock.horizonlockpercent,
+                smoothing.horizon_lock.horizonroll,
+                parameters.adaptive_zoom_center_offset.0,
+                parameters.adaptive_zoom_center_offset.1,
+                parameters.video_rotation,
+            ]
+        })?;
+        for (pointer, value) in outputs.into_iter().zip(values) {
+            // SAFETY: Outputs were checked above; allocation validity is the caller's contract.
+            unsafe { pointer.write(value) };
+        }
+        Ok("OK".into())
+    })
 }
 
-/// Gets the lens identifier.
-///
-/// # Arguments
-///
-/// * `gyroflow_project_data` - A pointer to a C-style string containing the Gyroflow Project data.
-///
-/// # Returns
-///
-/// A pointer to a C-style string containing the lens identifier or "FAIL".
+/// Writes legacy-compatible render defaults, returning 1 on success.
 ///
 /// # Safety
-///
-/// This function is marked as unsafe because it accepts a raw pointer as an argument. It is the caller's responsibility to ensure that the pointer is valid and points to a null-terminated string.
-#[unsafe(no_mangle)]
-pub extern "C" fn getLensIdentifier(
-    gyroflow_project_data: *const c_char,
-) -> *const c_char {
-    //---------------------------------------------------------
-    // Convert the Gyroflow Project data to a `&str`:
-    //---------------------------------------------------------
-    let gyroflow_project_data_pointer = unsafe { CStr::from_ptr(gyroflow_project_data) };
-    let gyroflow_project_data_string = gyroflow_project_data_pointer.to_string_lossy();
-
-    let mut stab = StabilizationManager::default();
-    {
-        //---------------------------------------------------------
-        // Find first lens profile database with loaded profiles:
-        //---------------------------------------------------------
-        let lock = MANAGER_CACHE.lock().unwrap();
-        for (_, v) in lock.iter() {
-            if v.lens_profile_db.read().loaded {
-                stab.lens_profile_db = v.lens_profile_db.clone();
-                break;
-            }
+/// Output must be null or point to an aligned writable `RenderOptions` until return.
+#[unsafe(export_name = "getRenderDefaults")]
+pub unsafe extern "C" fn render_defaults(options: *mut RenderOptions) -> c_int {
+    ffi_status(|| {
+        if options.is_null() || !options.is_aligned() {
+            return Err(BridgeError::InvalidInput(
+                "invalid render-options output pointer",
+            ));
         }
-    }
-
-    //---------------------------------------------------------
-    // Import the `gyroflow_project_data_string`:
-    //---------------------------------------------------------
-    let blocking = true;
-    let cancel_flag = Arc::new(AtomicBool::new(false));
-    let mut is_preset = false;
-    match stab.import_gyroflow_data(
-        gyroflow_project_data_string.as_bytes(),
-        blocking,
-        None,
-        |_|(),
-        cancel_flag,
-        &mut is_preset,
-        true
-    ) {
-        Ok(_) => {
-            //---------------------------------------------------------
-            // Get the Lens Identifier:
-            //---------------------------------------------------------
-            let identifier = stab.lens.read().identifier.to_string();
-            let result = CString::new(identifier).unwrap();
-            return result.into_raw();
-        },
-        Err(e) => {
-            //---------------------------------------------------------
-            // An error has occurred:
-            //---------------------------------------------------------
-            log::error!("[Gyroflow Toolbox Rust] Error importing gyroflow data: {:?}", e);
-
-            let error_msg = format!("{}", e);
-            let result = CString::new(error_msg).unwrap();
-            return result.into_raw()
-        },
-    }
+        // SAFETY: Validated output pointer; allocation validity is the caller's contract.
+        unsafe { options.write(RenderOptions::default()) };
+        Ok(())
+    })
 }
 
-/// Checks if a lens profile is loaded.
-///
-/// # Arguments
-///
-/// * `gyroflow_project_data` - A pointer to a C-style string containing the Gyroflow Project data.
-///
-/// # Returns
-///
-/// A pointer to a C-style string containing "YES" if the official lens is loaded, or a failure string otherwise.
+/// Reads advanced defaults from an imported project, returning 1 on success.
 ///
 /// # Safety
-///
-/// This function is marked as unsafe because it accepts a raw pointer as an argument. It is the caller's responsibility to ensure that the pointer is valid and points to a null-terminated string.
-#[unsafe(no_mangle)]
-pub extern "C" fn isLensProfileLoaded(
-    gyroflow_project_data: *const c_char,
-) -> *const c_char {
-    //---------------------------------------------------------
-    // Convert the Gyroflow Project data to a `&str`:
-    //---------------------------------------------------------
-    let gyroflow_project_data_pointer = unsafe { CStr::from_ptr(gyroflow_project_data) };
-    let gyroflow_project_data_string = gyroflow_project_data_pointer.to_string_lossy();
-
-    let mut stab = StabilizationManager::default();
-    {
-        //---------------------------------------------------------
-        // Find first lens profile database with loaded profiles:
-        //---------------------------------------------------------
-        let lock = MANAGER_CACHE.lock().unwrap();
-        for (_, v) in lock.iter() {
-            if v.lens_profile_db.read().loaded {
-                stab.lens_profile_db = v.lens_profile_db.clone();
-                break;
-            }
+/// Input must be a valid C string. Output must point to an aligned writable
+/// `RenderOptions`. Both allocations must remain valid for this call.
+#[unsafe(export_name = "getAdvancedDefaults")]
+pub unsafe extern "C" fn advanced_defaults(
+    data: *const c_char,
+    options: *mut RenderOptions,
+) -> c_int {
+    ffi_status(|| {
+        if options.is_null() || !options.is_aligned() {
+            return Err(BridgeError::InvalidInput(
+                "invalid render-options output pointer",
+            ));
         }
-    }
-
-    //---------------------------------------------------------
-    // Import the `gyroflow_project_data_string`:
-    //---------------------------------------------------------
-    let blocking = true;
-    let cancel_flag = Arc::new(AtomicBool::new(false));
-    let mut is_preset = false;
-    match stab.import_gyroflow_data(
-        gyroflow_project_data_string.as_bytes(),
-        blocking,
-        None,
-        |_|(),
-        cancel_flag,
-        &mut is_preset,
-        true
-    ) {
-        Ok(_) => {
-            //---------------------------------------------------------
-            // Is official lens loaded?
-            //---------------------------------------------------------
-            let is_official_lens_loaded = stab.lens.read().calib_dimension.w > 0;
-            if is_official_lens_loaded {
-                let result = CString::new("YES").unwrap();
-                return result.into_raw()
-            } else {
-                let result = CString::new("NO").unwrap();
-                return result.into_raw()
-            }
-        },
-        Err(e) => {
-            //---------------------------------------------------------
-            // An error has occurred:
-            //---------------------------------------------------------
-            log::error!("[Gyroflow Toolbox Rust] Error importing gyroflow data: {:?}", e);
-
-            let error_msg = format!("{}", e);
-            let result = CString::new(error_msg).unwrap();
-            return result.into_raw()
-        },
-    }
+        // SAFETY: The caller owns the input for this call.
+        let defaults =
+            project::inspect(unsafe { input_string(data)? }, RenderOptions::from_project)?;
+        // SAFETY: Validated output pointer; allocation validity is the caller's contract.
+        unsafe { options.write(defaults) };
+        Ok(())
+    })
 }
 
-/// Determines whether the Gyroflow Project contains Stabilisation Data.
-///
-/// # Arguments
-///
-/// * `gyroflow_project_data` - A pointer to a C-style string containing the Gyroflow Project data.
-///
-/// # Returns
-///
-/// A pointer to a C-style string containing "YES" if the Gyroflow Project contains Stabilisation Data, or a failure string otherwise.
+/// Returns the lens identifier as an owned C string, or "FAIL".
 ///
 /// # Safety
+/// `data` must be null or a valid NUL-terminated UTF-8 string during this call.
+#[unsafe(export_name = "getLensIdentifier")]
+pub unsafe extern "C" fn lens_identifier(data: *const c_char) -> *const c_char {
+    ffi_string(|| {
+        // SAFETY: The caller guarantees the input allocation.
+        project::inspect(unsafe { input_string(data)? }, |manager| {
+            manager.lens.read().identifier.clone()
+        })
+    })
+}
+
+/// Returns "YES", "NO", or "FAIL" as an owned C string.
 ///
-/// This function is marked as unsafe because it accepts a raw pointer as an argument. It is the caller's responsibility to ensure that the pointer is valid and points to a null-terminated string.
-#[unsafe(no_mangle)]
-pub extern "C" fn doesGyroflowProjectContainStabilisationData(
-    gyroflow_project_data: *const c_char,
+/// # Safety
+/// `data` must be null or a valid NUL-terminated UTF-8 string during this call.
+#[unsafe(export_name = "isLensProfileLoaded")]
+pub unsafe extern "C" fn lens_profile_loaded(data: *const c_char) -> *const c_char {
+    ffi_string(|| {
+        // SAFETY: The caller guarantees the input allocation.
+        let loaded = project::inspect(unsafe { input_string(data)? }, |manager| {
+            manager.lens.read().calib_dimension.w > 0
+        })?;
+        Ok(if loaded { "YES" } else { "NO" }.into())
+    })
+}
+
+/// Returns whether embedded motion data exists, without logging its contents.
+///
+/// # Safety
+/// `data` must be null or a valid NUL-terminated UTF-8 string during this call.
+#[unsafe(export_name = "doesGyroflowProjectContainStabilisationData")]
+pub unsafe extern "C" fn contains_stabilization_data(data: *const c_char) -> *const c_char {
+    ffi_string(|| {
+        // SAFETY: The caller guarantees the input allocation.
+        let present = project::inspect(unsafe { input_string(data)? }, |manager| {
+            let gyro = manager.gyro.read();
+            !gyro.file_metadata.read().raw_imu.is_empty() || !gyro.quaternions.is_empty()
+        })?;
+        Ok(if present { "YES" } else { "NO" }.into())
+    })
+}
+
+/// Returns whether the telemetry has accurate timestamps, as "YES", "NO", or "FAIL".
+///
+/// # Safety
+/// `data` must be null or a valid NUL-terminated UTF-8 string during this call.
+#[unsafe(export_name = "hasAccurateTimestamps")]
+pub unsafe extern "C" fn accurate_timestamps(data: *const c_char) -> *const c_char {
+    ffi_string(|| {
+        // SAFETY: The caller guarantees the input allocation.
+        let accurate = project::inspect(unsafe { input_string(data)? }, |manager| {
+            manager
+                .gyro
+                .read()
+                .file_metadata
+                .read()
+                .has_accurate_timestamps
+        })?;
+        Ok(if accurate { "YES" } else { "NO" }.into())
+    })
+}
+
+/// Applies a lens profile and returns embedded project data, or "FAIL".
+///
+/// # Safety
+/// Both pointers must be null or valid C strings. The host must hold sandbox access
+/// to the profile file throughout this call.
+#[unsafe(export_name = "loadLensProfile")]
+pub unsafe extern "C" fn load_lens_profile(
+    data: *const c_char,
+    path: *const c_char,
 ) -> *const c_char {
-    //---------------------------------------------------------
-    // Convert the Gyroflow Project data to a `&str`:
-    //---------------------------------------------------------
-    let gyroflow_project_data_pointer = unsafe { CStr::from_ptr(gyroflow_project_data) };
-    let gyroflow_project_data_string = gyroflow_project_data_pointer.to_string_lossy();
-
-    let mut stab: StabilizationManager = StabilizationManager::default();
-    {
-        //---------------------------------------------------------
-        // Find first lens profile database with loaded profiles:
-        //---------------------------------------------------------
-        let lock = MANAGER_CACHE.lock().unwrap();
-        for (_, v) in lock.iter() {
-            if v.lens_profile_db.read().loaded {
-                stab.lens_profile_db = v.lens_profile_db.clone();
-                break;
-            }
-        }
-    }
-
-    //---------------------------------------------------------
-    // Import the `gyroflow_project_data_string`:
-    //---------------------------------------------------------
-    let blocking = true;
-    let cancel_flag = Arc::new(AtomicBool::new(false));
-    let mut is_preset = false;
-    match stab.import_gyroflow_data(
-        gyroflow_project_data_string.as_bytes(),
-        blocking,
-        None,
-        |_|(),
-        cancel_flag,
-        &mut is_preset,
-        true
-    ) {
-        Ok(_) => {
-            //---------------------------------------------------------
-            // Check if gyroflow project contains stabilization data:
-            //---------------------------------------------------------
-            let has_motion = {
-                let gyro = stab.gyro.read();
-                let metadata = gyro.file_metadata.read();
-
-                log::error!("[Gyroflow Toolbox Rust] gyro.file_metadata.raw_imu: {:?}", metadata.raw_imu);
-                log::error!("[Gyroflow Toolbox Rust] gyro.file_metadata.quaternions: {:?}", metadata.quaternions);
-
-                //log::error!("[Gyroflow Toolbox Rust] gyro.raw_imu: {:?}", metadata.raw_imu);
-                log::error!("[Gyroflow Toolbox Rust] gyro.quaternions: {:?}", gyro.quaternions);
-
-                log::error!("[Gyroflow Toolbox Rust] detected_source: {:?}", metadata.detected_source);
-
-                log::error!("[Gyroflow Toolbox Rust] imu_orientation: {:?}", metadata.imu_orientation);
-                log::error!("[Gyroflow Toolbox Rust] integration_method: {:?}", gyro.integration_method);
-                log::error!("[Gyroflow Toolbox Rust] file_url: {:?}", gyro.file_url);
-
-                !metadata.raw_imu.is_empty() || !gyro.quaternions.is_empty()
-            };
-
-            //---------------------------------------------------------
-            // Return the result as a string:
-            //---------------------------------------------------------
-            let result_string = if has_motion {
-                "YES"
-            } else {
-                "NO"
-            };
-
-            let result = CString::new(result_string).unwrap();
-            return result.into_raw()
-        },
-        Err(e) => {
-            //---------------------------------------------------------
-            // An error has occurred:
-            //---------------------------------------------------------
-            log::error!("[Gyroflow Toolbox Rust] Error importing gyroflow data: {:?}", e);
-
-            let error_msg = format!("{}", e);
-            let result = CString::new(error_msg).unwrap();
-            return result.into_raw()
-        },
-    }
+    ffi_string(|| {
+        // SAFETY: The caller guarantees both string allocations.
+        let (data, path) = unsafe { (input_string(data)?, input_string(path)?) };
+        let manager = project::import(data)?;
+        manager.load_lens_profile(path)?;
+        project::export_preserving_metadata(&manager, data)
+    })
 }
 
-/// Determines whether the Gyroflow Project data has accurate timestamps.
+/// Applies a preset file while keeping the current clip's telemetry.
 ///
-/// # Arguments
+/// Also accepts the legacy JSON-string input. Returns an owned project or "FAIL".
 ///
-/// * `gyroflow_project_data` - A pointer to a C-style string containing the Gyroflow Project data.
-///
-/// # Returns
-///
-/// * If the project contains accurate timestamps, returns a C-style string containing "YES".
-/// * If the project does not contain accurate timestamps, returns a C-style string containing an error message.
-#[unsafe(no_mangle)]
-pub extern "C" fn hasAccurateTimestamps(
-    gyroflow_project_data: *const c_char,
-) -> *const c_char {
-    //---------------------------------------------------------
-    // Convert the Gyroflow Project data to a `&str`:
-    //---------------------------------------------------------
-    let gyroflow_project_data_pointer = unsafe { CStr::from_ptr(gyroflow_project_data) };
-    let gyroflow_project_data_string = gyroflow_project_data_pointer.to_string_lossy();
-
-    let mut stab = StabilizationManager::default();
-    {
-        //---------------------------------------------------------
-        // Find first lens profile database with loaded profiles:
-        //---------------------------------------------------------
-        let lock = MANAGER_CACHE.lock().unwrap();
-        for (_, v) in lock.iter() {
-            if v.lens_profile_db.read().loaded {
-                stab.lens_profile_db = v.lens_profile_db.clone();
-                break;
-            }
-        }
-    }
-
-    //---------------------------------------------------------
-    // Import the `gyroflow_project_data_string`:
-    //---------------------------------------------------------
-    let blocking = true;
-    let cancel_flag = Arc::new(AtomicBool::new(false));
-    let mut is_preset = false;
-    match stab.import_gyroflow_data(
-        gyroflow_project_data_string.as_bytes(),
-        blocking,
-        None,
-        |_|(),
-        cancel_flag,
-        &mut is_preset,
-        true
-    ) {
-        Ok(_) => {
-            //---------------------------------------------------------
-            // Check if gyroflow project contains stabilization data:
-            //---------------------------------------------------------
-            let has_accurate_timestamps = {
-                stab.gyro.read().file_metadata.read().has_accurate_timestamps
-            };
-
-            //---------------------------------------------------------
-            // Return the result as a string:
-            //---------------------------------------------------------
-            let result_string = if has_accurate_timestamps {
-                "YES"
-            } else {
-                "NO"
-            };
-
-            let result = CString::new(result_string).unwrap();
-            return result.into_raw()
-        },
-        Err(e) => {
-            //---------------------------------------------------------
-            // An error has occurred:
-            //---------------------------------------------------------
-            log::error!("[Gyroflow Toolbox Rust] Error importing gyroflow data: {:?}", e);
-
-            let error_msg = format!("{}", e);
-            let result = CString::new(error_msg).unwrap();
-            return result.into_raw()
-        },
-    }
+/// # Safety
+/// Both pointers must be null or valid C strings. The host must hold sandbox access
+/// when passing a preset path.
+#[unsafe(export_name = "loadPreset")]
+pub unsafe extern "C" fn load_preset(data: *const c_char, path: *const c_char) -> *const c_char {
+    ffi_string(|| {
+        // SAFETY: The caller guarantees both string allocations.
+        let (data, path) = unsafe { (input_string(data)?, input_string(path)?) };
+        let manager = project::import(data)?;
+        project::import_into(&manager, &project::read_preset(path)?)?;
+        project::export_preserving_metadata(&manager, data)
+    })
 }
 
-/// Load a Lens Profile from a JSON to a supplied Gyroflow Project.
+/// Imports authorized media and returns embedded project data, or "FAIL".
 ///
-/// # Arguments
-///
-/// * `gyroflow_project_data` - A pointer to a C-style string representing the Gyroflow Project data.
-/// * `lens_profile_path` - A pointer to a C-style string representing the Lens Profile data.
-///
-/// # Returns
-///
-/// A new Gyroflow Project or "FAIL".
-#[unsafe(no_mangle)]
-pub extern "C" fn loadLensProfile(
-    gyroflow_project_data: *const c_char,
-    lens_profile_path: *const c_char,
-) -> *const c_char {
-    //---------------------------------------------------------
-    // Convert the Gyroflow Project data to a `&str`:
-    //---------------------------------------------------------
-    let gyroflow_project_data_pointer = unsafe { CStr::from_ptr(gyroflow_project_data) };
-    let gyroflow_project_data_string = gyroflow_project_data_pointer.to_string_lossy();
-
-    //---------------------------------------------------------
-    // Convert the Lens Profile data to a `&str`:
-    //---------------------------------------------------------
-    let lens_profile_path_pointer = unsafe { CStr::from_ptr(lens_profile_path) };
-    let lens_profile_path_string = lens_profile_path_pointer.to_string_lossy();
-
-    let mut stab = StabilizationManager::default();
-    {
-        //---------------------------------------------------------
-        // Find first lens profile database with loaded profiles:
-        //---------------------------------------------------------
-        let lock = MANAGER_CACHE.lock().unwrap();
-        for (_, v) in lock.iter() {
-            if v.lens_profile_db.read().loaded {
-                stab.lens_profile_db = v.lens_profile_db.clone();
-                break;
-            }
-        }
-    }
-
-    //---------------------------------------------------------
-    // Import the `gyroflow_project_data_string`:
-    //---------------------------------------------------------
-    let blocking = true;
-    let cancel_flag = Arc::new(AtomicBool::new(false));
-    let mut is_preset = false;
-    match stab.import_gyroflow_data(
-        gyroflow_project_data_string.as_bytes(),
-        blocking,
-        None,
-        |_|(),
-        cancel_flag,
-        &mut is_preset,
-        true
-    ) {
-        Ok(_) => {
-            //---------------------------------------------------------
-            // Load Lens Profile:
-            //---------------------------------------------------------
-            if let Err(e) = stab.load_lens_profile(&lens_profile_path_string) {
-
-                log::error!("[Gyroflow Toolbox Rust] Error loading Lens Profile: {:?}", e);
-
-                let result = CString::new("FAIL").unwrap();
-                return result.into_raw()
-            }
-
-            //---------------------------------------------------------
-            // Export Gyroflow data:
-            //---------------------------------------------------------
-            let gyroflow_data: String;
-            match stab.export_gyroflow_data(gyroflow_core::GyroflowProjectType::WithGyroData, "{}", None) {
-                Ok(data) => {
-                    gyroflow_data = data;
-                    log::info!("[Gyroflow Toolbox Rust] Gyroflow data exported successfully");
-                },
-                Err(e) => {
-                    log::error!("[Gyroflow Toolbox Rust] An error occured: {:?}", e);
-                    gyroflow_data = "FAIL".to_string();
-                }
-            }
-
-            //---------------------------------------------------------
-            // Return Gyroflow Project data as string:
-            //---------------------------------------------------------
-            let result = CString::new(gyroflow_data).unwrap();
-            return result.into_raw()
-        },
-        Err(e) => {
-            //---------------------------------------------------------
-            // An error has occurred:
-            //---------------------------------------------------------
-            log::error!("[Gyroflow Toolbox Rust] Error importing Lens Profile: {:?}", e);
-
-            let error_msg = format!("{}", e);
-            let result = CString::new(error_msg).unwrap();
-            return result.into_raw()
-        },
-    }
+/// # Safety
+/// `path` must be null or a valid C string. The host must hold sandbox access to the media.
+#[unsafe(export_name = "importMediaFile")]
+pub unsafe extern "C" fn import_media_file(path: *const c_char) -> *const c_char {
+    ffi_string(|| {
+        // SAFETY: The caller guarantees the input allocation.
+        let url = gyroflow_core::filesystem::path_to_url(unsafe { input_string(path)? });
+        let manager = new_manager();
+        let mut file = gyroflow_core::filesystem::open_file(&url, false, false)?;
+        let size = file.size;
+        let metadata = manager.load_video_file(file.get_file(), size, &url, None, true)?;
+        let rotation = project::rotation_from_metadata(metadata.rotation);
+        manager.params.write().video_rotation = rotation;
+        let mut document: serde_json::Value = serde_json::from_str(&project::export(&manager)?)?;
+        document["toolbox_input_rotation"] = rotation.into();
+        Ok(serde_json::to_string(&document)?)
+    })
 }
 
-/// Load a Gyroflow Preset to a supplied Gyroflow Project.
-///
-/// # Arguments
-///
-/// * `gyroflow_project_data` - A pointer to a C-style string representing the Gyroflow Project data.
-/// * `preset_path` - A pointer to a C-style string representing the Profile data.
-///
-/// # Returns
-///
-/// A new Gyroflow Project or "FAIL".
-#[unsafe(no_mangle)]
-pub extern "C" fn loadPreset(
-    gyroflow_project_data: *const c_char,
-    preset_path: *const c_char,
-) -> *const c_char {
-    //---------------------------------------------------------
-    // Convert the Gyroflow Project data to a `&str`:
-    //---------------------------------------------------------
-    let gyroflow_project_data_pointer = unsafe { CStr::from_ptr(gyroflow_project_data) };
-    let gyroflow_project_data_string = gyroflow_project_data_pointer.to_string_lossy();
-
-    //---------------------------------------------------------
-    // Convert the Lens Profile data to a `&str`:
-    //---------------------------------------------------------
-    let preset_path_pointer = unsafe { CStr::from_ptr(preset_path) };
-    let preset_path_string = preset_path_pointer.to_string_lossy();
-
-    let mut stab = StabilizationManager::default();
-    {
-        //---------------------------------------------------------
-        // Find first lens profile database with loaded profiles:
-        //---------------------------------------------------------
-        let lock = MANAGER_CACHE.lock().unwrap();
-        for (_, v) in lock.iter() {
-            if v.lens_profile_db.read().loaded {
-                stab.lens_profile_db = v.lens_profile_db.clone();
-                break;
-            }
-        }
-    }
-
-    //---------------------------------------------------------
-    // Import the `gyroflow_project_data_string`:
-    //---------------------------------------------------------
-    let blocking = true;
-    let cancel_flag = Arc::new(AtomicBool::new(false));
-    let mut is_preset = false;
-    match stab.import_gyroflow_data(
-        gyroflow_project_data_string.as_bytes(),
-        blocking,
-        None,
-        |_|(),
-        cancel_flag,
-        &mut is_preset,
-        true
-    ) {
-        Ok(_) => {
-            //---------------------------------------------------------
-            // Load Preset:
-            //---------------------------------------------------------
-            let mut is_preset = false;
-            if let Err(e) = stab.import_gyroflow_data(preset_path_string.as_bytes(), true, None, |_|(), Arc::new(AtomicBool::new(false)), &mut is_preset, true) {
-                log::error!("[Gyroflow Toolbox Rust] Error loading Preset: {:?}", e);
-                let result = CString::new("FAIL").unwrap();
-                return result.into_raw()
-            }
-
-            //---------------------------------------------------------
-            // Export Gyroflow data:
-            //---------------------------------------------------------
-            let gyroflow_data: String;
-            match stab.export_gyroflow_data(gyroflow_core::GyroflowProjectType::WithGyroData, "{}", None) {
-                Ok(data) => {
-                    gyroflow_data = data;
-                    log::info!("[Gyroflow Toolbox Rust] Gyroflow data exported successfully");
-                },
-                Err(e) => {
-                    log::error!("[Gyroflow Toolbox Rust] An error occured: {:?}", e);
-                    gyroflow_data = "FAIL".to_string();
-                }
-            }
-
-            //---------------------------------------------------------
-            // Return Gyroflow Project data as string:
-            //---------------------------------------------------------
-            let result = CString::new(gyroflow_data).unwrap();
-            return result.into_raw()
-        },
-        Err(e) => {
-            //---------------------------------------------------------
-            // An error has occurred:
-            //---------------------------------------------------------
-            log::error!("[Gyroflow Toolbox Rust] Error importing Preset: {:?}", e);
-
-            let error_msg = format!("{}", e);
-            let result = CString::new(error_msg).unwrap();
-            return result.into_raw()
-        },
-    }
+/// Releases idle cached projects; in-flight frames retain ownership. Returns zero as in v1.3.5.
+#[unsafe(export_name = "trashCache")]
+pub extern "C" fn trash_cache() -> u32 {
+    let _ = ffi_status(|| {
+        render::clear_cache();
+        project::clear_cache();
+        animation::clear_cache();
+        // Active frames retain their Arc. Idle lens profiles are released outside the lock,
+        // and a later import lazily recreates them without requiring logger initialization.
+        release_lens_database();
+        Ok(())
+    });
+    0
 }
 
-/// This function is called from Objective-C land and is responsible for clearing the cache.
+/// Renders using the legacy v1.3.5 calling convention. Returns 1 only on successful stabilization.
 ///
-/// # Returns
-///
-/// This function returns the size of the cache as a `u32`.
-#[unsafe(no_mangle)]
-pub extern "C" fn trashCache() -> u32 {
-    //---------------------------------------------------------
-    // Trash the Cache:
-    //---------------------------------------------------------
-    let mut cache = MANAGER_CACHE.lock().unwrap();
-    cache.clear();
-
-    //---------------------------------------------------------
-    // Return the Cache Size:
-    //---------------------------------------------------------
-    cache.len() as u32
-}
-
-/// The "Import Media File" function that gets triggered from Objective-C Land.
-///
-/// # Arguments
-///
-/// * `media_file_path` - A pointer to a C-style string containing the path to the media file.
-///
-/// # Returns
-///
-/// This function returns the Gyroflow Project as a string or "FAIL".
-#[unsafe(no_mangle)]
-pub extern "C" fn importMediaFile(
-    media_file_path: *const c_char,
-) -> *const c_char {
-    //---------------------------------------------------------
-    // Convert the file path to a `&str`:
-    //---------------------------------------------------------
-    let media_file_path_pointer = unsafe { CStr::from_ptr(media_file_path) };
-    let media_file_path_string = media_file_path_pointer.to_string_lossy();
-
-    //log::info!("[Gyroflow Toolbox Rust] media_file_path_string: {:?}", media_file_path_string);
-
-    let mut stab = StabilizationManager::default();
-    {
-        //---------------------------------------------------------
-        // Find first lens profile database with loaded profiles:
-        //---------------------------------------------------------
-        let lock = MANAGER_CACHE.lock().unwrap();
-        for (_, v) in lock.iter() {
-            if v.lens_profile_db.read().loaded {
-                stab.lens_profile_db = v.lens_profile_db.clone();
-                break;
-            }
-        }
-    }
-
-    //---------------------------------------------------------
-    // Load video file:
-    //---------------------------------------------------------
-    match gyroflow_core::filesystem::open_file(&media_file_path_string, false, false) {
-        Ok(mut file) => {
-            let filesize = file.size;
-            match stab.load_video_file(file.get_file(), filesize, &media_file_path_string, None, true) {
-                Ok(_) => {
-                    log::info!("[Gyroflow Toolbox Rust] Video file loaded successfully");
-                },
-                Err(e) => {
-                    log::error!("[Gyroflow Toolbox Rust] An error occured: {:?}", e);
-                }
-            }
-        },
-        Err(e) => {
-            log::error!("[Gyroflow Toolbox Rust] Failed to open video file: {:?}", e);
-        }
-    }
-
-    //---------------------------------------------------------
-    // Export Gyroflow data:
-    //---------------------------------------------------------
-    let gyroflow_data: String;
-    match stab.export_gyroflow_data(gyroflow_core::GyroflowProjectType::WithGyroData, "{}", None) {
-        Ok(data) => {
-            gyroflow_data = data;
-            log::info!("[Gyroflow Toolbox Rust] Gyroflow data exported successfully");
-        },
-        Err(e) => {
-            log::error!("[Gyroflow Toolbox Rust] An error occured: {:?}", e);
-            gyroflow_data = "FAIL".to_string();
-        }
-    }
-
-    //---------------------------------------------------------
-    // Return Gyroflow Project data as string:
-    //---------------------------------------------------------
-    let result = CString::new(gyroflow_data).unwrap();
-    return result.into_raw()
-}
-
-/// This function is called from Objective-C land to process a video frame.
-///
-/// # Arguments
-///
-/// * `unique_identifier` - A pointer to a C-style string containing a unique identifier for the frame.
-/// * `width` - The width of the video frame.
-/// * `height` - The height of the video frame.
-/// * `pixel_format` - A pointer to a C-style string containing the pixel format of the video frame.
-/// * `number_of_bytes` - The number of bytes in the video frame.
-/// * `path` - A pointer to a C-style string containing the path to the video frame.
-/// * `data` - A pointer to a C-style string containing the video frame data.
-/// * `timestamp` - The timestamp of the video frame.
-/// * `fov` - The field of view of the video frame.
-/// * `smoothness` - The smoothness of the video frame.
-/// * `lens_correction` - The lens correction of the video frame.
-/// * `horizon_lock` - The horizon lock of the video frame.
-/// * `horizon_roll` - The horizon roll of the video frame.
-/// * `position_offset_x` - The x position offset of the video frame.
-/// * `position_offset_y` - The y position offset of the video frame.
-/// * `input_rotation` - The input rotation of the video frame.
-/// * `video_rotation` - The video rotation of the video frame.
-/// * `fov_overview` - The field of view overview of the video frame.
-/// * `disable_gyroflow_stretch` - Whether or not to disable Gyroflow stretch.
-/// * `in_mtl_tex` - A pointer to the input Metal texture.
-/// * `out_mtl_tex` - A pointer to the output Metal texture.
-/// * `command_queue` - A pointer to the Metal command queue.
-///
-/// # Returns
-///
-/// This function returns 1 if successful, otherwise 0. If successful, the output Metal Texture is stored in `out_mtl_tex`.
-#[unsafe(no_mangle)]
-pub extern "C" fn processFrame(
-    unique_identifier: *const c_char,
+/// # Safety
+/// Strings must be valid C strings. Textures must be live Metal textures with the specified
+/// format and dimensions on the same device, valid until return, without concurrent writers.
+/// A non-null queue must belong to that device.
+#[unsafe(export_name = "processFrame")]
+pub unsafe extern "C" fn process_frame(
+    identifier: *const c_char,
     width: u32,
     height: u32,
-    pixel_format: *const c_char,
-    number_of_bytes: std::ffi::c_int,
+    format: *const c_char,
+    bytes_per_component: c_int,
     path: *const c_char,
     data: *const c_char,
     timestamp: i64,
@@ -882,321 +536,254 @@ pub extern "C" fn processFrame(
     lens_correction: f64,
     horizon_lock: f64,
     horizon_roll: f64,
-    position_offset_x: f64,
-    position_offset_y: f64,
+    position_x: f64,
+    position_y: f64,
     input_rotation: f64,
     video_rotation: f64,
-    fov_overview: u8,
-    disable_gyroflow_stretch: u8,
-    in_mtl_tex: *mut std::ffi::c_void,
-    out_mtl_tex: *mut std::ffi::c_void,
-    command_queue: *mut std::ffi::c_void,
-) -> std::ffi::c_int {
-    //---------------------------------------------------------
-    // Setting our NSLog Logger (only once):
-    //---------------------------------------------------------
-    static LOGGER: OnceCell<Mutex<Option<()>>> = OnceCell::new();
-    LOGGER.get_or_init(|| {
-        let logger = oslog::OsLogger::new("com.latenitefilms.GyroflowToolbox")
-            .level_filter(log::LevelFilter::Debug)
-            .category_level_filter("Settings", log::LevelFilter::Trace)
-            .init().ok();
-        Mutex::new(logger)
-    });
-
-    //---------------------------------------------------------
-    // Have parameters changed:
-    //---------------------------------------------------------
-    let mut params_changed = false;
-    let mut rotation_changed = false;
-
-    //---------------------------------------------------------
-    // Get the Unique Identifier:
-    //---------------------------------------------------------
-    let unique_identifier_pointer = unsafe { CStr::from_ptr(unique_identifier) };
-    let unique_identifier_string = unique_identifier_pointer.to_string_lossy();
-
-    //log::debug!("[Gyroflow Toolbox Rust] unique_identifier_string: {:?}", unique_identifier_string);
-
-    //---------------------------------------------------------
-    // Get Pixel Format:
-    //---------------------------------------------------------
-    let pixel_format_pointer = unsafe { CStr::from_ptr(pixel_format) };
-    let pixel_format_string = pixel_format_pointer.to_string_lossy();
-
-    // -------------------------------------------------------------------------------
-    // You can't use &str across FFI boundary, it's a Rust type.
-    // You have to use C-compatible char pointer, so path: *const c_char and then
-    // construct CStr from it https://doc.rust-lang.org/std/ffi/struct.CStr.html - CStr::from_ptr(path);
-    // and then get &str by calling .to_str().unwrap() or .to_string_lossy()
-    // -------------------------------------------------------------------------------
-    let path_pointer = unsafe { CStr::from_ptr(path) };
-    let path_string = path_pointer.to_string_lossy();
-
-    //---------------------------------------------------------
-    // Convert the output width and height to `usize`:
-    //---------------------------------------------------------
-    let output_width: usize = width as usize;
-    let output_height: usize = height as usize;
-
-    //---------------------------------------------------------
-    // Convert the number of bytes to `usize`:
-    //---------------------------------------------------------
-    let number_of_bytes_value: usize = number_of_bytes as usize;
-
-   //---------------------------------------------------------
-   // Cache the manager:
-   //---------------------------------------------------------
-   let mut cache = MANAGER_CACHE.lock().unwrap();
-   let cache_key = format!("{path_string}{output_width}{output_height}{pixel_format_string}{disable_gyroflow_stretch}{unique_identifier_string}");
-   let manager = if let Some(manager) = cache.get(&cache_key) {
-       //---------------------------------------------------------
-       // Already cached:
-       //---------------------------------------------------------
-       manager.clone()
-   } else {
-       //---------------------------------------------------------
-       // On first load, always Invalidate & Recompute:
-       //---------------------------------------------------------
-       params_changed = true;
-
-       //---------------------------------------------------------
-       // Setup the Gyroflow Manager:
-       //---------------------------------------------------------
-       let manager = StabilizationManager::default();
-
-       //---------------------------------------------------------
-       // Import the Gyroflow Data:
-       //---------------------------------------------------------
-       let data_slice: &[u8] = unsafe {
-           CStr::from_ptr(data).to_bytes()
-       };
-       let mut is_preset = false;
-       match manager.import_gyroflow_data(&data_slice, true, None, |_|(), Arc::new(AtomicBool::new(false)), &mut is_preset, true) {
-           Ok(_) => {
-                //---------------------------------------------------------
-                // Disable Gyroflow Stretch:
-                //---------------------------------------------------------
-                if disable_gyroflow_stretch != 0 {
-                    // TODO: Do we need to expose this an an option?
-                    manager.disable_lens_stretch(false);
-                }
-
-               //---------------------------------------------------------
-               // Set the Input Size:
-               //---------------------------------------------------------
-               manager.set_size(output_width, output_height);
-
-               //---------------------------------------------------------
-               // Set the Output Size:
-               //---------------------------------------------------------
-               manager.set_output_size(output_width, output_height);
-
-               //---------------------------------------------------------
-               // Invert the Frame Buffer:
-               //---------------------------------------------------------
-               manager.params.write().framebuffer_inverted = true;
-
-               //---------------------------------------------------------
-               // Set Stabilisation Settings:
-               //---------------------------------------------------------
-               {
-                    let mut stab = manager.stabilization.write();
-
-                    //---------------------------------------------------------
-                    // Set the Interpolation:
-                    //---------------------------------------------------------
-                    stab.interpolation = gyroflow_core::stabilization::Interpolation::Lanczos4;
-
-                    //---------------------------------------------------------
-                    // Share wpgu instances:
-                    //---------------------------------------------------------
-                    stab.share_wgpu_instances = true;
-               }
-
-               //---------------------------------------------------------
-               // Force the background color to transparent:
-               //---------------------------------------------------------
-               let background_color: Vector4<f32> = Vector4::new(0.0, 0.0, 0.0, 0.0);
-               manager.set_background_color(background_color);
-           },
-           Err(e) => {
-               //---------------------------------------------------------
-               // Return an error message is something fails:
-               //---------------------------------------------------------
-               log::error!("[Gyroflow Toolbox Rust] Failed to import Gyroflow File: {:?}", e);
-           }
-       }
-
-       cache.put(cache_key.to_owned(), Arc::new(manager));
-       cache.get(&cache_key).unwrap().clone()
-   };
-
-   {
-       let mut params = manager.params.write();
-
-        //---------------------------------------------------------
-        // Set the FOV Overview:
-        //---------------------------------------------------------
-        let incoming_fov_overview = fov_overview != 0;
-        if incoming_fov_overview != params.fov_overview {
-            //log::error!("[Gyroflow Toolbox Rust] FOV Changed!");
-            params.fov_overview = incoming_fov_overview;
-            params_changed = true;
-        }
-
-       //---------------------------------------------------------
-       // Set the FOV:
-       //---------------------------------------------------------
-       if params.fov != fov {
-           params.fov = fov;
-           params_changed = true;
-       }
-
-       //---------------------------------------------------------
-       // Set the Lens Correction:
-       //---------------------------------------------------------
-       if params.lens_correction_amount != lens_correction {
-           params.lens_correction_amount = lens_correction;
-           params_changed = true;
-       }
-
-       //---------------------------------------------------------
-       // Set the Position Offset X:
-       //---------------------------------------------------------
-       if params.adaptive_zoom_center_offset.0 != position_offset_x / 100.0 {
-            params.adaptive_zoom_center_offset.0 = position_offset_x / 100.0;
-            params_changed = true;
-       }
-
-       //---------------------------------------------------------
-       // Set the Position Offset Y:
-       //---------------------------------------------------------
-       if params.adaptive_zoom_center_offset.1 != position_offset_y / 100.0 {
-            params.adaptive_zoom_center_offset.1 = position_offset_y / 100.0;
-            params_changed = true;
-        }
-
-       //---------------------------------------------------------
-       // Set the Video Rotation:
-       //---------------------------------------------------------
-       if params.video_rotation != video_rotation {
-            params.video_rotation = video_rotation;
-            params_changed = true;
-            rotation_changed = true;
-       }
+    overview: u8,
+    disable_stretch: u8,
+    input_texture: *mut c_void,
+    output_texture: *mut c_void,
+    command_queue: *mut c_void,
+) -> c_int {
+    // SAFETY: Both entry points have the same pointer contract.
+    unsafe {
+        process_frame_v2(
+            identifier,
+            width,
+            height,
+            format,
+            bytes_per_component,
+            path,
+            data,
+            timestamp,
+            fov,
+            smoothness,
+            lens_correction,
+            horizon_lock,
+            horizon_roll,
+            position_x,
+            position_y,
+            input_rotation,
+            video_rotation,
+            overview,
+            disable_stretch,
+            input_texture,
+            output_texture,
+            command_queue,
+            std::ptr::null(),
+        )
     }
-
-   {
-       //---------------------------------------------------------
-       // Set the Smoothness:
-       //---------------------------------------------------------
-       let mut smoothing = manager.smoothing.write();
-       if smoothing.current().get_parameter("smoothness") != smoothness {
-           smoothing.current_mut().set_parameter("smoothness", smoothness);
-           params_changed = true;
-       }
-
-       //---------------------------------------------------------
-       // Set the Horizon Lock:
-       //---------------------------------------------------------
-       if smoothing.horizon_lock.lock_enabled != (horizon_lock > 0.0) || smoothing.horizon_lock.horizonlockpercent != horizon_lock || smoothing.horizon_lock.horizonroll != horizon_roll {
-          smoothing.horizon_lock.set_horizon(horizon_lock, horizon_roll, false, 0.0, false, 5.0, 500.0, 1.0, f64::INFINITY);
-          params_changed = true;
-       }
-   }
-
-   //---------------------------------------------------------
-   // If the rotation value has changed, make sure we set
-   // the manager's `output_size` and `set_size`:
-   //---------------------------------------------------------
-   if rotation_changed {
-      log::info!("[Gyroflow Toolbox Rust] Rotation changed, so triggering `output_size` and `set_size` again...");
-
-      let (input_w, input_h) = if (video_rotation.rem_euclid(180.0)).abs() == 90.0 {
-          // For 90 or 270 degrees, swap
-          (output_height, output_width)
-      } else {
-          (output_width, output_height)
-      };
-
-      manager.set_size(input_w, input_h);
-      manager.set_output_size(output_width, output_height);
-   }
-
-   //---------------------------------------------------------
-   // If something has changed, Invalidate & Recompute, to
-   // make sure everything is up-to-date:
-   //---------------------------------------------------------
-   if params_changed  {
-       log::info!("[Gyroflow Toolbox Rust] Parameters or rotation changed, so triggering Invalidate & Recompute...");
-       manager.invalidate_smoothing();
-       manager.recompute_blocking();
-       manager.params.write().calculate_ramped_timestamps(&manager.keyframes.read(), false, false);
-   }
-
-   //---------------------------------------------------------
-   // Calculate buffer size and stride:
-   //---------------------------------------------------------
-   let input_stride: usize = output_width * 4 * number_of_bytes_value;
-   let output_stride: usize = output_width * 4 * number_of_bytes_value;
-
-   //---------------------------------------------------------
-   // Prepare the Metal Texture Image Buffers:
-   //---------------------------------------------------------
-   let mut buffers = Buffers {
-       input: BufferDescription {
-           size: (output_width, output_height, input_stride),
-           rect: None,
-           data: BufferSource::Metal { texture: in_mtl_tex, command_queue },
-           rotation: Some(input_rotation as f32),
-           texture_copy: false,
-       },
-       output: BufferDescription {
-           size: (output_width, output_height, output_stride),
-           rect: None,
-           data: BufferSource::Metal { texture: out_mtl_tex, command_queue },
-           rotation: None,
-           texture_copy: false,
-       }
-   };
-
-   //log::debug!("[Gyroflow Toolbox Rust] in_mtl_tex: {:?}", in_mtl_tex);
-   //log::debug!("[Gyroflow Toolbox Rust] out_mtl_tex: {:?}", out_mtl_tex);
-
-   //---------------------------------------------------------
-   // Get the Stabilization Result:
-   //---------------------------------------------------------
-   let _stabilization_result = match pixel_format_string.as_ref() {
-       "BGRA8Unorm" => {
-           manager.process_pixels::<BGRA8>(timestamp, None, &mut buffers)
-        },
-       "RGBAf16" => {
-           manager.process_pixels::<RGBAf16>(timestamp, None, &mut buffers)
-        },
-       "RGBAf" => {
-           manager.process_pixels::<RGBAf>(timestamp, None, &mut buffers)
-        },
-        e => {
-            log::error!("[Gyroflow Toolbox Rust] Unsupported pixel format: {:?}", pixel_format_string);
-            log::error!("[Gyroflow Toolbox Rust] Error during stabilization: {:?}", e);
-            return 0
-       }
-   };
-
-   //---------------------------------------------------------
-   // Output the Stabilization result to the Console:
-   //---------------------------------------------------------
-   //log::debug!("[Gyroflow Toolbox Rust] stabilization_result: {:?}", &_stabilization_result);
-
-   //---------------------------------------------------------
-   // Success:
-   //---------------------------------------------------------
-   return 1
 }
 
-#[unsafe(no_mangle)]
-pub extern "C" fn freeCString(s: *mut c_char) {
-    if s.is_null() { return; }
-    unsafe { let _ = CString::from_raw(s); } // drops and frees
+/// Renders with advanced options and the legacy per-frame parameter behavior.
+///
+/// # Safety
+/// The pointer contracts of [`process_frame_with_keyframes`] apply.
+#[unsafe(export_name = "processFrameV2")]
+pub unsafe extern "C" fn process_frame_v2(
+    identifier: *const c_char,
+    width: u32,
+    height: u32,
+    format: *const c_char,
+    bytes_per_component: c_int,
+    path: *const c_char,
+    data: *const c_char,
+    timestamp: i64,
+    fov: f64,
+    smoothness: f64,
+    lens_correction: f64,
+    horizon_lock: f64,
+    horizon_roll: f64,
+    position_x: f64,
+    position_y: f64,
+    input_rotation: f64,
+    video_rotation: f64,
+    overview: u8,
+    disable_stretch: u8,
+    input_texture: *mut c_void,
+    output_texture: *mut c_void,
+    command_queue: *mut c_void,
+    options: *const RenderOptions,
+) -> c_int {
+    // SAFETY: This entry point forwards the same pointer contract, without a snapshot.
+    unsafe {
+        process_frame_with_keyframes(
+            identifier,
+            width,
+            height,
+            format,
+            bytes_per_component,
+            path,
+            data,
+            timestamp,
+            fov,
+            smoothness,
+            lens_correction,
+            horizon_lock,
+            horizon_roll,
+            position_x,
+            position_y,
+            input_rotation,
+            video_rotation,
+            overview,
+            disable_stretch,
+            input_texture,
+            output_texture,
+            command_queue,
+            options,
+            std::ptr::null(),
+        )
+    }
+}
+
+/// Renders with advanced options; null options select legacy behavior.
+///
+/// # Safety
+/// All pointer requirements of [`process_frame`] apply. Non-null options must point
+/// to an aligned readable `RenderOptions` throughout this call. A non-null snapshot must be a valid C string.
+#[unsafe(export_name = "processFrameWithKeyframes")]
+pub unsafe extern "C" fn process_frame_with_keyframes(
+    identifier: *const c_char,
+    width: u32,
+    height: u32,
+    format: *const c_char,
+    bytes_per_component: c_int,
+    path: *const c_char,
+    data: *const c_char,
+    timestamp: i64,
+    fov: f64,
+    smoothness: f64,
+    lens_correction: f64,
+    horizon_lock: f64,
+    horizon_roll: f64,
+    position_x: f64,
+    position_y: f64,
+    input_rotation: f64,
+    video_rotation: f64,
+    overview: u8,
+    disable_stretch: u8,
+    input_texture: *mut c_void,
+    output_texture: *mut c_void,
+    command_queue: *mut c_void,
+    options: *const RenderOptions,
+    host_keyframes: *const c_char,
+) -> c_int {
+    ffi_status(|| {
+        // SAFETY: Strings remain owned by the caller until this synchronous operation returns.
+        let (identifier, format, path, data) = unsafe {
+            (
+                input_string(identifier)?,
+                input_string(format)?,
+                input_string(path)?,
+                input_string(data)?,
+            )
+        };
+        let options = if options.is_null() {
+            RenderOptions::default()
+        } else {
+            if !options.is_aligned() {
+                return Err(BridgeError::InvalidInput("misaligned render options"));
+            }
+            // SAFETY: The caller guarantees a readable options struct.
+            unsafe { *options }
+        };
+        let host_keyframes = if host_keyframes.is_null() {
+            None
+        } else {
+            // SAFETY: Snapshot string has the same lifetime contract as the project data.
+            Some(unsafe { input_string(host_keyframes)? })
+        };
+        let request = render::Frame {
+            host_keyframes,
+            identifier,
+            path,
+            data,
+            width,
+            height,
+            timestamp,
+            format: render::PixelFormat::parse(format, bytes_per_component)?,
+            settings: render::Settings {
+                fov,
+                smoothness,
+                lens_correction,
+                horizon_lock,
+                horizon_roll,
+                position_x,
+                position_y,
+                input_rotation,
+                video_rotation,
+                overview: overview != 0,
+            },
+            disable_stretch: disable_stretch != 0,
+            input_texture,
+            output_texture,
+            command_queue,
+            options,
+        };
+        request.validate()?;
+        render::process(request)
+    })
+}
+
+/// Frees a library-owned string; null is accepted.
+///
+/// # Safety
+/// The pointer must be an unmodified, not-yet-freed string returned by this library.
+/// Never pass a host-owned allocation.
+#[unsafe(export_name = "freeCString")]
+pub unsafe extern "C" fn free_c_string(pointer: *mut c_char) {
+    if !pointer.is_null() {
+        // SAFETY: The caller transfers back the allocation created by CString::into_raw.
+        drop(unsafe { CString::from_raw(pointer) });
+    }
+}
+
+#[cfg(test)]
+mod tests;
+
+/// Returns owned JSON descriptors for the additional FxPlug inspector controls.
+#[unsafe(export_name = "getPluginParameterDefinitions")]
+pub extern "C" fn parameter_definitions() -> *const c_char {
+    ffi_string(|| Ok(parameters::definitions().to_string()))
+}
+
+/// A synchronous host callback that writes a parameter value at a clip-relative microsecond timestamp.
+pub type SampleParameter = unsafe extern "C" fn(*mut c_void, u32, i64, *mut f64) -> c_int;
+
+/// Returns an owned JSON array of host parameter IDs consumed by the Core keyframe provider.
+#[unsafe(export_name = "getKeyframeParameterIDs")]
+pub extern "C" fn keyframe_parameter_ids() -> *const c_char {
+    ffi_string(|| Ok(animation::parameter_ids().to_string()))
+}
+
+/// Samples changed host curves into a portable snapshot for rendering in another FxPlug process.
+///
+/// Neither the callback nor its context is retained. Returns an owned snapshot, or "FAIL".
+///
+/// # Safety
+/// Strings must be valid C strings. The context and callback must remain valid until return.
+/// The callback must write the output on success (1), return 0 on failure, and never unwind.
+#[unsafe(export_name = "buildHostKeyframes")]
+pub unsafe extern "C" fn build_host_keyframes(
+    data: *const c_char,
+    signature: *const c_char,
+    context: *mut c_void,
+    sample: Option<SampleParameter>,
+) -> *const c_char {
+    ffi_string(|| {
+        let sample = sample.ok_or(BridgeError::InvalidInput("missing host animation callback"))?;
+        // SAFETY: The caller owns the string allocations for the full call.
+        let (data, signature) = unsafe { (input_string(data)?, input_string(signature)?) };
+        animation::snapshot(data, signature, |parameter, timestamp| {
+            let mut value = 0.0;
+            // SAFETY: Callback and context remain valid synchronously; output is a live stack double.
+            if unsafe { sample(context, parameter, timestamp, &mut value) } != 1 {
+                return Err(BridgeError::InvalidInput(
+                    "host could not evaluate an animation sample",
+                ));
+            }
+            Ok(value)
+        })
+    })
 }

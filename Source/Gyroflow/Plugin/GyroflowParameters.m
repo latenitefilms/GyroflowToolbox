@@ -29,6 +29,8 @@ static NSString * const kInputRotation          = @"inputRotation";
 static NSString * const kVideoRotation          = @"videoRotation";
 static NSString * const kFovOverview            = @"fovOverview";
 static NSString * const kDisableGyroflowStretch = @"disableGyroflowStretch";
+static NSString * const kRenderOptions = @"renderOptionsV1";
+static NSString * const kHostKeyframes = @"hostKeyframesV1";
 
 @implementation GyroflowParameters
 
@@ -55,6 +57,15 @@ static NSString * const kDisableGyroflowStretch = @"disableGyroflowStretch";
 
         _fovOverview            = [decoder decodeObjectOfClass:[NSNumber class] forKey:kFovOverview];
         _disableGyroflowStretch = [decoder decodeObjectOfClass:[NSNumber class] forKey:kDisableGyroflowStretch];
+        if ([decoder containsValueForKey:kRenderOptions]) {
+            _renderOptions = [decoder decodeObjectOfClass:[NSData class] forKey:kRenderOptions];
+        }
+        if ([decoder containsValueForKey:kHostKeyframes]) {
+            _hostKeyframes = [decoder decodeObjectOfClass:[NSString class] forKey:kHostKeyframes];
+        }
+        if ([decoder containsValueForKey:@"parameterValuesV1"]) {
+            _parameterValues = [decoder decodeObjectOfClass:NSString.class forKey:@"parameterValuesV1"];
+        }
     }
     return self;
 }
@@ -78,6 +89,9 @@ static NSString * const kDisableGyroflowStretch = @"disableGyroflowStretch";
 
     [encoder encodeObject:self.fovOverview            forKey:kFovOverview];
     [encoder encodeObject:self.disableGyroflowStretch forKey:kDisableGyroflowStretch];
+    [encoder encodeObject:self.renderOptions forKey:kRenderOptions];
+    [encoder encodeObject:self.hostKeyframes forKey:kHostKeyframes];
+    [encoder encodeObject:self.parameterValues forKey:@"parameterValuesV1"];
 }
 
 @end

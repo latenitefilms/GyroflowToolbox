@@ -1,0 +1,17 @@
+{
+  "version": 3,
+  "video_info": { "width": 64, "height": 32, "fps": 30.0, "num_frames": 30, "duration_ms": 1000.0 },
+  "calibration_data": {
+    "name": "Synthetic test lens",
+    "calib_dimension": { "w": 64, "h": 32 },
+    "orig_dimension": { "w": 64, "h": 32 },
+    "input_horizontal_stretch": 1.0,
+    "input_vertical_stretch": 1.0,
+    "fisheye_params": {
+      "camera_matrix": [[64.0, 0.0, 32.0], [0.0, 64.0, 16.0], [0.0, 0.0, 1.0]],
+      "distortion_coeffs": [0.0, 0.0, 0.0, 0.0]
+    }
+  },
+  "stabilization": { "fov": 1.0, "adaptive_zoom_window": 0.0, "max_zoom": 100.0, "lens_correction_amount": 1.0 }
+}
+

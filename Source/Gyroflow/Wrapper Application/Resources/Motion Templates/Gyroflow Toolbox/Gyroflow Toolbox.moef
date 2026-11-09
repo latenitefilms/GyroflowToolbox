@@ -308,6 +308,46 @@
 					<parameter name="Position Offset Y" id="160" flags="12884901904" default="0" value="0"/>
 					<parameter name="Input Rotation" id="170" flags="12884901904" default="0" value="0"/>
 					<parameter name="Video Rotation" id="180" flags="12884901904" default="0" value="0"/>
+					<parameter name="Override Project Zoom and Orientation" id="200" flags="12884901904" default="0" value="0"/>
+					<parameter name="Zoom Limit" id="210" flags="12884901904" default="130.0" value="130.0"/>
+					<parameter name="Additional Pitch" id="220" flags="12884901904" default="0.0" value="0.0"/>
+					<parameter name="Additional Yaw" id="230" flags="12884901904" default="0.0" value="0.0"/>
+					<parameter name="Integration Method" id="240" flags="12884901904" default="0" value="0"/>
+					<parameter name="Interpolation" id="250" flags="12884901904" default="0" value="0"/>
+					<parameter name="Use Gyroflow Keyframes" id="260" flags="12884901904" default="1" value="1"/>
+					<parameter name="Advanced Stabilisation" id="600" flags="8589938704">
+						<parameter name="Override Advanced Project Settings" id="601" flags="12884901904" default="0" value="0"/>
+						<parameter name="Smoothing Method" id="610" flags="12884901904" default="0" value="0"/>
+						<parameter name="Zoom Mode" id="611" flags="12884901904" default="0" value="0"/>
+						<parameter name="Zooming Speed (s)" id="612" flags="12884901904" default="4.0" value="4.0"/>
+						<parameter name="Zoom Limit Iterations" id="613" flags="12884901904" default="5.0" value="5.0"/>
+						<parameter name="Additional Roll" id="614" flags="12884901904" default="0.0" value="0.0"/>
+						<parameter name="3D Translation X" id="615" flags="12884901904" default="0.0" value="0.0"/>
+						<parameter name="3D Translation Y" id="616" flags="12884901904" default="0.0" value="0.0"/>
+						<parameter name="3D Translation Z" id="617" flags="12884901904" default="0.0" value="0.0"/>
+						<parameter name="Lock Horizon Pitch" id="620" flags="12884901904" default="0" value="0"/>
+						<parameter name="Horizon Pitch" id="621" flags="12884901904" default="0.0" value="0.0"/>
+						<parameter name="Automatic Horizon Lock" id="622" flags="12884901904" default="0" value="0"/>
+						<parameter name="Horizon Turn Threshold" id="623" flags="12884901904" default="5.0" value="5.0"/>
+						<parameter name="Horizon Response (ms)" id="624" flags="12884901904" default="500.0" value="500.0"/>
+						<parameter name="Horizon Turn Multiplier" id="625" flags="12884901904" default="1.0" value="1.0"/>
+						<parameter name="Use Gravity Vectors" id="626" flags="12884901904" default="1" value="1"/>
+						<parameter name="Stabilise Focal Length" id="630" flags="12884901904" default="0" value="0"/>
+						<parameter name="Focal Length Zoom Rate" id="631" flags="12884901904" default="0.5" value="0.5"/>
+						<parameter name="Lens Breathing Compensation" id="632" flags="12884901904" default="1" value="1"/>
+						<parameter name="Lens Metadata Delay (frames)" id="633" flags="12884901904" default="0.0" value="0.0"/>
+						<parameter name="Rolling Shutter Readout (ms)" id="634" flags="12884901904" default="0.0" value="0.0"/>
+						<parameter name="Readout Direction" id="635" flags="12884901904" default="0" value="0"/>
+						<parameter name="Light Refraction Coefficient" id="636" flags="12884901904" default="1.0" value="1.0"/>
+						<parameter name="Output Projection" id="637" flags="12884901904" default="1" value="1"/>
+						<parameter name="Additional Sync Offset (ms)" id="640" flags="12884901904" default="0.0" value="0.0"/>
+						<parameter name="Motion Low-Pass Filter (Hz)" id="641" flags="12884901904" default="0.0" value="0.0"/>
+						<parameter name="Motion Median Filter" id="642" flags="12884901904" default="0.0" value="0.0"/>
+						<parameter name="Use Saved Optical Correction" id="643" flags="12884901904" default="1" value="1"/>
+						<parameter name="Frame Edges" id="644" flags="12884901904" default="0" value="0"/>
+						<parameter name="Background Margin (%)" id="645" flags="12884901904" default="0.0" value="0.0"/>
+						<parameter name="Background Feather (%)" id="646" flags="12884901904" default="0.0" value="0.0"/>
+					</parameter>
 				</parameter>
 				<parameter name="Tools" id="300" flags="8589938704">
 					<parameter name="Stabilisation Overview" id="310" flags="12884901904" default="0" value="0"/>

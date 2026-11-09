@@ -12,6 +12,26 @@
 
 typedef void (^BRAWCompletionHandler)(void);
 
+/// Borrowed host APIs are only used synchronously while preparing render state.
+typedef struct {
+    __unsafe_unretained id<FxParameterRetrievalAPI_v6> parameters;
+    __unsafe_unretained id<FxTimingAPI_v4> timing;
+    CMTime timelineOrigin;
+} GyroflowParameterReader;
+
+static int readGyroflowHostParameter(void *context, uint32_t parameter, int64_t timestamp, double *value) {
+    GyroflowParameterReader *reader = context;
+    CMTime timelineTime = CMTimeAdd(reader->timelineOrigin, CMTimeMake(timestamp, 1000000));
+    CMTime inputTime = kCMTimeInvalid;
+    [reader->timing inputTime:&inputTime fromTimelineTime:timelineTime];
+    return CMTIME_IS_NUMERIC(inputTime) &&
+        [reader->parameters getFloatValue:value fromParameter:parameter atTime:inputTime];
+}
+
+@interface GyroflowPlugIn ()
+@property (nonatomic, copy) NSArray<NSDictionary *> *engineParameterDefinitions;
+@end
+
 //---------------------------------------------------------
 // Gyroflow FxPlug4 Implementation:
 //---------------------------------------------------------
@@ -30,6 +50,12 @@ typedef void (^BRAWCompletionHandler)(void);
     self = [super init];
     if (self != nil)
     {
+        const char *definitions = getPluginParameterDefinitions();
+        NSData *data = [NSData dataWithBytes:definitions length:strlen(definitions)];
+        freeCString((char *)definitions);
+        id decoded = [NSJSONSerialization JSONObjectWithData:data options:0 error:NULL];
+        if (![decoded isKindOfClass:NSArray.class]) return nil;
+        self.engineParameterDefinitions = decoded;
         //---------------------------------------------------------
         // Write log file to disk when using NSLog:
         //---------------------------------------------------------
@@ -289,864 +315,79 @@ typedef void (^BRAWCompletionHandler)(void);
 //
 // This method is where a plug-in defines its list of parameters.
 //---------------------------------------------------------
-- (BOOL)addParametersWithError:(NSError**)error
-{
-    //---------------------------------------------------------
-    // Setup Parameter Creation API:
-    //---------------------------------------------------------
-    id<FxParameterCreationAPI_v5> paramAPI = [self.apiManager apiForProtocol:@protocol(FxParameterCreationAPI_v5)];
-    if (paramAPI == nil)
-    {
-        if (error != nil)
-        {
-            NSString* description = [NSString stringWithFormat:@"[Gyroflow Toolbox Renderer] Unable to get the FxParameterCreationAPI_v5 in %s", __func__];
-            *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                         code:kFxError_APIUnavailable
-                                     userInfo:@{ NSLocalizedDescriptionKey : description }];
-        }
+/// Creates the complete inspector from the Rust catalog, preserving the saved FxPlug identifiers.
+- (BOOL)addParametersWithError:(NSError **)error {
+    id<FxParameterCreationAPI_v5> api = [self.apiManager apiForProtocol:@protocol(FxParameterCreationAPI_v5)];
+    if (!api) {
+        if (error) *error = [NSError errorWithDomain:FxPlugErrorDomain code:kFxError_APIUnavailable
+            userInfo:@{NSLocalizedDescriptionKey: @"The FxPlug parameter API is unavailable."}];
         return NO;
     }
-    
-    //---------------------------------------------------------
-    //
-    // TOP SECTION:
-    //
-    //---------------------------------------------------------
-    
-    //---------------------------------------------------------
-    // START GROUP: 'Top Section'
-    //---------------------------------------------------------
-    if (![paramAPI startParameterSubGroup:@"Gyroflow Toolbox"
-                              parameterID:kCB_TopSection
-                           parameterFlags:kFxParameterFlag_DEFAULT])
-    {
-        if (error != NULL) {
-            NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_TopSection"};
-            *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                         code:kFxError_InvalidParameter
-                                     userInfo:userInfo];
+    for (NSDictionary *definition in self.engineParameterDefinitions) {
+        UInt32 identifier = [definition[@"id"] unsignedIntValue];
+        NSString *kind = definition[@"kind"];
+        NSString *name = definition[@"name"];
+        UInt32 flags = kFxParameterFlag_DEFAULT;
+        if (![definition[@"animated"] boolValue]) flags |= kFxParameterFlag_NOT_ANIMATABLE;
+        if ([definition[@"hidden"] boolValue]) flags |= kFxParameterFlag_HIDDEN;
+        if ([definition[@"disabled"] boolValue]) flags |= kFxParameterFlag_DISABLED;
+        BOOL added = NO;
+        if ([kind isEqualToString:@"slider"]) {
+            added = [api addFloatSliderWithName:name parameterID:identifier defaultValue:[definition[@"default"] doubleValue]
+                parameterMin:[definition[@"min"] doubleValue] parameterMax:[definition[@"max"] doubleValue]
+                sliderMin:[definition[@"min"] doubleValue] sliderMax:[definition[@"max"] doubleValue]
+                delta:[definition[@"delta"] doubleValue] parameterFlags:flags];
+        } else if ([kind isEqualToString:@"toggle"]) {
+            added = [api addToggleButtonWithName:name parameterID:identifier defaultValue:[definition[@"default"] boolValue] parameterFlags:flags];
+        } else if ([kind isEqualToString:@"menu"]) {
+            added = [api addPopupMenuWithName:name parameterID:identifier defaultValue:[definition[@"default"] unsignedIntValue]
+                menuEntries:definition[@"entries"] parameterFlags:flags];
+        } else if ([kind isEqualToString:@"text"]) {
+            added = [api addStringParameterWithName:name parameterID:identifier defaultValue:definition[@"default"] parameterFlags:flags];
+        } else if ([kind isEqualToString:@"custom"]) {
+            added = [api addCustomParameterWithName:name parameterID:identifier defaultValue:definition[@"default"]
+                parameterFlags:flags | kFxParameterFlag_CUSTOM_UI];
+        } else if ([kind isEqualToString:@"group"]) {
+            added = [api startParameterSubGroup:name parameterID:identifier
+                parameterFlags:kFxParameterFlag_DEFAULT | ([definition[@"collapsed"] boolValue] ? kFxParameterFlag_COLLAPSED : 0)];
+        } else if ([kind isEqualToString:@"end-group"]) {
+            added = [api endParameterSubGroup];
         }
-        return NO;
-    } else {
-        //---------------------------------------------------------
-        // ADD PARAMETER: Header
-        //---------------------------------------------------------
-        if (![paramAPI addCustomParameterWithName:@""
-                                      parameterID:kCB_Header
-                                     defaultValue:@0
-                                   parameterFlags:kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE])
-        {
-            if (error != NULL) {
-                NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_Header"};
-                *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                             code:kFxError_InvalidParameter
-                                         userInfo:userInfo];
-            }
-            return NO;
-        }
-        
-        //---------------------------------------------------------
-        // ADD PARAMETER: 'Open User Guide' Button
-        //---------------------------------------------------------
-        if (![paramAPI addCustomParameterWithName:@""
-                                      parameterID:kCB_OpenUserGuide
-                                     defaultValue:@0
-                                   parameterFlags:kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE])
-        {
-            if (error != NULL) {
-                NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_OpenUserGuide"};
-                *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                             code:kFxError_InvalidParameter
-                                         userInfo:userInfo];
-            }
-            return NO;
-        }
-        
-        //---------------------------------------------------------
-        // END GROUP: 'Gyroflow Parameters'
-        //---------------------------------------------------------
-        if (![paramAPI endParameterSubGroup])
-        {
-            if (error != NULL) {
-                NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add end 'Top Section' Parameter"};
-                *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                             code:kFxError_InvalidParameter
-                                         userInfo:userInfo];
-            }
+        if (!added) {
+            if (error) *error = [NSError errorWithDomain:FxPlugErrorDomain code:kFxError_InvalidParameter
+                userInfo:@{NSLocalizedDescriptionKey: @"Unable to create a Gyroflow inspector control."}];
             return NO;
         }
     }
-    
-    //---------------------------------------------------------
-    //
-    // IMPORT SECTION:
-    //
-    //---------------------------------------------------------
-    
-    //---------------------------------------------------------
-    // START GROUP: 'Import'
-    //---------------------------------------------------------
-    if (![paramAPI startParameterSubGroup:@"Import"
-                              parameterID:kCB_ImportSection
-                           parameterFlags:kFxParameterFlag_DEFAULT])
-    {
-        if (error != NULL) {
-            NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_ImportSection"};
-            *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                         code:kFxError_InvalidParameter
-                                     userInfo:userInfo];
-        }
-        return NO;
-    } else {
-        //---------------------------------------------------------
-        // ADD PARAMETER: Drop Clip Here
-        //---------------------------------------------------------
-        if (![paramAPI addCustomParameterWithName:@"Drop Clip Here ➡"
-                                      parameterID:kCB_DropZone
-                                     defaultValue:@0
-                                   parameterFlags:kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE])
-        {
-            if (error != NULL) {
-                NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_DropZone"};
-                *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                             code:kFxError_InvalidParameter
-                                         userInfo:userInfo];
-            }
-            return NO;
-        }
-        
-        //---------------------------------------------------------
-        // ADD PARAMETER: 'Import Gyroflow Project' Button
-        //---------------------------------------------------------
-        if (![paramAPI addCustomParameterWithName:@""
-                                      parameterID:kCB_ImportGyroflowProject
-                                     defaultValue:@0
-                                   parameterFlags:kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE])
-        {
-            if (error != NULL) {
-                NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_ImportGyroflowProject"};
-                *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                             code:kFxError_InvalidParameter
-                                         userInfo:userInfo];
-            }
-            return NO;
-        }
-        
-        //---------------------------------------------------------
-        // ADD PARAMETER: 'Import Last Gyroflow Project' Button
-        //---------------------------------------------------------
-        if (![paramAPI addCustomParameterWithName:@""
-                                      parameterID:kCB_LoadLastGyroflowProject
-                                     defaultValue:@0
-                                   parameterFlags:kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE])
-        {
-            if (error != NULL) {
-                NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_LoadLastGyroflowProject"};
-                *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                             code:kFxError_InvalidParameter
-                                         userInfo:userInfo];
-            }
-            return NO;
-        }
-        
-        //---------------------------------------------------------
-        // ADD PARAMETER: 'Import Media File' Button
-        //---------------------------------------------------------
-        if (![paramAPI addCustomParameterWithName:@""
-                                      parameterID:kCB_ImportMediaFile
-                                     defaultValue:@0
-                                   parameterFlags:kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE])
-        {
-            if (error != NULL) {
-                NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_ImportMediaFile"};
-                *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                             code:kFxError_InvalidParameter
-                                         userInfo:userInfo];
-            }
-            return NO;
-        }
-        
-        //---------------------------------------------------------
-        // ADD PARAMETER: 'Load Preset/Lens Profile' Button
-        //---------------------------------------------------------
-        if (![paramAPI addCustomParameterWithName:@""
-                                      parameterID:kCB_LoadPresetLensProfile
-                                     defaultValue:@0
-                                   parameterFlags:kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE])
-        {
-            if (error != NULL) {
-                NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_LoadPresetLensProfile"};
-                *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                             code:kFxError_InvalidParameter
-                                         userInfo:userInfo];
-            }
-            return NO;
-        }
-        
-        //---------------------------------------------------------
-        // END GROUP: 'Import'
-        //---------------------------------------------------------
-        if (![paramAPI endParameterSubGroup])
-        {
-            if (error != NULL) {
-                NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add end 'Import Section' Parameter"};
-                *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                             code:kFxError_InvalidParameter
-                                         userInfo:userInfo];
-            }
-            return NO;
-        }
-    }
-    
-    //---------------------------------------------------------
-    //
-    // GYROFLOW PARAMETERS:
-    //
-    //---------------------------------------------------------
-    
-    //---------------------------------------------------------
-    // START GROUP: 'Gyroflow Parameters'
-    //---------------------------------------------------------
-    if (![paramAPI startParameterSubGroup:@"Gyroflow Parameters"
-                              parameterID:kCB_GyroflowParameters
-                           parameterFlags:kFxParameterFlag_DEFAULT])
-    {
-        if (error != NULL) {
-            NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_GyroflowParameters"};
-            *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                         code:kFxError_InvalidParameter
-                                     userInfo:userInfo];
-        }
-        return NO;
-    } else {
-        //---------------------------------------------------------
-        // ADD PARAMETER: 'FOV' Slider
-        //
-        // NOTE: 0.1 to 0.3 in Gyroflow OpenFX
-        //
-        // let mut param = param_set.param_define_double("FOV")?;
-        // param.set_default(1.0)?;
-        // param.set_display_min(0.1)?;
-        // param.set_display_max(3.0)?;
-        // param.set_label("FOV")?;
-        // param.set_hint("FOV")?;
-        // let _ = param.set_script_name("FOV");
-        // param.set_parent("AdjustGroup")?;
-        //---------------------------------------------------------
-        if (![paramAPI addFloatSliderWithName:@"FOV"
-                                  parameterID:kCB_FOV
-                                 defaultValue:1.000
-                                 parameterMin:0.100
-                                 parameterMax:3.000
-                                    sliderMin:0.100
-                                    sliderMax:3.000
-                                        delta:0.001
-                               parameterFlags:kFxParameterFlag_DEFAULT])
-        {
-            if (error != NULL) {
-                NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_FOV"};
-                *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                             code:kFxError_InvalidParameter
-                                         userInfo:userInfo];
-            }
-            return NO;
-        }
-        
-        //---------------------------------------------------------
-        // ADD PARAMETER: 'Smoothness' Slider
-        //
-        // NOTE: 0.01 to 3.00 in Gyroflow OpenFX
-        //
-        // let mut param = param_set.param_define_double("Smoothness")?;
-        // param.set_default(0.5)?;
-        // param.set_display_min(0.01)?;
-        // param.set_display_max(3.0)?;
-        // param.set_label("Smoothness")?;
-        // param.set_hint("Smoothness")?;
-        // let _ = param.set_script_name("Smoothness");
-        // param.set_parent("AdjustGroup")?;
-        //---------------------------------------------------------
-        if (![paramAPI addFloatSliderWithName:@"Smoothness"
-                                  parameterID:kCB_Smoothness
-                                 defaultValue:0.500
-                                 parameterMin:0.010
-                                 parameterMax:3.000
-                                    sliderMin:0.010
-                                    sliderMax:3.000
-                                        delta:0.001
-                               parameterFlags:kFxParameterFlag_DEFAULT])
-        {
-            if (error != NULL) {
-                NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_Smoothness"};
-                *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                             code:kFxError_InvalidParameter
-                                         userInfo:userInfo];
-            }
-            return NO;
-        }
-        
-        //---------------------------------------------------------
-        // ADD PARAMETER: 'Lens Correction' Slider
-        //
-        // NOTE: In the Gyroflow user interface it shows 0 to 100,
-        //       however internally it's actually 0 to 1.
-        //
-        // let mut param = param_set.param_define_double("LensCorrectionStrength")?;
-        // param.set_default(100.0)?;
-        // param.set_display_min(0.0)?;
-        // param.set_display_max(100.0)?;
-        // param.set_label("Lens correction")?;
-        // param.set_hint("Lens correction")?;
-        // let _ = param.set_script_name("LensCorrectionStrength");
-        // param.set_parent("AdjustGroup")?;
-        //---------------------------------------------------------
-        if (![paramAPI addFloatSliderWithName:@"Lens Correction"
-                                  parameterID:kCB_LensCorrection
-                                 defaultValue:100.0
-                                 parameterMin:0.0
-                                 parameterMax:100.0
-                                    sliderMin:0.0
-                                    sliderMax:100.0
-                                        delta:0.1
-                               parameterFlags:kFxParameterFlag_DEFAULT])
-        {
-            if (error != NULL) {
-                NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_LensCorrection"};
-                *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                             code:kFxError_InvalidParameter
-                                         userInfo:userInfo];
-            }
-            return NO;
-        }
-        
-        //---------------------------------------------------------
-        // ADD PARAMETER: 'Horizon Lock' Slider
-        //
-        // NOTE: 0 to 100 in Gyroflow OpenFX
-        //
-        // let mut param = param_set.param_define_double("HorizonLockAmount")?;
-        // param.set_default(0.0)?;
-        // param.set_display_min(0.0)?;
-        // param.set_display_max(100.0)?;
-        // param.set_label("Horizon lock")?;
-        // param.set_hint("Horizon lock amount")?;
-        // let _ = param.set_script_name("HorizonLockAmount");
-        // param.set_parent("AdjustGroup")?;//
-        //---------------------------------------------------------
-        if (![paramAPI addFloatSliderWithName:@"Horizon Lock"
-                                  parameterID:kCB_HorizonLock
-                                 defaultValue:0.0
-                                 parameterMin:0.0
-                                 parameterMax:100.0
-                                    sliderMin:0.0
-                                    sliderMax:100.0
-                                        delta:0.1
-                               parameterFlags:kFxParameterFlag_DEFAULT])
-        {
-            if (error != NULL) {
-                NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_HorizonLock"};
-                *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                             code:kFxError_InvalidParameter
-                                         userInfo:userInfo];
-            }
-            return NO;
-        }
-        
-        //---------------------------------------------------------
-        // ADD PARAMETER: 'Horizon Roll' Slider
-        //
-        // NOTE: -100 to 100 in Gyroflow OpenFX
-        //
-        // let mut param = param_set.param_define_double("HorizonLockRoll")?;
-        // param.set_default(0.0)?;
-        // param.set_display_min(-100.0)?;
-        // param.set_display_max(100.0)?;
-        // param.set_label("Horizon roll")?;
-        // param.set_hint("Horizon lock roll adjustment")?;
-        // let _ = param.set_script_name("HorizonLockRoll");
-        // param.set_parent("AdjustGroup")?;
-        //---------------------------------------------------------
-        if (![paramAPI addFloatSliderWithName:@"Horizon Roll"
-                                  parameterID:kCB_HorizonRoll
-                                 defaultValue:0.0
-                                 parameterMin:-100.0
-                                 parameterMax:100.0
-                                    sliderMin:-100.0
-                                    sliderMax:100.0
-                                        delta:0.1
-                               parameterFlags:kFxParameterFlag_DEFAULT])
-        {
-            if (error != NULL) {
-                NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_HorizonRoll"};
-                *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                             code:kFxError_InvalidParameter
-                                         userInfo:userInfo];
-            }
-            return NO;
-        }
-        
-        //---------------------------------------------------------
-        // ADD PARAMETER: 'Position Offset X' Slider
-        //
-        // NOTE: -100 to 100 in Gyroflow OpenFX
-        //
-        // let mut param = param_set.param_define_double("PositionX")?;
-        // param.set_default(0.0)?;
-        // param.set_display_min(-100.0)?;
-        // param.set_display_max(100.0)?;
-        // param.set_label("Position offset X")?;
-        // let _ = param.set_script_name("PositionX");
-        // param.set_parent("AdjustGroup")?;
-        //---------------------------------------------------------
-        if (![paramAPI addFloatSliderWithName:@"Position Offset X"
-                                  parameterID:kCB_PositionOffsetX
-                                 defaultValue:0.0
-                                 parameterMin:-100.0
-                                 parameterMax:100.0
-                                    sliderMin:-100.0
-                                    sliderMax:100.0
-                                        delta:0.1
-                               parameterFlags:kFxParameterFlag_DEFAULT])
-        {
-            if (error != NULL) {
-                NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_PositionOffsetX"};
-                *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                             code:kFxError_InvalidParameter
-                                         userInfo:userInfo];
-            }
-            return NO;
-        }
-        
-        //---------------------------------------------------------
-        // ADD PARAMETER: 'Position Offset Y' Slider
-        //
-        // NOTE: -100 to 100 in Gyroflow OpenFX
-        //
-        // let mut param = param_set.param_define_double("PositionY")?;
-        // param.set_default(0.0)?;
-        // param.set_display_min(-100.0)?;
-        // param.set_display_max(100.0)?;
-        // param.set_label("Position offset Y")?;
-        // let _ = param.set_script_name("PositionY");
-        // param.set_parent("AdjustGroup")?;
-        //---------------------------------------------------------
-        if (![paramAPI addFloatSliderWithName:@"Position Offset Y"
-                                  parameterID:kCB_PositionOffsetY
-                                 defaultValue:0.0
-                                 parameterMin:-100.0
-                                 parameterMax:100.0
-                                    sliderMin:-100.0
-                                    sliderMax:100.0
-                                        delta:0.1
-                               parameterFlags:kFxParameterFlag_DEFAULT])
-        {
-            if (error != NULL) {
-                NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_PositionOffsetY"};
-                *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                             code:kFxError_InvalidParameter
-                                         userInfo:userInfo];
-            }
-            return NO;
-        }
-        
-        //---------------------------------------------------------
-        // ADD PARAMETER: 'Input Rotation' Slider
-        //
-        // Resolve UI:      -360 to 360
-        // Gyroflow UI:     TBC
-        // Internally:      TBC
-        //
-        // let mut param = param_set.param_define_double("InputRotation")?;
-        // param.set_default(0.0)?;
-        // param.set_display_min(-360.0)?;
-        // param.set_display_max(360.0)?;
-        // param.set_label("Input rotation")?;
-        // let _ = param.set_script_name("InputRotation");
-        // param.set_parent("AdjustGroup")?;
-        //---------------------------------------------------------
-        if (![paramAPI addFloatSliderWithName:@"Input Rotation"
-                                  parameterID:kCB_InputRotation
-                                 defaultValue:0.0
-                                 parameterMin:-360.0
-                                 parameterMax:360.0
-                                    sliderMin:-360.0
-                                    sliderMax:360.0
-                                        delta:0.1
-                               parameterFlags:kFxParameterFlag_DEFAULT])
-        {
-            if (error != NULL) {
-                NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_InputRotation"};
-                *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                             code:kFxError_InvalidParameter
-                                         userInfo:userInfo];
-            }
-            return NO;
-        }
-        
-        //---------------------------------------------------------
-        // ADD PARAMETER: 'Video Rotation' Slider
-        //
-        // Resolve UI:      -360 to 360
-        // Gyroflow UI:     TBC
-        // Internally:      TBC
-        //
-        // let mut param = param_set.param_define_double("Rotation")?;
-        // param.set_default(0.0)?;
-        // param.set_display_min(-360.0)?;
-        // param.set_display_max(360.0)?;
-        // param.set_label("Video rotation")?;
-        // let _ = param.set_script_name("Rotation");
-        // param.set_parent("AdjustGroup")?;
-        //---------------------------------------------------------
-        if (![paramAPI addFloatSliderWithName:@"Video Rotation"
-                                  parameterID:kCB_VideoRotation
-                                 defaultValue:0.0
-                                 parameterMin:-360.0
-                                 parameterMax:360.0
-                                    sliderMin:-360.0
-                                    sliderMax:360.0
-                                        delta:0.1
-                               parameterFlags:kFxParameterFlag_DEFAULT])
-        {
-            if (error != NULL) {
-                NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_VideoRotation"};
-                *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                             code:kFxError_InvalidParameter
-                                         userInfo:userInfo];
-            }
-            return NO;
-        }
-        
-        //---------------------------------------------------------
-        // END GROUP: 'Gyroflow Parameters'
-        //---------------------------------------------------------
-        if (![paramAPI endParameterSubGroup])
-        {
-            if (error != NULL) {
-                NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add end 'Gyroflow Parameters' Parameter"};
-                *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                             code:kFxError_InvalidParameter
-                                         userInfo:userInfo];
-            }
-            return NO;
-        }
-    }
-    
-    //---------------------------------------------------------
-    //
-    // TOOLS:
-    //
-    //---------------------------------------------------------
-    
-    //---------------------------------------------------------
-    // START GROUP: 'Tools'
-    //---------------------------------------------------------
-    if (![paramAPI startParameterSubGroup:@"Tools"
-                              parameterID:kCB_ToolsSection
-                           parameterFlags:kFxParameterFlag_DEFAULT])
-    {
-        if (error != NULL) {
-            NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_ToolsSection"};
-            *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                         code:kFxError_InvalidParameter
-                                     userInfo:userInfo];
-        }
-        return NO;
-    } else {
-        //---------------------------------------------------------
-        // ADD PARAMETER: 'Stabilisation Overview' Check Box
-        //---------------------------------------------------------
-        if (![paramAPI addToggleButtonWithName:@"Stabilisation Overview"
-                                   parameterID:kCB_FieldOfViewOverview
-                                  defaultValue:NO
-                                parameterFlags:kFxParameterFlag_DEFAULT | kFxParameterFlag_NOT_ANIMATABLE]) {
-            if (error != NULL) {
-                NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_FieldOfViewOverview"};
-                *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                             code:kFxError_InvalidParameter
-                                         userInfo:userInfo];
-            }
-            return NO;
-        }
-        
-        //---------------------------------------------------------
-        // ADD PARAMETER: 'Disable Gyroflow Stretch' Check Box
-        //---------------------------------------------------------
-        if (![paramAPI addToggleButtonWithName:@"Disable Gyroflow Stretch"
-                                   parameterID:kCB_DisableGyroflowStretch
-                                  defaultValue:NO
-                                parameterFlags:kFxParameterFlag_DEFAULT | kFxParameterFlag_NOT_ANIMATABLE]) {
-            if (error != NULL) {
-                NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_DisableGyroflowStretch"};
-                *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                             code:kFxError_InvalidParameter
-                                         userInfo:userInfo];
-            }
-            return NO;
-        }
-        
-        //---------------------------------------------------------
-        // END GROUP: 'Tools'
-        //---------------------------------------------------------
-        if (![paramAPI endParameterSubGroup])
-        {
-            if (error != NULL) {
-                NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add end 'Tools' Parameter"};
-                *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                             code:kFxError_InvalidParameter
-                                         userInfo:userInfo];
-            }
-            return NO;
-        }
-    }
-    
-    //---------------------------------------------------------
-    //
-    // FILE MANAGEMENT:
-    //
-    //---------------------------------------------------------
-    
-    //---------------------------------------------------------
-    // START GROUP: 'File Management'
-    //---------------------------------------------------------
-    if (![paramAPI startParameterSubGroup:@"File Management"
-                              parameterID:kCB_FileManagementSection
-                           parameterFlags:kFxParameterFlag_DEFAULT])
-    {
-        if (error != NULL) {
-            NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_FileManagementSection"};
-            *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                         code:kFxError_InvalidParameter
-                                     userInfo:userInfo];
-        }
-        return NO;
-    } else {
-        //---------------------------------------------------------
-        // ADD PARAMETER: 'Reload Gyroflow Project' Button
-        //---------------------------------------------------------
-        if (![paramAPI addCustomParameterWithName:@""
-                                      parameterID:kCB_ReloadGyroflowProject
-                                     defaultValue:@0
-                                   parameterFlags:kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE])
-        {
-            if (error != NULL) {
-                NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_ReloadGyroflowProject"};
-                *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                             code:kFxError_InvalidParameter
-                                         userInfo:userInfo];
-            }
-            return NO;
-        }
-        
-        //---------------------------------------------------------
-        // ADD PARAMETER: 'Open in Gyroflow' Button
-        //---------------------------------------------------------
-        if (![paramAPI addCustomParameterWithName:@""
-                                      parameterID:kCB_LaunchGyroflow
-                                     defaultValue:@0
-                                   parameterFlags:kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE])
-        {
-            if (error != NULL) {
-                NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_LaunchGyroflow"};
-                *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                             code:kFxError_InvalidParameter
-                                         userInfo:userInfo];
-            }
-            return NO;
-        }
-        
-        //---------------------------------------------------------
-        // ADD PARAMETER: 'Export Gyroflow Project' Button
-        //---------------------------------------------------------
-        if (![paramAPI addCustomParameterWithName:@""
-                                      parameterID:kCB_ExportGyroflowProject
-                                     defaultValue:@0
-                                   parameterFlags:kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE])
-        {
-            if (error != NULL) {
-                NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_ExportGyroflowProject"};
-                *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                             code:kFxError_InvalidParameter
-                                         userInfo:userInfo];
-            }
-            return NO;
-        }
-        
-        //---------------------------------------------------------
-        // ADD PARAMETER: 'Reveal in Finder' Button
-        //---------------------------------------------------------
-        if (![paramAPI addCustomParameterWithName:@""
-                                      parameterID:kCB_RevealInFinder
-                                     defaultValue:@0
-                                   parameterFlags:kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE])
-        {
-            if (error != NULL) {
-                NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_RevealInFinder"};
-                *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                             code:kFxError_InvalidParameter
-                                         userInfo:userInfo];
-            }
-            return NO;
-        }
-        
-        //---------------------------------------------------------
-        // ADD PARAMETER: 'Settings' Button
-        //---------------------------------------------------------
-        if (![paramAPI addCustomParameterWithName:@""
-                                      parameterID:kCB_Settings
-                                     defaultValue:@0
-                                   parameterFlags:kFxParameterFlag_CUSTOM_UI | kFxParameterFlag_NOT_ANIMATABLE])
-        {
-            if (error != NULL) {
-                NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_Settings"};
-                *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                             code:kFxError_InvalidParameter
-                                         userInfo:userInfo];
-            }
-            return NO;
-        }
-        
-        //---------------------------------------------------------
-        // ADD PARAMETER: 'Loaded Gyroflow Project' Text Box
-        //---------------------------------------------------------
-        if (![paramAPI addStringParameterWithName:@"Loaded Gyroflow Project"
-                                      parameterID:kCB_LoadedGyroflowProject
-                                     defaultValue:@"NOTHING LOADED"
-                                   parameterFlags:kFxParameterFlag_DISABLED | kFxParameterFlag_NOT_ANIMATABLE])
-        {
-            if (error != NULL) {
-                NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_LoadedGyroflowProject"};
-                *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                             code:kFxError_InvalidParameter
-                                         userInfo:userInfo];
-            }
-            return NO;
-        }
-        
-        //---------------------------------------------------------
-        // END GROUP: 'Gyroflow Parameters'
-        //---------------------------------------------------------
-        if (![paramAPI endParameterSubGroup])
-        {
-            if (error != NULL) {
-                NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add end 'File Management' Parameter"};
-                *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                             code:kFxError_InvalidParameter
-                                         userInfo:userInfo];
-            }
-            return NO;
-        }
-    }
-    
-    //---------------------------------------------------------
-    //
-    // HIDDEN PARAMETERS:
-    //
-    //---------------------------------------------------------
-    
-    //---------------------------------------------------------
-    // ADD PARAMETER: Unique Identifier
-    //---------------------------------------------------------
-    if (![paramAPI addStringParameterWithName:@"Unique Identifier"
-                                  parameterID:kCB_UniqueIdentifier
-                                 defaultValue:@""
-                               parameterFlags:kFxParameterFlag_HIDDEN | kFxParameterFlag_NOT_ANIMATABLE])
-    {
-        if (error != NULL) {
-            NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_UniqueIdentifier"};
-            *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                         code:kFxError_InvalidParameter
-                                     userInfo:userInfo];
-        }
-        return NO;
-    }
-    
-    //---------------------------------------------------------
-    // ADD PARAMETER: 'Gyroflow Project Path' Text Box
-    //---------------------------------------------------------
-    if (![paramAPI addStringParameterWithName:@"Gyroflow Project Path"
-                                  parameterID:kCB_GyroflowProjectPath
-                                 defaultValue:@""
-                               parameterFlags:kFxParameterFlag_HIDDEN | kFxParameterFlag_NOT_ANIMATABLE])
-    {
-        if (error != NULL) {
-            NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_GyroflowProjectPath"};
-            *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                         code:kFxError_InvalidParameter
-                                     userInfo:userInfo];
-        }
-        return NO;
-    }
-    
-    //---------------------------------------------------------
-    // ADD PARAMETER: 'Gyroflow Project Bookmark Data' Text Box
-    //---------------------------------------------------------
-    if (![paramAPI addStringParameterWithName:@"Gyroflow Project Bookmark Data"
-                                  parameterID:kCB_GyroflowProjectBookmarkData
-                                 defaultValue:@""
-                               parameterFlags:kFxParameterFlag_HIDDEN | kFxParameterFlag_NOT_ANIMATABLE])
-    {
-        if (error != NULL) {
-            NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_GyroflowProjectBookmarkData"};
-            *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                         code:kFxError_InvalidParameter
-                                     userInfo:userInfo];
-        }
-        return NO;
-    }
-    
-    //---------------------------------------------------------
-    // ADD PARAMETER: 'Gyroflow Project Data' Text Box
-    //---------------------------------------------------------
-    if (![paramAPI addStringParameterWithName:@"Gyroflow Project Data"
-                                  parameterID:kCB_GyroflowProjectData
-                                 defaultValue:@""
-                               parameterFlags:kFxParameterFlag_HIDDEN | kFxParameterFlag_NOT_ANIMATABLE])
-    {
-        if (error != NULL) {
-            NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_GyroflowProjectData"};
-            *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                         code:kFxError_InvalidParameter
-                                     userInfo:userInfo];
-        }
-        return NO;
-    }
-    
-    //---------------------------------------------------------
-    // ADD PARAMETER: 'Media Path' Text Box
-    //---------------------------------------------------------
-    if (![paramAPI addStringParameterWithName:@"Media Path"
-                                  parameterID:kCB_MediaPath
-                                 defaultValue:@""
-                               parameterFlags:kFxParameterFlag_HIDDEN | kFxParameterFlag_NOT_ANIMATABLE])
-    {
-        if (error != NULL) {
-            NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_MediaPath"};
-            *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                         code:kFxError_InvalidParameter
-                                     userInfo:userInfo];
-        }
-        return NO;
-    }
-    
-    //---------------------------------------------------------
-    // ADD PARAMETER: 'Media Bookmark Data' Text Box
-    //---------------------------------------------------------
-    if (![paramAPI addStringParameterWithName:@"Media Bookmark Data"
-                                  parameterID:kCB_MediaBookmarkData
-                                 defaultValue:@""
-                               parameterFlags:kFxParameterFlag_HIDDEN | kFxParameterFlag_NOT_ANIMATABLE])
-    {
-        if (error != NULL) {
-            NSDictionary* userInfo = @{NSLocalizedDescriptionKey : @"[Gyroflow Toolbox Renderer] Unable to add parameter: kCB_MediaBookmarkData"};
-            *error = [NSError errorWithDomain:FxPlugErrorDomain
-                                         code:kFxError_InvalidParameter
-                                     userInfo:userInfo];
-        }
-        return NO;
-    }
-    
     return YES;
+}
+
+/// Reads native values without interpreting units, ranges, or stabilization policy.
+- (NSDictionary<NSString *, NSNumber *> *)parameterValuesAtTime:(CMTime)time
+    parameterAPI:(id<FxParameterRetrievalAPI_v6>)api error:(NSError **)error {
+    NSMutableDictionary *values = [NSMutableDictionary dictionary];
+    for (NSDictionary *definition in self.engineParameterDefinitions) {
+        UInt32 identifier = [definition[@"id"] unsignedIntValue];
+        NSString *kind = definition[@"kind"];
+        NSNumber *value = nil;
+        if ([kind isEqualToString:@"slider"]) {
+            double number = 0;
+            if ([api getFloatValue:&number fromParameter:identifier atTime:time]) value = @(number);
+        } else if ([kind isEqualToString:@"toggle"]) {
+            BOOL flag = NO;
+            if ([api getBoolValue:&flag fromParameter:identifier atTime:time]) value = @(flag);
+        } else if ([kind isEqualToString:@"menu"]) {
+            int index = 0;
+            if ([api getIntValue:&index fromParameter:identifier atTime:time]) value = @(index);
+        } else { continue; }
+        if (!value) {
+            if (error) *error = [NSError errorWithDomain:FxPlugErrorDomain code:kFxError_InvalidParameter
+                userInfo:@{NSLocalizedDescriptionKey: @"Unable to read a Gyroflow inspector value."}];
+            return nil;
+        }
+        values[[@(identifier) stringValue]] = value;
+    }
+    return values;
 }
 
 //---------------------------------------------------------
@@ -1158,11 +399,110 @@ typedef void (^BRAWCompletionHandler)(void);
                   atTime:(CMTime)time
                    error:(NSError * _Nullable *)error
 {
-    if (paramID == kCB_DisableGyroflowStretch) {
-        //NSLog(@"[Gyroflow Toolbox Renderer] Disable Gyroflow Stretch Changed!");
-        trashCache();
-    }
+    // Rust keys the cache by project, curve snapshot, and stretch settings.
     return YES;
+}
+
+/// Transfers curve identity to Rust, which samples only changed curves and owns interpolation.
+- (NSString *)hostKeyframesForProject:(NSString *)project
+                       parameterAPI:(id<FxParameterRetrievalAPI_v6>)parameterAPI
+                          timingAPI:(id<FxTimingAPI_v4>)timingAPI
+                     timelineOrigin:(CMTime)timelineOrigin
+                          frameRate:(double)frameRate
+                              error:(NSError **)error
+{
+    id<FxKeyframeAPI_v3> keyframeAPI = [self.apiManager apiForProtocol:@protocol(FxKeyframeAPI_v3)];
+    if (!keyframeAPI || project.length == 0) return nil;
+    const char *identifiersString = getKeyframeParameterIDs();
+    NSData *identifiersData = [NSData dataWithBytes:identifiersString length:strlen(identifiersString)];
+    freeCString((char *)identifiersString);
+    NSArray<NSNumber *> *identifiers = [NSJSONSerialization JSONObjectWithData:identifiersData options:0 error:error];
+    if (![identifiers isKindOfClass:NSArray.class]) return nil;
+    GyroflowParameterReader reader = { parameterAPI, timingAPI, timelineOrigin };
+    NSMutableArray *parameters = [NSMutableArray arrayWithCapacity:identifiers.count];
+    for (NSNumber *identifier in identifiers) {
+        NSUInteger count = 0;
+        NSError *keyframeError = [keyframeAPI keyframeCount:&count forParameter:identifier.unsignedIntValue andChannel:0];
+        if (keyframeError) { if (error) *error = keyframeError; return nil; }
+        double initialValue = 0.0;
+        if (!readGyroflowHostParameter(&reader, identifier.unsignedIntValue, 0, &initialValue)) {
+            if (error) *error = [NSError errorWithDomain:FxPlugErrorDomain code:kFxError_InvalidParameter
+                userInfo:@{NSLocalizedDescriptionKey: @"Unable to read an animation parameter from Final Cut Pro."}];
+            return nil;
+        }
+        NSMutableArray *keys = [NSMutableArray arrayWithCapacity:count];
+        for (NSUInteger index = 0; index < count; index++) {
+            FxKeyframe keyframe;
+            FxInitKeyframe(keyframe, kFxKeyframe_CurrentVersion);
+            keyframeError = [keyframeAPI keyframe:&keyframe forParameter:identifier.unsignedIntValue channel:0 andIndex:index];
+            if (keyframeError) { if (error) *error = keyframeError; return nil; }
+            CMTime timelineTime = kCMTimeInvalid;
+            [timingAPI timelineTime:&timelineTime fromInputTime:keyframe.time];
+            CMTime relativeTime = CMTimeConvertScale(CMTimeSubtract(timelineTime, timelineOrigin), 1000000, kCMTimeRoundingMethod_RoundHalfAwayFromZero);
+            double value = 0.0;
+            if (!CMTIME_IS_NUMERIC(relativeTime) || ![parameterAPI getFloatValue:&value fromParameter:identifier.unsignedIntValue atTime:keyframe.time]) {
+                if (error) *error = [NSError errorWithDomain:FxPlugErrorDomain code:kFxError_InvalidTime
+                    userInfo:@{NSLocalizedDescriptionKey: @"Unable to read a keyframe time or value from Final Cut Pro."}];
+                return nil;
+            }
+            NSData *shape = [NSData dataWithBytes:&keyframe length:sizeof(keyframe)];
+            [keys addObject:@{@"time_us": @(relativeTime.value), @"value": @(value), @"shape": [shape base64EncodedStringWithOptions:0]}];
+        }
+        [parameters addObject:@{@"id": identifier, @"value": @(initialValue), @"keys": keys}];
+    }
+    CMTime duration = kCMTimeInvalid;
+    [timingAPI durationTimeOfInputToFilter:&duration];
+    double inputRotation = 0.0;
+    if (!readGyroflowHostParameter(&reader, kCB_InputRotation, 0, &inputRotation)) {
+        if (error) *error = [NSError errorWithDomain:FxPlugErrorDomain code:kFxError_InvalidParameter
+            userInfo:@{NSLocalizedDescriptionKey: @"Unable to read the input rotation from Final Cut Pro."}];
+        return nil;
+    }
+    CMTime initialTime = kCMTimeInvalid;
+    [timingAPI inputTime:&initialTime fromTimelineTime:timelineOrigin];
+    NSDictionary *controls = [self parameterValuesAtTime:initialTime parameterAPI:parameterAPI error:error];
+    if (!controls) return nil;
+    NSDictionary *signature = @{@"fps": @(frameRate), @"parameters": parameters,
+        @"input_rotation": @(inputRotation),
+        @"controls": controls,
+        @"origin_value": @(timelineOrigin.value), @"origin_scale": @(timelineOrigin.timescale),
+        @"duration_value": @(duration.value), @"duration_scale": @(duration.timescale)};
+    NSData *signatureData = [NSJSONSerialization dataWithJSONObject:signature options:NSJSONWritingSortedKeys error:error];
+    if (!signatureData) return nil;
+    NSString *signatureString = [[NSString alloc] initWithData:signatureData encoding:NSUTF8StringEncoding];
+    const char *snapshot = buildHostKeyframes(project.UTF8String, signatureString.UTF8String, &reader, readGyroflowHostParameter);
+    NSString *result = [NSString stringWithUTF8String:snapshot];
+    freeCString((char *)snapshot);
+    if ([result isEqualToString:@"FAIL"]) {
+        if (error) *error = [NSError errorWithDomain:FxPlugErrorDomain code:kFxError_InvalidParameter
+            userInfo:@{NSLocalizedDescriptionKey: @"Gyroflow could not read the animation curves from Final Cut Pro."}];
+        return nil;
+    }
+    return result;
+}
+
+/// Populates host controls from Rust without parsing Gyroflow documents in Objective-C.
+- (void)applyProjectDefaultsFromProject:(NSString *)project
+                          parameterAPI:(id<FxParameterSettingAPI_v5>)parameterAPI
+{
+    const char *defaultsString = getEngineControlDefaults(project.UTF8String);
+    NSData *defaultsData = [NSData dataWithBytes:defaultsString length:strlen(defaultsString)];
+    freeCString((char *)defaultsString);
+    NSDictionary *values = [NSJSONSerialization JSONObjectWithData:defaultsData options:0 error:NULL];
+    if (![values isKindOfClass:NSDictionary.class]) return;
+    for (NSDictionary *definition in self.engineParameterDefinitions) {
+        UInt32 identifier = [definition[@"id"] unsignedIntValue];
+        NSNumber *value = values[[@(identifier) stringValue]];
+        if (!value) continue;
+        NSString *kind = definition[@"kind"];
+        if ([kind isEqualToString:@"slider"]) {
+            [parameterAPI setFloatValue:value.doubleValue toParameter:identifier atTime:kCMTimeZero];
+        } else if ([kind isEqualToString:@"toggle"]) {
+            [parameterAPI setBoolValue:value.boolValue toParameter:identifier atTime:kCMTimeZero];
+        } else if ([kind isEqualToString:@"menu"]) {
+            [parameterAPI setIntValue:value.intValue toParameter:identifier atTime:kCMTimeZero];
+        }
+    }
 }
 
 //---------------------------------------------------------
@@ -1263,7 +603,7 @@ typedef void (^BRAWCompletionHandler)(void);
     Float64 timelineFpsDenominator  = [timingAPI timelineFpsDenominatorForEffect:self];
     Float64 frameRate               = timelineFpsNumerator / timelineFpsDenominator;
     Float64 timestamp               = (frame / frameRate) * 1000000.0;
-    params.timestamp                = [[NSNumber alloc] initWithFloat:timestamp];
+    params.timestamp                = @(llround(timestamp));
 
     /*
      NSLog(@"---------------------------------");
@@ -1307,7 +647,8 @@ typedef void (^BRAWCompletionHandler)(void);
     // If the Gyroflow Project data is base64 encoded, try
     // to decode it first, otherwise pass the original string:
     //---------------------------------------------------------
-    NSData *base64EncodedData = [[NSData alloc] initWithBase64EncodedString:gyroflowData options:0];
+    params.gyroflowData = gyroflowData;
+    NSData *base64EncodedData = [[NSData alloc] initWithBase64EncodedString:gyroflowData ?: @"" options:0];
     if (base64EncodedData != nil) {
         NSString *decodedGyroflowData = [[NSString alloc] initWithData:base64EncodedData encoding:NSUTF8StringEncoding];
         if (decodedGyroflowData != nil) {
@@ -1317,82 +658,27 @@ typedef void (^BRAWCompletionHandler)(void);
         params.gyroflowData = gyroflowData;
     }
 
-    //---------------------------------------------------------
-    // FOV:
-    //---------------------------------------------------------
-    double fov;
-    [paramGetAPI getFloatValue:&fov fromParameter:kCB_FOV atTime:renderTime];
-    params.fov = [NSNumber numberWithDouble:fov];
-
-    //---------------------------------------------------------
-    // Smoothness:
-    //---------------------------------------------------------
-    double smoothness;
-    [paramGetAPI getFloatValue:&smoothness fromParameter:kCB_Smoothness atTime:renderTime];
-    params.smoothness = [NSNumber numberWithDouble:smoothness];
-
-    //---------------------------------------------------------
-    // Lens Correction:
-    //---------------------------------------------------------
-    double lensCorrection;
-    [paramGetAPI getFloatValue:&lensCorrection fromParameter:kCB_LensCorrection atTime:renderTime];
-    params.lensCorrection = [NSNumber numberWithDouble:lensCorrection];
-
-    //---------------------------------------------------------
-    // Horizon Lock:
-    //---------------------------------------------------------
-    double horizonLock;
-    [paramGetAPI getFloatValue:&horizonLock fromParameter:kCB_HorizonLock atTime:renderTime];
-    params.horizonLock = [NSNumber numberWithDouble:horizonLock];
-
-    //---------------------------------------------------------
-    // Horizon Roll:
-    //---------------------------------------------------------
-    double horizonRoll;
-    [paramGetAPI getFloatValue:&horizonRoll fromParameter:kCB_HorizonRoll atTime:renderTime];
-    params.horizonRoll = [NSNumber numberWithDouble:horizonRoll];
-
-    //---------------------------------------------------------
-    // Position Offset X:
-    //---------------------------------------------------------
-    double positionOffsetX;
-    [paramGetAPI getFloatValue:&positionOffsetX fromParameter:kCB_PositionOffsetX atTime:renderTime];
-    params.positionOffsetX = [NSNumber numberWithDouble:positionOffsetX];
-
-    //---------------------------------------------------------
-    // Position Offset Y:
-    //---------------------------------------------------------
-    double positionOffsetY;
-    [paramGetAPI getFloatValue:&positionOffsetY fromParameter:kCB_PositionOffsetY atTime:renderTime];
-    params.positionOffsetY = [NSNumber numberWithDouble:positionOffsetY];
-
-    //---------------------------------------------------------
-    // Input Rotation:
-    //---------------------------------------------------------
-    double inputRotation;
-    [paramGetAPI getFloatValue:&inputRotation fromParameter:kCB_InputRotation atTime:renderTime];
-    params.inputRotation = [NSNumber numberWithDouble:inputRotation];
-
-    //---------------------------------------------------------
-    // Video Rotation:
-    //---------------------------------------------------------
-    double videoRotation;
-    [paramGetAPI getFloatValue:&videoRotation fromParameter:kCB_VideoRotation atTime:renderTime];
-    params.videoRotation = [NSNumber numberWithDouble:videoRotation];
-
-    //---------------------------------------------------------
-    // FOV Overview:
-    //---------------------------------------------------------
-    BOOL fovOverview;
-    [paramGetAPI getBoolValue:&fovOverview fromParameter:kCB_FieldOfViewOverview atTime:renderTime];
-    params.fovOverview = [NSNumber numberWithBool:fovOverview];
-
-    //---------------------------------------------------------
-    // Disable Gyroflow Stretch:
-    //---------------------------------------------------------
-    BOOL disableGyroflowStretch;
-    [paramGetAPI getBoolValue:&disableGyroflowStretch fromParameter:kCB_DisableGyroflowStretch atTime:renderTime];
-    params.disableGyroflowStretch = [NSNumber numberWithBool:disableGyroflowStretch];
+    NSDictionary *values = [self parameterValuesAtTime:renderTime parameterAPI:paramGetAPI error:error];
+    if (!values) return NO;
+    NSData *valuesData = [NSJSONSerialization dataWithJSONObject:values options:NSJSONWritingSortedKeys error:error];
+    if (!valuesData) return NO;
+    params.parameterValues = [[NSString alloc] initWithData:valuesData encoding:NSUTF8StringEncoding];
+    for (NSDictionary *definition in self.engineParameterDefinitions) {
+        NSString *archiveKey = definition[@"archive"];
+        if (archiveKey) [params setValue:values[[definition[@"id"] stringValue]] forKey:archiveKey];
+    }
+    GyroflowRenderOptions renderOptions;
+    if (!getOptionsFromParameters(params.parameterValues.UTF8String, &renderOptions)) {
+        if (error) *error = [NSError errorWithDomain:FxPlugErrorDomain code:kFxError_InvalidParameter
+            userInfo:@{NSLocalizedDescriptionKey: @"The stabilisation settings are invalid."}];
+        return NO;
+    }
+    params.renderOptions = [NSData dataWithBytes:&renderOptions length:sizeof(renderOptions)];
+    NSError *animationError = nil;
+    params.hostKeyframes = [self hostKeyframesForProject:params.gyroflowData
+        parameterAPI:paramGetAPI timingAPI:timingAPI
+        timelineOrigin:startTimeOfInputToFilterInTimelineTime frameRate:frameRate error:&animationError];
+    if (animationError) { if (error) *error = animationError; return NO; }
 
     //---------------------------------------------------------
     // Write the parameters to the pluginState as `NSData`:
@@ -1667,7 +953,7 @@ typedef void (^BRAWCompletionHandler)(void);
         }
         return NO;
     }
-    if (sourceImages[0].ioSurface == nil) {
+    if (sourceImages.count == 0 || sourceImages[0].ioSurface == nil) {
         NSString *errorMessage = @"FATAL ERROR: Invalid plugin state received from host - sourceImages[0].ioSurface was nil.";
         NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
         if (outError != NULL) {
@@ -1778,6 +1064,13 @@ typedef void (^BRAWCompletionHandler)(void);
     //---------------------------------------------------------
     id<MTLTexture> outputTexture = [destinationImage metalTextureForDevice:metalDevice];
 
+    if (!inputTexture || !outputTexture || inputTexture.width != outputTexture.width ||
+        inputTexture.height != outputTexture.height || inputTexture.pixelFormat != outputTexture.pixelFormat) {
+        if (outError) *outError = [NSError errorWithDomain:FxPlugErrorDomain code:kFxError_InvalidParameter
+            userInfo:@{NSLocalizedDescriptionKey: @"The source and destination Metal textures must have matching dimensions and pixel formats."}];
+        return NO;
+    }
+
     //---------------------------------------------------------
     // Determine the Pixel Format:
     //---------------------------------------------------------
@@ -1815,7 +1108,7 @@ typedef void (^BRAWCompletionHandler)(void);
     const char*     xPixelFormat               = [inputPixelFormat UTF8String];
     const char*     xPath                      = [gyroflowPath UTF8String];
     const char*     xData                      = [gyroflowData UTF8String];
-    int64_t         xTimestamp                 = [timestamp floatValue];
+    int64_t         xTimestamp                 = [timestamp longLongValue];
     double          xFOV                       = [fov doubleValue];
     double          xSmoothness                = [smoothness doubleValue];
     double          xLensCorrection            = [lensCorrection doubleValue] / 100.0;
@@ -1831,7 +1124,18 @@ typedef void (^BRAWCompletionHandler)(void);
     //---------------------------------------------------------
     // Trigger the Gyroflow Rust Function:
     //---------------------------------------------------------
-    int ok = processFrame(
+    GyroflowRenderOptions renderOptions;
+    getRenderDefaults(&renderOptions);
+    if (params.renderOptions.length == sizeof(renderOptions)) {
+        [params.renderOptions getBytes:&renderOptions length:sizeof(renderOptions)];
+    }
+    int ok;
+    if (params.parameterValues.length > 0) {
+        ok = processFrameWithParameters(xUniqueIdentifier, xWidth, xHeight, xPixelFormat, numberOfBytes,
+            xPath, xData, xTimestamp, params.parameterValues.UTF8String, params.hostKeyframes.UTF8String,
+            (__bridge void *)inputTexture, (__bridge void *)outputTexture, nil);
+    } else {
+        ok = processFrameWithKeyframes(
                           xUniqueIdentifier,                    // const char*
                           xWidth,                               // uint32_t
                           xHeight,                              // uint32_t
@@ -1853,8 +1157,11 @@ typedef void (^BRAWCompletionHandler)(void);
                           xDisableGyroflowStretch,              // uint8_t
                           (__bridge void *)inputTexture,        // MTLTexture
                           (__bridge void *)outputTexture,       // MTLTexture
-                          nil                                   // MTLCommandQueue
+                          nil,                                  // Core selects the texture's Metal device
+                          &renderOptions,
+                          params.hostKeyframes.UTF8String
                           );
+    }
 
     //---------------------------------------------------------
     // Gyroflow Core had an error, so abort:
@@ -2252,6 +1559,33 @@ typedef void (^BRAWCompletionHandler)(void);
             gyroflowProjectData = [NSString stringWithString:decodedGyroflowData];
         }
     }
+
+    // Bake the inspector's complete curves in Rust so exported projects render identically.
+    id<FxTimingAPI_v4> timingAPI = [self.apiManager apiForProtocol:@protocol(FxTimingAPI_v4)];
+    CMTime startTime = kCMTimeInvalid;
+    [timingAPI startTimeForEffect:&startTime];
+    NSData *state = nil;
+    NSError *exportError = nil;
+    if (!CMTIME_IS_NUMERIC(startTime) || ![self pluginState:&state atTime:startTime quality:kFxQuality_HIGH error:&exportError]) {
+        [actionAPI endAction:self];
+        [self showAlertWithMessage:@"Unable to Export Animation" info:exportError.localizedDescription ?: @"The clip timing is unavailable."];
+        return;
+    }
+    GyroflowParameters *parameters = [NSKeyedUnarchiver unarchivedObjectOfClass:GyroflowParameters.class fromData:state error:&exportError];
+    if (parameters.hostKeyframes.length > 0) {
+        GyroflowRenderOptions options;
+        getRenderDefaults(&options);
+        if (parameters.renderOptions.length == sizeof(options)) [parameters.renderOptions getBytes:&options length:sizeof(options)];
+        const char *exported = exportConfiguredProject(gyroflowProjectData.UTF8String, parameters.hostKeyframes.UTF8String, &options);
+        NSString *document = [NSString stringWithUTF8String:exported];
+        freeCString((char *)exported);
+        if (!document || [document isEqualToString:@"FAIL"]) {
+            [actionAPI endAction:self];
+            [self showAlertWithMessage:@"Unable to Export Animation" info:@"Gyroflow could not prepare the current settings and keyframes for export."];
+            return;
+        }
+        gyroflowProjectData = document;
+    }
     
     //---------------------------------------------------------
     // Get the existing Gyroflow Project Path:
@@ -2265,7 +1599,7 @@ typedef void (^BRAWCompletionHandler)(void);
     NSString *gyroflowProjectName = nil;
     [paramGetAPI getStringParameterValue:&gyroflowProjectName fromParameter:kCB_LoadedGyroflowProject];
     
-    if (gyroflowProjectName != nil || [gyroflowProjectName isEqualToString:@""]) {
+    if (gyroflowProjectName.length > 0) {
         gyroflowProjectName = [gyroflowProjectName stringByAppendingString:@".gyroflow"];
     } else {
         gyroflowProjectName = @"Untitled.gyroflow";
@@ -2578,6 +1912,8 @@ typedef void (^BRAWCompletionHandler)(void);
     NSString *base64EncodedString = [loadResultStringData base64EncodedStringWithOptions:0];
     [paramSetAPI setStringParameterValue:base64EncodedString toParameter:kCB_GyroflowProjectData];
     
+    [self applyProjectDefaultsFromProject:loadResultString parameterAPI:paramSetAPI];
+
     //---------------------------------------------------------
     // Trash the cache!
     //---------------------------------------------------------
@@ -4580,31 +3916,6 @@ typedef void (^BRAWCompletionHandler)(void);
         //---------------------------------------------------------
         // Get default values from the Gyroflow Project:
         //---------------------------------------------------------
-        double defaultFOV               = 1.0;
-        double defaultSmoothness        = 0.5;
-        double defaultLensCorrection    = 100.0;
-        double defaultHorizonLock       = 0.0;
-        double defaultHorizonRoll       = 0.0;
-        double defaultPositionOffsetX   = 0.0;
-        double defaultPositionOffsetY   = 0.0;
-        double defaultVideoRotation     = 0.0;
-        
-        const char* getDefaultValuesResult = getDefaultValues(
-                                                              [selectedGyroflowProjectData UTF8String],
-                                                              &defaultFOV,
-                                                              &defaultSmoothness,
-                                                              &defaultLensCorrection,
-                                                              &defaultHorizonLock,
-                                                              &defaultHorizonRoll,
-                                                              &defaultPositionOffsetX,
-                                                              &defaultPositionOffsetY,
-                                                              &defaultVideoRotation
-                                                              );
-        
-        NSString *getDefaultValuesResultString = [NSString stringWithUTF8String:getDefaultValuesResult];
-        if (getDefaultValuesResult) freeCString((char *)getDefaultValuesResult);
-
-        //NSLog(@"[Gyroflow Toolbox Renderer] getDefaultValuesResult: %@", getDefaultValuesResultString);
         
         //---------------------------------------------------------
         // Use the Action API to allow us to change the parameters:
@@ -4667,27 +3978,7 @@ typedef void (^BRAWCompletionHandler)(void);
         //---------------------------------------------------------
         // Set parameters from Gyroflow Project file:
         //---------------------------------------------------------
-        if ([getDefaultValuesResultString isEqualToString:@"OK"]) {
-            //NSLog(@"[Gyroflow Toolbox Renderer] defaultFOV: %f", defaultFOV);
-            //NSLog(@"[Gyroflow Toolbox Renderer] defaultSmoothness: %f", defaultSmoothness);
-            //NSLog(@"[Gyroflow Toolbox Renderer] defaultLensCorrection: %f", defaultLensCorrection);
-            //NSLog(@"[Gyroflow Toolbox Renderer] defaultHorizonLock: %f", defaultHorizonLock);
-            //NSLog(@"[Gyroflow Toolbox Renderer] defaultHorizonRoll: %f", defaultHorizonRoll);
-            //NSLog(@"[Gyroflow Toolbox Renderer] defaultPositionOffsetX: %f", defaultPositionOffsetX);
-            //NSLog(@"[Gyroflow Toolbox Renderer] defaultPositionOffsetY: %f", defaultPositionOffsetY);
-            //NSLog(@"[Gyroflow Toolbox Renderer] defaultVideoRotation: %f", defaultVideoRotation);
-            
-            [paramSetAPI setFloatValue:defaultFOV toParameter:kCB_FOV atTime:kCMTimeZero];
-            [paramSetAPI setFloatValue:defaultSmoothness toParameter:kCB_Smoothness atTime:kCMTimeZero];
-            [paramSetAPI setFloatValue:defaultLensCorrection toParameter:kCB_LensCorrection atTime:kCMTimeZero];
-            [paramSetAPI setFloatValue:defaultHorizonLock toParameter:kCB_HorizonLock atTime:kCMTimeZero];
-            [paramSetAPI setFloatValue:defaultHorizonRoll toParameter:kCB_HorizonRoll atTime:kCMTimeZero];
-            [paramSetAPI setFloatValue:defaultPositionOffsetX toParameter:kCB_PositionOffsetX atTime:kCMTimeZero];
-            [paramSetAPI setFloatValue:defaultPositionOffsetY toParameter:kCB_PositionOffsetY atTime:kCMTimeZero];
-            [paramSetAPI setFloatValue:defaultVideoRotation toParameter:kCB_VideoRotation atTime:kCMTimeZero];
-        } else {
-            NSLog(@"[Gyroflow Toolbox Renderer] ERROR - Failed to get default values!");
-        }
+        [self applyProjectDefaultsFromProject:selectedGyroflowProjectData parameterAPI:paramSetAPI];
         
         //---------------------------------------------------------
         // Stop Action API:
@@ -4952,7 +4243,15 @@ typedef void (^BRAWCompletionHandler)(void);
 
         //NSLog(@"[Gyroflow Toolbox Renderer] doesHaveAccurateTimestamps: %@", doesHaveAccurateTimestampsString);
         
-        if (doesHaveAccurateTimestampsString == nil || ![doesHaveAccurateTimestampsString isEqualToString:@"YES"]) {
+        if (![doesHaveAccurateTimestampsString isEqualToString:@"YES"] &&
+            ![doesHaveAccurateTimestampsString isEqualToString:@"NO"]) {
+            [NSApp endSheet:self.progressAlert.window];
+            [self showAlertWithMessage:@"Unable to Read Motion Timing"
+                info:@"Gyroflow could not read the timing metadata. Import the media again or choose a valid Gyroflow project."];
+            if (completion) completion();
+            return;
+        }
+        if ([doesHaveAccurateTimestampsString isEqualToString:@"NO"]) {
             //---------------------------------------------------------
             // Close the Progress Alert:
             //---------------------------------------------------------
@@ -4962,10 +4261,12 @@ typedef void (^BRAWCompletionHandler)(void);
             // The Gyroflow Project doesn't have accurate timestamps,
             // so we need to launch Gyroflow:
             //---------------------------------------------------------
-            NSString *message = @"Requires Synchronization in Gyroflow";
-            NSString *info = @"The imported media file needs to be synchronized in Gyroflow before it can be used by Gyroflow Toolbox in Final Cut Pro.\n\nYou will be prompted to save the Gyroflow Project, and then we'll launch Gyroflow to open it.\n\nWhen you have finished synchronizing in Gyroflow, press COMMAND+S to save the project. Then back in Final Cut Pro press the 'Reload Gyroflow Project' button in the Inspector of the Gyroflow Toolbox effect.";
-            [self showAlertWithMessage:message info:info];
-            requiresGyroflowLaunch = YES;
+            NSAlert *syncAlert = [[NSAlert alloc] init];
+            syncAlert.messageText = @"Synchronise Motion Data";
+            syncAlert.informativeText = @"This clip does not provide accurate motion timestamps. You can align it manually in Final Cut Pro using Advanced Stabilisation → Override Advanced Project Settings → Additional Sync Offset, or open Gyroflow for automatic synchronization.";
+            [syncAlert addButtonWithTitle:@"Continue in Final Cut Pro"];
+            [syncAlert addButtonWithTitle:@"Open Gyroflow"];
+            requiresGyroflowLaunch = [syncAlert runModal] == NSAlertSecondButtonReturn;
         }
         
         //---------------------------------------------------------
@@ -5088,31 +4389,6 @@ typedef void (^BRAWCompletionHandler)(void);
         //---------------------------------------------------------
         // Get default values from the Gyroflow Project:
         //---------------------------------------------------------
-        double defaultFOV               = 1.0;
-        double defaultSmoothness        = 0.5;
-        double defaultLensCorrection    = 100.0;
-        double defaultHorizonLock       = 0.0;
-        double defaultHorizonRoll       = 0.0;
-        double defaultPositionOffsetX   = 0.0;
-        double defaultPositionOffsetY   = 0.0;
-        double defaultVideoRotation     = 0.0;
-        
-        const char* getDefaultValuesResult = getDefaultValues(
-            [gyroflowProject UTF8String],
-            &defaultFOV,
-            &defaultSmoothness,
-            &defaultLensCorrection,
-            &defaultHorizonLock,
-            &defaultHorizonRoll,
-            &defaultPositionOffsetX,
-            &defaultPositionOffsetY,
-            &defaultVideoRotation
-        );
-        
-        NSString *getDefaultValuesResultString = [NSString stringWithUTF8String:getDefaultValuesResult];
-        if (getDefaultValuesResult) freeCString((char *)getDefaultValuesResult);
-
-        //NSLog(@"[Gyroflow Toolbox Renderer] getDefaultValuesResult: %@", getDefaultValuesResultString);
                 
         //---------------------------------------------------------
         // Use the Action API to allow us to change the parameters:
@@ -5194,27 +4470,7 @@ typedef void (^BRAWCompletionHandler)(void);
         //---------------------------------------------------------
         // Set parameters from Gyroflow Project file:
         //---------------------------------------------------------
-        if ([getDefaultValuesResultString isEqualToString:@"OK"]) {
-            //NSLog(@"[Gyroflow Toolbox Renderer] defaultFOV: %f", defaultFOV);
-            //NSLog(@"[Gyroflow Toolbox Renderer] defaultSmoothness: %f", defaultSmoothness);
-            //NSLog(@"[Gyroflow Toolbox Renderer] defaultLensCorrection: %f", defaultLensCorrection);
-            //NSLog(@"[Gyroflow Toolbox Renderer] defaultHorizonLock: %f", defaultHorizonLock);
-            //NSLog(@"[Gyroflow Toolbox Renderer] defaultHorizonRoll: %f", defaultHorizonRoll);
-            //NSLog(@"[Gyroflow Toolbox Renderer] defaultPositionOffsetX: %f", defaultPositionOffsetX);
-            //NSLog(@"[Gyroflow Toolbox Renderer] defaultPositionOffsetY: %f", defaultPositionOffsetY);
-            //NSLog(@"[Gyroflow Toolbox Renderer] defaultVideoRotation: %f", defaultVideoRotation);
-            
-            [paramSetAPI setFloatValue:defaultFOV toParameter:kCB_FOV atTime:kCMTimeZero];
-            [paramSetAPI setFloatValue:defaultSmoothness toParameter:kCB_Smoothness atTime:kCMTimeZero];
-            [paramSetAPI setFloatValue:defaultLensCorrection toParameter:kCB_LensCorrection atTime:kCMTimeZero];
-            [paramSetAPI setFloatValue:defaultHorizonLock toParameter:kCB_HorizonLock atTime:kCMTimeZero];
-            [paramSetAPI setFloatValue:defaultHorizonRoll toParameter:kCB_HorizonRoll atTime:kCMTimeZero];
-            [paramSetAPI setFloatValue:defaultPositionOffsetX toParameter:kCB_PositionOffsetX atTime:kCMTimeZero];
-            [paramSetAPI setFloatValue:defaultPositionOffsetY toParameter:kCB_PositionOffsetY atTime:kCMTimeZero];
-            [paramSetAPI setFloatValue:defaultVideoRotation toParameter:kCB_VideoRotation atTime:kCMTimeZero];
-        } else {
-            NSLog(@"[Gyroflow Toolbox Renderer] ERROR - Failed to get default values!");
-        }
+        [self applyProjectDefaultsFromProject:gyroflowProject parameterAPI:paramSetAPI];
         
         //---------------------------------------------------------
         // Stop Action API:
