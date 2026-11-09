@@ -56,6 +56,7 @@ python3 Scripts/sync_parameters.py
 ./Scripts/test_analysis_image.sh
 ./Scripts/test_analysis_actions.sh
 python3 Scripts/test_presets.py --clip 'LLM Resources/Test Clips/GoPro Hero 6.MP4'
+python3 Scripts/test_project_import.py 'LLM Resources/Test Clips/GoPro Hero 6.gyroflow'
 python3 Scripts/test_analysis.py
 python3 Scripts/test_analysis.py --gmflow
 python3 Scripts/test_analysis.py --mode synchronize --seconds 8 --clip 'LLM Resources/Test Clips/GoPro Hero 6.MP4'
@@ -77,6 +78,16 @@ UUIDs and published Motion channels.
 code against a host double that exposes APIs only inside a custom-view action
 or analysis callback. It checks all three analysis buttons, current and legacy
 API lookup, interrupted cleanup, host errors and balanced action scopes.
+It also checks media/project drop routing and cancellation, including an invalid
+neighboring project. Set `GYROFLOW_LIBRARY_DIRECTORY` to test a development dylib.
+
+`test_project_import.py` checks the supplied legacy GoPro project through the Rust
+ABI: relocated Windows paths, preserved synchronization/lens/smoothing settings,
+missing-source recovery, independent motion sources, embedded offline reload and
+media import after a failed project. `--library` selects a development dylib.
+Project recovery reads the original project and source without modifying either;
+Final Cut Pro stores the recovered motion data in the effect. If the sandbox
+cannot read the external source, a native open panel obtains access before retrying.
 
 The Motion parameter generator locates additive controls by their IDs. It never
 adds XML comments and refuses to overwrite unrelated controls between them.

@@ -2284,6 +2284,7 @@ static int readGyroflowHostParameter(void *context, uint32_t parameter, int64_t 
     //---------------------------------------------------------
     id<FxParameterRetrievalAPI_v6> paramGetAPI = [self.apiManager apiForProtocol:@protocol(FxParameterRetrievalAPI_v6)];
     if (paramGetAPI == nil) {
+        [actionAPI endAction:self];
         //---------------------------------------------------------
         // Show error message:
         //---------------------------------------------------------
@@ -2496,26 +2497,6 @@ static int readGyroflowHostParameter(void *context, uint32_t parameter, int64_t 
         //---------------------------------------------------------
         // Read the Gyroflow Project Data from File:
         //---------------------------------------------------------
-        NSError *readError = nil;
-        NSString *selectedGyroflowProjectData = [NSString stringWithContentsOfURL:openPanelURL encoding:NSUTF8StringEncoding error:&readError];
-        //NSLog(@"[Gyroflow Toolbox Renderer] selectedGyroflowProjectData: %@", selectedGyroflowProjectData);
-        
-        //---------------------------------------------------------
-        // There was an error reading the Gyroflow Project file:
-        //---------------------------------------------------------
-        if (readError != nil) {
-            NSString *errorMessage = [NSString stringWithFormat:@"Failed to read Gyroflow Project File due to:\n\n%@", [readError localizedDescription]];
-            NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
-            [self showAlertWithMessage:@"An error has occurred." info:errorMessage];
-            
-            //---------------------------------------------------------
-            // Stop Action API & Stop Accessing Resource:
-            //---------------------------------------------------------
-            [actionAPI endAction:self];
-            [openPanelURL stopAccessingSecurityScopedResource];
-            return;
-        }
-        
         //---------------------------------------------------------
         // Before we attempt to check the Gyroflow Project, we need
         // to grant sandbox access to the media file if it exists:
@@ -2528,6 +2509,7 @@ static int readGyroflowHostParameter(void *context, uint32_t parameter, int64_t 
         // If there's a bookmark for the media, lets try load it:
         //---------------------------------------------------------
         NSURL *decodedMediaBookmarkURL = nil;
+        BOOL ownsReloadMediaAccess = NO;
         if (mediaBookmarkDataString != nil && ![mediaBookmarkDataString isEqualToString:@""]) {
             //---------------------------------------------------------
             // Decode the Base64 bookmark data:
@@ -2552,44 +2534,18 @@ static int readGyroflowHostParameter(void *context, uint32_t parameter, int64_t 
             // Continue if there's no error...
             //---------------------------------------------------------
             if (bookmarkError == nil) {
-                if ([decodedMediaBookmarkURL startAccessingSecurityScopedResource]) {
-                    //NSLog(@"[Gyroflow Toolbox Renderer] Can access media: %@", [decodedMediaBookmarkURL path]);
-                }
-                //else
-                //{
-                    //NSLog(@"[Gyroflow Toolbox Renderer] Cannot access media: %@", [decodedMediaBookmarkURL path]);
-                //}
+                ownsReloadMediaAccess = [decodedMediaBookmarkURL startAccessingSecurityScopedResource];
             }
         }
-        
-        //---------------------------------------------------------
-        // Make sure there's Gyro Data in the Gyroflow Project:
-        //---------------------------------------------------------
-        const char* hasData = doesGyroflowProjectContainStabilisationData([selectedGyroflowProjectData UTF8String]);
-        NSString *hasDataResult = [NSString stringWithUTF8String: hasData];
-        if (hasData) freeCString((char *)hasData);
 
-        //NSLog(@"[Gyroflow Toolbox Renderer] doesGyroflowProjectContainStabilisationData: %@", hasDataResult);
-        if (hasDataResult == nil || ![hasDataResult isEqualToString:@"YES"]) {
-            NSString *errorMessage = @"The Gyroflow file you imported doesn't seem to contain any gyro data.\n\nPlease try exporting from Gyroflow again using the 'Export project file (including gyro data)' option.";
-            NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
-            [self showAlertWithMessage:@"Gyro Data Not Found." info:errorMessage];
-            
-            //---------------------------------------------------------
-            // Stop Action API & Stop Accessing Resource:
-            //---------------------------------------------------------
+        NSString *selectedGyroflowProjectData = [self preparedGyroflowProjectAtURL:openPanelURL];
+        if (ownsReloadMediaAccess) [decodedMediaBookmarkURL stopAccessingSecurityScopedResource];
+        if (!selectedGyroflowProjectData) {
             [actionAPI endAction:self];
             [openPanelURL stopAccessingSecurityScopedResource];
             return;
         }
-        
-        //---------------------------------------------------------
-        // Stop accessing media file:
-        //---------------------------------------------------------
-        if (decodedMediaBookmarkURL != nil) {
-            [decodedMediaBookmarkURL stopAccessingSecurityScopedResource];
-        }
-        
+
         //---------------------------------------------------------
         // Load the Parameter Set API:
         //---------------------------------------------------------
@@ -2714,35 +2670,14 @@ static int readGyroflowHostParameter(void *context, uint32_t parameter, int64_t 
     //---------------------------------------------------------
     // Read the Gyroflow Project Data from File:
     //---------------------------------------------------------
-    [decodedBookmarkURL startAccessingSecurityScopedResource];
-    
-    NSError *readError = nil;
-    NSString *selectedGyroflowProjectData = [NSString stringWithContentsOfURL:decodedBookmarkURL encoding:NSUTF8StringEncoding error:&readError];
-    
-    //---------------------------------------------------------
-    // Stop accessing security scoped bookmark:
-    //---------------------------------------------------------
-    [decodedBookmarkURL stopAccessingSecurityScopedResource];
-    
-    //---------------------------------------------------------
-    // If there was a problem reading the file:
-    //---------------------------------------------------------
-    if (readError != nil) {
-        //---------------------------------------------------------
-        // Show an error message:
-        //---------------------------------------------------------
-        NSString *message   = @"An error has occurred.";
-        NSString *info      = [NSString stringWithFormat:@"Failed to read Gyroflow Project file due to:\n\n%@", [readError localizedDescription]];
-        NSLog(@"[Gyroflow Toolbox Renderer] %@", info);
-        [self showAlertWithMessage:message info:info];
-        
-        //---------------------------------------------------------
-        // Stop Action API:
-        //---------------------------------------------------------
+    BOOL ownsProjectAccess = [decodedBookmarkURL startAccessingSecurityScopedResource];
+    NSString *selectedGyroflowProjectData = [self preparedGyroflowProjectAtURL:decodedBookmarkURL];
+    if (ownsProjectAccess) [decodedBookmarkURL stopAccessingSecurityScopedResource];
+    if (!selectedGyroflowProjectData) {
         [actionAPI endAction:self];
         return;
     }
-    
+
     //---------------------------------------------------------
     // Update 'Gyroflow Project Data':
     //---------------------------------------------------------
@@ -3643,9 +3578,10 @@ static int readGyroflowHostParameter(void *context, uint32_t parameter, int64_t 
                 (motionURL.path ?: @"").UTF8String);
             NSData *data = response ? [NSData dataWithBytes:response length:strlen(response)] : nil;
             if (response) freeCString((char *)response);
-            NSDictionary *result = data ? [NSJSONSerialization JSONObjectWithData:data options:0 error:nil] : nil;
-            if (![result isKindOfClass:NSDictionary.class] || ![result[@"ok"] boolValue]) {
-                [NSApp endSheet:self.progressAlert.window];
+            id decoded = data ? [NSJSONSerialization JSONObjectWithData:data options:0 error:nil] : nil;
+            NSDictionary *result = [decoded isKindOfClass:NSDictionary.class] ? decoded : nil;
+            if (![result[@"ok"] boolValue]) {
+                if (self.progressAlert.window.sheetParent) [NSApp endSheet:self.progressAlert.window];
                 [self showAlertWithMessage:@"Unable to Import Gyroflow Project"
                     info:result[@"error"] ?: @"The project could not be read. Please select a valid Gyroflow project."];
                 return nil;
@@ -3654,7 +3590,7 @@ static int readGyroflowHostParameter(void *context, uint32_t parameter, int64_t 
             if ([imported[@"status"] isEqualToString:@"ready"]) return imported[@"project"];
 
             NSWindow *progressParent = self.progressAlert.window.sheetParent;
-            [NSApp endSheet:self.progressAlert.window];
+            if (self.progressAlert.window.sheetParent) [NSApp endSheet:self.progressAlert.window];
             if (motionURL || ![imported[@"status"] isEqualToString:@"needs_motion"]) {
                 [self showAlertWithMessage:@"Unable to Read Motion Data"
                     info:@"The selected source file could not be read. Check that it is available and try importing the project again."];
@@ -4081,6 +4017,11 @@ static int readGyroflowHostParameter(void *context, uint32_t parameter, int64_t 
         }
     }
 
+    BRAWCompletionHandler finish = ^{
+        if (!isAccessible) [panelURL stopAccessingSecurityScopedResource];
+        if (completion) completion();
+    };
+
     //---------------------------------------------------------
     // Show a Progress Alert:
     //---------------------------------------------------------
@@ -4156,9 +4097,7 @@ static int readGyroflowHostParameter(void *context, uint32_t parameter, int64_t 
             //---------------------------------------------------------
             // Trigger the Completion Handler:
             //---------------------------------------------------------
-            if (completion) {
-                completion();
-            }
+            finish();
             return;
         }
         
@@ -4177,9 +4116,7 @@ static int readGyroflowHostParameter(void *context, uint32_t parameter, int64_t 
             //---------------------------------------------------------
             // Trigger the Completion Handler:
             //---------------------------------------------------------
-            if (completion) {
-                completion();
-            }
+            finish();
             return;
         }
         
@@ -4217,7 +4154,7 @@ static int readGyroflowHostParameter(void *context, uint32_t parameter, int64_t 
             [NSApp endSheet:self.progressAlert.window];
             [self showAlertWithMessage:@"Unable to Read Motion Timing"
                 info:@"Gyroflow could not read the timing metadata. Import the media again or choose a valid Gyroflow project."];
-            if (completion) completion();
+            finish();
             return;
         }
         const char *motionStatus = doesGyroflowProjectContainStabilisationData(gyroflowProject.UTF8String);
@@ -4257,20 +4194,6 @@ static int readGyroflowHostParameter(void *context, uint32_t parameter, int64_t 
         }
         */
         
-        //---------------------------------------------------------
-        // If the file wasn't already accessible, then we need to
-        // startAccessingSecurityScopedResource:
-        //---------------------------------------------------------
-        if (!isAccessible) {
-            if ([fileURL startAccessingSecurityScopedResource]) {
-                NSLog(@"[Gyroflow Toolbox Renderer] startAccessingSecurityScopedResource for url!");
-            } else {
-                NSLog(@"[Gyroflow Toolbox Renderer] FAILED TO startAccessingSecurityScopedResource for url!");
-            }
-        } else {
-            NSLog(@"[Gyroflow Toolbox Renderer] fileURL was already accessible, so no need to startAccessingSecurityScopedResource.");
-        }
-        
         NSError *bookmarkError = nil;
         NSURLBookmarkCreationOptions bookmarkOptions = NSURLBookmarkCreationWithSecurityScope | NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess;
         NSData *bookmarkData = [fileURL bookmarkDataWithOptions:bookmarkOptions
@@ -4296,9 +4219,7 @@ static int readGyroflowHostParameter(void *context, uint32_t parameter, int64_t 
             //---------------------------------------------------------
             // Trigger the Completion Handler:
             //---------------------------------------------------------
-            if (completion) {
-                completion();
-            }
+            finish();
             return;
         }
         
@@ -4318,9 +4239,7 @@ static int readGyroflowHostParameter(void *context, uint32_t parameter, int64_t 
             //---------------------------------------------------------
             // Trigger the Completion Handler:
             //---------------------------------------------------------
-            if (completion) {
-                completion();
-            }
+            finish();
             return;
         }
         
@@ -4341,6 +4260,7 @@ static int readGyroflowHostParameter(void *context, uint32_t parameter, int64_t 
         id<FxParameterSettingAPI_v5> paramSetAPI = [self.apiManager apiForProtocol:@protocol(FxParameterSettingAPI_v5)];
         if (paramSetAPI == nil)
         {
+            [actionAPI endAction:self];
             //---------------------------------------------------------
             // Close the Progress Alert:
             //---------------------------------------------------------
@@ -4356,9 +4276,7 @@ static int readGyroflowHostParameter(void *context, uint32_t parameter, int64_t 
             //---------------------------------------------------------
             // Trigger the Completion Handler:
             //---------------------------------------------------------
-            if (completion) {
-                completion();
-            }
+            finish();
             return;
         }
         
@@ -4420,10 +4338,7 @@ static int readGyroflowHostParameter(void *context, uint32_t parameter, int64_t 
         //---------------------------------------------------------
         // Stop accessing security scoped resource:
         //---------------------------------------------------------
-        if (isAccessible) {
-            //NSLog(@"[Gyroflow Toolbox Renderer] Stop accessing fileURL: %@", fileURL);
-            [fileURL stopAccessingSecurityScopedResource];
-        }
+
         
         //---------------------------------------------------------
         // If we need to Launch Gyroflow:
@@ -4446,9 +4361,7 @@ static int readGyroflowHostParameter(void *context, uint32_t parameter, int64_t 
             //---------------------------------------------------------
             // Trigger the Completion Handler:
             //---------------------------------------------------------
-            if (completion) {
-                completion();
-            }
+            finish();
             return;
         }
             
@@ -4492,9 +4405,7 @@ static int readGyroflowHostParameter(void *context, uint32_t parameter, int64_t 
                     //---------------------------------------------------------
                     // Trigger the Completion Handler:
                     //---------------------------------------------------------
-                    if (completion) {
-                        completion();
-                    }
+                    finish();
                     return;
                 }];
             } else {
@@ -4511,9 +4422,7 @@ static int readGyroflowHostParameter(void *context, uint32_t parameter, int64_t 
                 //---------------------------------------------------------
                 // Trigger the Completion Handler:
                 //---------------------------------------------------------
-                if (completion) {
-                    completion();
-                }
+                finish();
                 return;
             }
         } else {
@@ -4530,9 +4439,7 @@ static int readGyroflowHostParameter(void *context, uint32_t parameter, int64_t 
             //---------------------------------------------------------
             // Trigger the Completion Handler:
             //---------------------------------------------------------
-            if (completion) {
-                completion();
-            }
+            finish();
             return;
         }
     });
