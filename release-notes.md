@@ -7,12 +7,16 @@
 
 **🔨 Improvements:**
 - We've updated to the latest Gyroflow Core v1.7 Renderer. HUGE thank you to the amazing [AdrianEddy](https://github.com/AdrianEddy) for all his ongoing help, assistance, genius and support!
+- Added Metal-powered KLT and optional GMFlow (AI) tracking. Amazing work Yasunori Morishima!
 - Reworked keyframe handling to use Gyroflow’s native keyframe engine. Added a **Use Gyroflow Keyframes** option to preserve animation saved in imported Gyroflow projects.
 - Exported Gyroflow projects now include your current Inspector settings and animation.
 - Added more stabilisation controls directly in Final Cut Pro, including smoothing methods, zoom modes and limits, automatic horizon locking, additional rotation and 3D translation.
 - Added controls for rolling shutter correction, lens breathing compensation, focal length stabilisation, light refraction, output projection and image interpolation.
 - Updated RED motion-data handling to recognise accurately timed gyro data, avoiding unnecessary automatic synchronisation.
-- Added manual motion-data synchronisation using Additional Sync Offset. Clips requiring synchronisation can now be adjusted within Final Cut Pro or opened in Gyroflow for automatic synchronisation.
+- Added automatic motion-data synchronisation directly in Final Cut Pro, with manual adjustment available through Additional Sync Offset.
+- Added optical stabilisation using Final Cut Pro’s background analysis. Analyse images to improve recorded motion data or stabilise footage without gyro data.
+- Added Save as Default and named presets for saving and recalling stabilisation settings.
+- Added focal-length-only lens setup and automatic lens metadata delay analysis for supported zoom footage.
 - Improved rotation and framing for vertical footage, including portrait clips on matching vertical timelines.
 - Improved renderer caching and memory management, and reduced unnecessary recalculation when adjusting settings.
 - Improved preset importing so settings can be reused without replacing the current clip’s motion data or synchronisation offsets.
