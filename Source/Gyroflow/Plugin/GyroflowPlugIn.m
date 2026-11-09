@@ -10,6 +10,8 @@
 //---------------------------------------------------------
 #import "GyroflowPlugIn.h"
 #import "GyroflowAlertFactory.h"
+#import "GyroflowAnalysis.h"
+#import "GyroflowActions.h"
 
 typedef void (^BRAWCompletionHandler)(void);
 
@@ -57,12 +59,12 @@ static int readGyroflowHostParameter(void *context, uint32_t parameter, int64_t 
         id decoded = [NSJSONSerialization JSONObjectWithData:data options:0 error:NULL];
         if (![decoded isKindOfClass:NSArray.class]) return nil;
         self.engineParameterDefinitions = decoded;
+        self.analysis = [[GyroflowAnalysis alloc] initWithPlugin:self];
         //---------------------------------------------------------
         // Write log file to disk when using NSLog:
         //---------------------------------------------------------
         NSArray *paths = NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES);
         NSString *applicationSupportDirectory = [paths firstObject];
-        
         NSString* logPath = [applicationSupportDirectory stringByAppendingString:@"/FxPlug.log"];
         
         freopen([logPath fileSystemRepresentation],"a+",stderr);
@@ -252,6 +254,11 @@ static int readGyroflowHostParameter(void *context, uint32_t parameter, int64_t 
 //---------------------------------------------------------
 - (NSView*)createViewForParameterID:(UInt32)parameterID
 {
+    for (NSDictionary *definition in self.engineParameterDefinitions) {
+        if ([definition[@"id"] unsignedIntValue] == parameterID && definition[@"button_title"]) {
+            return [[CustomButtonView alloc] initWithParentPlugin:self buttonID:parameterID buttonTitle:definition[@"button_title"]];
+        }
+    }
     if (parameterID == kCB_ImportGyroflowProject) {
         return [[CustomButtonView alloc] initWithParentPlugin:self
                                                      buttonID:kCB_ImportGyroflowProject
@@ -491,6 +498,15 @@ static int readGyroflowHostParameter(void *context, uint32_t parameter, int64_t 
     freeCString((char *)defaultsString);
     NSDictionary *values = [NSJSONSerialization JSONObjectWithData:defaultsData options:0 error:NULL];
     if (![values isKindOfClass:NSDictionary.class]) return;
+    [self applyToolboxControlValues:values parameterAPI:parameterAPI];
+}
+
+- (void)applyToolboxControlValues:(NSDictionary<NSString *, NSNumber *> *)values {
+    id<FxParameterSettingAPI_v5> parameterAPI = [self.apiManager apiForProtocol:@protocol(FxParameterSettingAPI_v5)];
+    [self applyToolboxControlValues:values parameterAPI:parameterAPI];
+}
+
+- (void)applyToolboxControlValues:(NSDictionary<NSString *, NSNumber *> *)values parameterAPI:(id<FxParameterSettingAPI_v5>)parameterAPI {
     for (NSDictionary *definition in self.engineParameterDefinitions) {
         UInt32 identifier = [definition[@"id"] unsignedIntValue];
         NSNumber *value = values[[@(identifier) stringValue]];
@@ -1467,6 +1483,7 @@ static int readGyroflowHostParameter(void *context, uint32_t parameter, int64_t 
 //---------------------------------------------------------
 - (void)customButtonViewPressed:(UInt32)buttonID
 {
+    if (buttonID >= 700 && buttonID < 800) { [self performToolboxAction:buttonID]; return; }
     if (buttonID == kCB_LaunchGyroflow) {
         [self buttonLaunchGyroflow];
     } else if (buttonID == kCB_LoadLastGyroflowProject) {
@@ -4245,7 +4262,10 @@ static int readGyroflowHostParameter(void *context, uint32_t parameter, int64_t 
             if (completion) completion();
             return;
         }
-        if ([doesHaveAccurateTimestampsString isEqualToString:@"NO"]) {
+        const char *motionStatus = doesGyroflowProjectContainStabilisationData(gyroflowProject.UTF8String);
+        BOOL hasRecordedMotion = motionStatus && strcmp(motionStatus, "YES") == 0;
+        if (motionStatus) freeCString((char *)motionStatus);
+        if (hasRecordedMotion && [doesHaveAccurateTimestampsString isEqualToString:@"NO"]) {
             //---------------------------------------------------------
             // Close the Progress Alert:
             //---------------------------------------------------------
@@ -4257,42 +4277,10 @@ static int readGyroflowHostParameter(void *context, uint32_t parameter, int64_t 
             //---------------------------------------------------------
             NSAlert *syncAlert = [GyroflowAlertFactory makeAlert];
             syncAlert.messageText = @"Synchronise Motion Data";
-            syncAlert.informativeText = @"This clip does not provide accurate motion timestamps. You can align it manually in Final Cut Pro using Advanced Stabilisation → Override Advanced Project Settings → Additional Sync Offset, or open Gyroflow for automatic synchronization.";
+            syncAlert.informativeText = @"This clip does not provide accurate motion timestamps. After importing, use Motion Analysis → Synchronise Motion Data to align it in Final Cut Pro. You can also set an Additional Sync Offset in Advanced Stabilisation.";
             [syncAlert addButtonWithTitle:@"Continue in Final Cut Pro"];
             [syncAlert addButtonWithTitle:@"Open Gyroflow"];
             requiresGyroflowLaunch = [syncAlert runModal] == NSAlertSecondButtonReturn;
-        }
-        
-        //---------------------------------------------------------
-        // Make sure there's Gyro Data in the Gyroflow Project:
-        //---------------------------------------------------------
-        if (!requiresGyroflowLaunch) {
-            const char* hasData = doesGyroflowProjectContainStabilisationData([gyroflowProject UTF8String]);
-            NSString *hasDataResult = [NSString stringWithUTF8String: hasData];
-            if (hasData) freeCString((char *)hasData);
-
-            NSLog(@"[Gyroflow Toolbox Renderer] hasDataResult: %@", hasDataResult);
-            if (hasDataResult == nil || ![hasDataResult isEqualToString:@"YES"]) {
-                //---------------------------------------------------------
-                // Close the Progress Alert:
-                //---------------------------------------------------------
-                [NSApp endSheet:self.progressAlert.window];
-
-                //---------------------------------------------------------
-                // Show the error message:
-                //---------------------------------------------------------
-                NSString *errorMessage = @"The file you imported doesn't seem to contain any gyroscope data.\n\nPlease check the media file to make sure it's correct and valid.";
-                NSLog(@"[Gyroflow Toolbox Renderer] %@", errorMessage);
-                [self showAlertWithMessage:@"Missing Gyroscope Data" info:errorMessage];
-                
-                //---------------------------------------------------------
-                // Trigger the Completion Handler:
-                //---------------------------------------------------------
-                if (completion) {
-                    completion();
-                }
-                return;
-            }
         }
         
         //---------------------------------------------------------
@@ -4529,8 +4517,10 @@ static int readGyroflowHostParameter(void *context, uint32_t parameter, int64_t 
                 NSAlert *alert                  = [GyroflowAlertFactory makeAlert];
                 alert.alertStyle                = NSAlertStyleInformational;
                 alert.messageText               = @"No Lens Profile Detected";
-                alert.informativeText           = @"A lens profile could not be automatically detected from the supplied video file.\n\nYou will be prompted to select an appropriate Lens Profile in the next panel.";
+                alert.informativeText           = @"Choose a lens profile for this camera and lens, or enter a 35 mm equivalent focal length in Lens Setup. A focal-length-only setup does not correct lens distortion.";
                 alert.showsSuppressionButton    = YES;
+                [alert addButtonWithTitle:@"Choose Lens Profile"];
+                [alert addButtonWithTitle:@"Set Focal Length"];
                 [alert beginSheetModalForWindow:NSApp.windows.firstObject completionHandler:^(NSModalResponse result) {
                     if ([alert suppressionButton].state == NSControlStateValueOn) {
                         [[NSUserDefaults standardUserDefaults] setBool:YES forKey:@"suppressNoLensProfileDetected"];
@@ -4539,7 +4529,7 @@ static int readGyroflowHostParameter(void *context, uint32_t parameter, int64_t 
                     //---------------------------------------------------------
                     // Load Preset or Lens Profile:
                     //---------------------------------------------------------
-                    [self buttonLoadPresetLensProfileIsImporting:YES];
+                    if (result == NSAlertFirstButtonReturn) [self buttonLoadPresetLensProfileIsImporting:YES];
                     
                     //---------------------------------------------------------
                     // Trigger the Completion Handler:
@@ -4790,5 +4780,17 @@ void runOnMainQueueWithoutDeadlocking(void (^block)(void)) {
         [alert runModal];
     });
 }
+
+// FxPlug calls these on its background analysis worker; no UI or rendering work is dispatched.
+- (BOOL)desiredAnalysisTimeRange:(CMTimeRange *)desiredRange forInputWithTimeRange:(CMTimeRange)inputRange error:(NSError **)error {
+    return [self.analysis desiredAnalysisTimeRange:desiredRange forInputWithTimeRange:inputRange error:error];
+}
+- (BOOL)setupAnalysisForTimeRange:(CMTimeRange)range frameDuration:(CMTime)duration error:(NSError **)error {
+    return [self.analysis setupAnalysisForTimeRange:range frameDuration:duration error:error];
+}
+- (BOOL)analyzeFrame:(FxImageTile *)frame atTime:(CMTime)time error:(NSError **)error {
+    return [self.analysis analyzeFrame:frame atTime:time error:error];
+}
+- (BOOL)cleanupAnalysis:(NSError **)error { return [self.analysis cleanupAnalysis:error]; }
 
 @end

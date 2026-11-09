@@ -52,9 +52,21 @@
 //---------------------------------------------------------
 // Gyroflow Plugin:
 //---------------------------------------------------------
-@interface GyroflowPlugIn : NSObject <FxTileableEffect> {}
+@class GyroflowAnalysis;
+
+@interface GyroflowPlugIn : NSObject <FxTileableEffect, FxAnalyzer> {}
+
+/// Owns the native lifecycle adapter; its analysis state and algorithms live in Rust.
+@property (nonatomic, strong) GyroflowAnalysis * _Nonnull analysis;
 
 - (NSView *_Nonnull)createViewForParameterID:(UInt32)parameterID NS_RETURNS_RETAINED;
+
+/// Applies the Rust-owned parameter defaults after importing or recalling a project.
+- (void)applyProjectDefaultsFromProject:(NSString * _Nonnull)project
+                          parameterAPI:(id<FxParameterSettingAPI_v5> _Nonnull)parameterAPI;
+
+/// Applies the specific inspector values returned by a Rust command or analysis result.
+- (void)applyToolboxControlValues:(NSDictionary<NSString *, NSNumber *> * _Nonnull)values;
 
 //---------------------------------------------------------
 // Cached Lens Profile Lookup:

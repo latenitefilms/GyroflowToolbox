@@ -176,6 +176,10 @@ pub(crate) fn defaults(manager: &StabilizationManager) -> Value {
         "643": gyro.optical_correction.as_ref().is_none_or(|correction| correction.enabled),
         "644": parameters.background_mode as i32,
         "645": parameters.background_margin * 100.0, "646": parameters.background_margin_feather * 100.0,
+        "701": if manager.optical_tracking.read().name() == "gmflow" { 1 } else { 0 },
+        "702": gyro.ignores_file_motion(),
+        "703": manager.optical_settings.read().strength * 100.0,
+        "704": manager.optical_settings.read().per_frame,
     });
     values
         .as_object_mut()

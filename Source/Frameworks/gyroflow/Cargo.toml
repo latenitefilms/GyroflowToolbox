@@ -11,8 +11,10 @@ crate-type =["cdylib"]
 
 [dependencies]
 serde_json = "1.0"
-gyroflow-core = { git = "https://github.com/gyroflow/gyroflow.git", default-features = false, rev = "eb695f058c65b0b6ae3eecb8631f55a91f28e54a", features = ["bundle-lens-profiles", "cache-gyro-metadata"] }
+gyroflow-core = { git = "https://github.com/gyroflow/gyroflow.git", rev = "eb695f058c65b0b6ae3eecb8631f55a91f28e54a", default-features = false, features = ["bundle-lens-profiles", "cache-gyro-metadata", "use-burn"] }
 log = "0.4"
+# Configure the existing upstream GPU runtime before Core starts it.
+cubecl = "0.12.0-pre.1"
 lru = "0.19"
 nalgebra = { version = "0.34", features = ["serde-serialize"] }
 simplelog = "0.12.2"
@@ -24,3 +26,58 @@ codegen-units = 1
 
 [lints.rust]
 unsafe_op_in_unsafe_fn = "deny"
+
+[patch.crates-io]
+# Match the GPU fixes used by Gyroflow 1.7; pin them for reproducible builds.
+cubecl = { git = "https://github.com/AdrianEddy/cubecl.git", rev = "3651b11e43da786cd1ef831a3986693becd6b701" }
+cubecl-common = { git = "https://github.com/AdrianEddy/cubecl.git", rev = "3651b11e43da786cd1ef831a3986693becd6b701" }
+cubecl-core = { git = "https://github.com/AdrianEddy/cubecl.git", rev = "3651b11e43da786cd1ef831a3986693becd6b701" }
+cubecl-cpp = { git = "https://github.com/AdrianEddy/cubecl.git", rev = "3651b11e43da786cd1ef831a3986693becd6b701" }
+cubecl-cpu = { git = "https://github.com/AdrianEddy/cubecl.git", rev = "3651b11e43da786cd1ef831a3986693becd6b701" }
+cubecl-cuda = { git = "https://github.com/AdrianEddy/cubecl.git", rev = "3651b11e43da786cd1ef831a3986693becd6b701" }
+cubecl-environment = { git = "https://github.com/AdrianEddy/cubecl.git", rev = "3651b11e43da786cd1ef831a3986693becd6b701" }
+cubecl-hip = { git = "https://github.com/AdrianEddy/cubecl.git", rev = "3651b11e43da786cd1ef831a3986693becd6b701" }
+cubecl-ir = { git = "https://github.com/AdrianEddy/cubecl.git", rev = "3651b11e43da786cd1ef831a3986693becd6b701" }
+cubecl-llvm = { git = "https://github.com/AdrianEddy/cubecl.git", rev = "3651b11e43da786cd1ef831a3986693becd6b701" }
+cubecl-macros = { git = "https://github.com/AdrianEddy/cubecl.git", rev = "3651b11e43da786cd1ef831a3986693becd6b701" }
+cubecl-macros-internal = { git = "https://github.com/AdrianEddy/cubecl.git", rev = "3651b11e43da786cd1ef831a3986693becd6b701" }
+cubecl-metal = { git = "https://github.com/AdrianEddy/cubecl.git", rev = "3651b11e43da786cd1ef831a3986693becd6b701" }
+cubecl-monitoring = { git = "https://github.com/AdrianEddy/cubecl.git", rev = "3651b11e43da786cd1ef831a3986693becd6b701" }
+cubecl-opt = { git = "https://github.com/AdrianEddy/cubecl.git", rev = "3651b11e43da786cd1ef831a3986693becd6b701" }
+cubecl-runtime = { git = "https://github.com/AdrianEddy/cubecl.git", rev = "3651b11e43da786cd1ef831a3986693becd6b701" }
+cubecl-server = { git = "https://github.com/AdrianEddy/cubecl.git", rev = "3651b11e43da786cd1ef831a3986693becd6b701" }
+cubecl-spirv = { git = "https://github.com/AdrianEddy/cubecl.git", rev = "3651b11e43da786cd1ef831a3986693becd6b701" }
+cubecl-std = { git = "https://github.com/AdrianEddy/cubecl.git", rev = "3651b11e43da786cd1ef831a3986693becd6b701" }
+cubecl-tile = { git = "https://github.com/AdrianEddy/cubecl.git", rev = "3651b11e43da786cd1ef831a3986693becd6b701" }
+cubecl-wgpu = { git = "https://github.com/AdrianEddy/cubecl.git", rev = "3651b11e43da786cd1ef831a3986693becd6b701" }
+cubecl-zspace = { git = "https://github.com/AdrianEddy/cubecl.git", rev = "3651b11e43da786cd1ef831a3986693becd6b701" }
+burn = { git = "https://github.com/AdrianEddy/burn.git", rev = "416577bbc668a0ab3d4ef6fb1f3354ca9150097b" }
+burn-autodiff = { git = "https://github.com/AdrianEddy/burn.git", rev = "416577bbc668a0ab3d4ef6fb1f3354ca9150097b" }
+burn-backend = { git = "https://github.com/AdrianEddy/burn.git", rev = "416577bbc668a0ab3d4ef6fb1f3354ca9150097b" }
+burn-backend-extension = { git = "https://github.com/AdrianEddy/burn.git", rev = "416577bbc668a0ab3d4ef6fb1f3354ca9150097b" }
+burn-core = { git = "https://github.com/AdrianEddy/burn.git", rev = "416577bbc668a0ab3d4ef6fb1f3354ca9150097b" }
+burn-cpu = { git = "https://github.com/AdrianEddy/burn.git", rev = "416577bbc668a0ab3d4ef6fb1f3354ca9150097b" }
+burn-cubecl = { git = "https://github.com/AdrianEddy/burn.git", rev = "416577bbc668a0ab3d4ef6fb1f3354ca9150097b" }
+burn-cubecl-fusion = { git = "https://github.com/AdrianEddy/burn.git", rev = "416577bbc668a0ab3d4ef6fb1f3354ca9150097b" }
+burn-cuda = { git = "https://github.com/AdrianEddy/burn.git", rev = "416577bbc668a0ab3d4ef6fb1f3354ca9150097b" }
+burn-derive = { git = "https://github.com/AdrianEddy/burn.git", rev = "416577bbc668a0ab3d4ef6fb1f3354ca9150097b" }
+burn-dispatch = { git = "https://github.com/AdrianEddy/burn.git", rev = "416577bbc668a0ab3d4ef6fb1f3354ca9150097b" }
+burn-einsum = { git = "https://github.com/AdrianEddy/burn.git", rev = "416577bbc668a0ab3d4ef6fb1f3354ca9150097b" }
+burn-flex = { git = "https://github.com/AdrianEddy/burn.git", rev = "416577bbc668a0ab3d4ef6fb1f3354ca9150097b" }
+burn-fusion = { git = "https://github.com/AdrianEddy/burn.git", rev = "416577bbc668a0ab3d4ef6fb1f3354ca9150097b" }
+burn-instrument = { git = "https://github.com/AdrianEddy/burn.git", rev = "416577bbc668a0ab3d4ef6fb1f3354ca9150097b" }
+burn-instrument-macros = { git = "https://github.com/AdrianEddy/burn.git", rev = "416577bbc668a0ab3d4ef6fb1f3354ca9150097b" }
+burn-ir = { git = "https://github.com/AdrianEddy/burn.git", rev = "416577bbc668a0ab3d4ef6fb1f3354ca9150097b" }
+burn-linalg = { git = "https://github.com/AdrianEddy/burn.git", rev = "416577bbc668a0ab3d4ef6fb1f3354ca9150097b" }
+burn-nn = { git = "https://github.com/AdrianEddy/burn.git", rev = "416577bbc668a0ab3d4ef6fb1f3354ca9150097b" }
+burn-optim = { git = "https://github.com/AdrianEddy/burn.git", rev = "416577bbc668a0ab3d4ef6fb1f3354ca9150097b" }
+burn-pack = { git = "https://github.com/AdrianEddy/burn.git", rev = "416577bbc668a0ab3d4ef6fb1f3354ca9150097b" }
+burn-remote = { git = "https://github.com/AdrianEddy/burn.git", rev = "416577bbc668a0ab3d4ef6fb1f3354ca9150097b" }
+burn-rocm = { git = "https://github.com/AdrianEddy/burn.git", rev = "416577bbc668a0ab3d4ef6fb1f3354ca9150097b" }
+burn-router = { git = "https://github.com/AdrianEddy/burn.git", rev = "416577bbc668a0ab3d4ef6fb1f3354ca9150097b" }
+burn-signal = { git = "https://github.com/AdrianEddy/burn.git", rev = "416577bbc668a0ab3d4ef6fb1f3354ca9150097b" }
+burn-std = { git = "https://github.com/AdrianEddy/burn.git", rev = "416577bbc668a0ab3d4ef6fb1f3354ca9150097b" }
+burn-store = { git = "https://github.com/AdrianEddy/burn.git", rev = "416577bbc668a0ab3d4ef6fb1f3354ca9150097b" }
+burn-tensor = { git = "https://github.com/AdrianEddy/burn.git", rev = "416577bbc668a0ab3d4ef6fb1f3354ca9150097b" }
+burn-vision = { git = "https://github.com/AdrianEddy/burn.git", rev = "416577bbc668a0ab3d4ef6fb1f3354ca9150097b" }
+burn-wgpu = { git = "https://github.com/AdrianEddy/burn.git", rev = "416577bbc668a0ab3d4ef6fb1f3354ca9150097b" }

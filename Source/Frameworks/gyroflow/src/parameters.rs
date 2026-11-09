@@ -19,6 +19,7 @@ enum Kind {
     },
     EndGroup,
     Custom,
+    Button(&'static str),
     Slider {
         default: f64,
         minimum: f64,
@@ -91,6 +92,11 @@ impl Parameter {
             Kind::Custom => {
                 value["kind"] = "custom".into();
                 value["default"] = 0.into();
+            }
+            Kind::Button(title) => {
+                value["kind"] = "custom".into();
+                value["default"] = 0.into();
+                value["button_title"] = title.into();
             }
             Kind::Slider {
                 default,
@@ -183,6 +189,9 @@ pub(crate) fn menu(
 fn custom(identifier: u32, name: &'static str) -> Parameter {
     Parameter::new(identifier, name, Kind::Custom)
 }
+pub(crate) fn button(identifier: u32, title: &'static str) -> Parameter {
+    Parameter::new(identifier, "", Kind::Button(title))
+}
 fn text(
     identifier: u32,
     name: &'static str,
@@ -243,6 +252,8 @@ fn catalog() -> Vec<Parameter> {
         toggle(260, "Use Gyroflow Keyframes", true).symbol("kCB_UseGyroflowKeyframes"),
     ];
     additions.extend(controls::definitions());
+    additions.extend(crate::analysis::definitions());
+    additions.extend(crate::presets::definitions());
     parameters.splice(insertion..insertion, additions);
     for (identifier, kind, scale) in [
         (100, KeyframeType::Fov, 1.0),

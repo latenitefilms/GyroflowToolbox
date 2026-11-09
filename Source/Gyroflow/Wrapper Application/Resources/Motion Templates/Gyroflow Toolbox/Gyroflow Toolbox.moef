@@ -348,6 +348,30 @@
 						<parameter name="Background Margin (%)" id="645" flags="12884901904" default="0.0" value="0.0"/>
 						<parameter name="Background Feather (%)" id="646" flags="12884901904" default="0.0" value="0.0"/>
 					</parameter>
+					<parameter name="Motion Analysis" id="700" flags="8589938704">
+						<parameter name="Tracking" id="701" flags="12884901904" default="0" value="0"/>
+						<parameter name="Ignore Recorded Motion" id="702" flags="12884901904" default="0" value="0"/>
+						<parameter name="Optical Correction Strength" id="703" flags="12884901904" default="50.0" value="50.0"/>
+						<parameter name="Correct Each Frame" id="704" flags="12884901904" default="0" value="0"/>
+						<parameter name="Sync Search Range (s)" id="705" flags="12884901904" default="5.0" value="5.0"/>
+						<parameter name="Initial Sync Offset (s)" id="706" flags="12884901904" default="0.0" value="0.0"/>
+						<parameter name="" id="707" flags="12884901904" default="0" value="0"/>
+						<parameter name="" id="708" flags="12884901904" default="0" value="0"/>
+						<parameter name="" id="709" flags="12884901904" default="0" value="0"/>
+						<parameter name="" id="710" flags="12884901904" default="0" value="0"/>
+						<parameter name="" id="711" flags="12884901904" default="0" value="0"/>
+					</parameter>
+					<parameter name="Presets" id="720" flags="8589938704">
+						<parameter name="" id="721" flags="12884901904" default="0" value="0"/>
+						<parameter name="" id="722" flags="12884901904" default="0" value="0"/>
+						<parameter name="" id="723" flags="12884901904" default="0" value="0"/>
+						<parameter name="" id="724" flags="12884901904" default="0" value="0"/>
+					</parameter>
+					<parameter name="Lens Setup" id="730" flags="8589938704">
+						<parameter name="35 mm Equivalent Focal Length" id="731" flags="12884901904" default="24.0" value="24.0"/>
+						<parameter name="" id="732" flags="12884901904" default="0" value="0"/>
+						<parameter name="" id="733" flags="12884901904" default="0" value="0"/>
+					</parameter>
 				</parameter>
 				<parameter name="Tools" id="300" flags="8589938704">
 					<parameter name="Stabilisation Overview" id="310" flags="12884901904" default="0" value="0"/>

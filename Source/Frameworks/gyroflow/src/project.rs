@@ -98,6 +98,10 @@ pub(crate) fn export_preserving_metadata(
     if let Some(rotation) = input_rotation(source, manager) {
         document["toolbox_input_rotation"] = rotation.into();
     }
+    let original: serde_json::Value = serde_json::from_str(source)?;
+    if let Some(value) = original.get("toolbox_original_lens_profile") {
+        document["toolbox_original_lens_profile"] = value.clone();
+    }
     Ok(serde_json::to_string(&document)?)
 }
 
@@ -119,7 +123,7 @@ pub(crate) fn read_preset(path_or_json: &str) -> BridgeResult<String> {
     Ok(serde_json::to_string(&document)?)
 }
 
-fn settings_from_project(document: &serde_json::Value) -> serde_json::Value {
+pub(crate) fn settings_from_project(document: &serde_json::Value) -> serde_json::Value {
     let mut preset = serde_json::Map::new();
     for key in [
         "version",

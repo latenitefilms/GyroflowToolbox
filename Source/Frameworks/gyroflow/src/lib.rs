@@ -3,13 +3,17 @@
 //! Returned strings belong to Rust and must be released with `freeCString`.
 //! The v1.3.5 entry points and calling conventions remain available.
 
+mod analysis;
+mod analysis_ffi;
 mod animation;
 mod cache;
 mod controls;
 mod geometry;
 mod parameters;
+mod presets;
 mod project;
 mod render;
+mod resources;
 
 pub use render::RenderOptions;
 
@@ -29,6 +33,7 @@ enum BridgeError {
     Filesystem(gyroflow_core::filesystem::FilesystemError),
     Utf8(std::str::Utf8Error),
     Json(serde_json::Error),
+    Operation(String),
     Panic,
 }
 
@@ -41,6 +46,7 @@ impl std::fmt::Display for BridgeError {
             Self::Filesystem(error) => error.fmt(formatter),
             Self::Utf8(error) => error.fmt(formatter),
             Self::Json(error) => error.fmt(formatter),
+            Self::Operation(message) => formatter.write_str(message),
             Self::Panic => formatter.write_str("Gyroflow operation panicked"),
         }
     }
@@ -494,6 +500,7 @@ pub unsafe extern "C" fn import_media_file(path: *const c_char) -> *const c_char
         let metadata = manager.load_video_file(file.get_file(), size, &url, None, true)?;
         let rotation = project::rotation_from_metadata(metadata.rotation);
         manager.params.write().video_rotation = rotation;
+        presets::apply_default(&manager)?;
         let mut document: serde_json::Value = serde_json::from_str(&project::export(&manager)?)?;
         document["toolbox_input_rotation"] = rotation.into();
         Ok(serde_json::to_string(&document)?)

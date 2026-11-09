@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A11CE0000000000000000132 /* GyroflowAnalysisImage.m in Sources */ = {isa = PBXBuildFile; fileRef = A11CE0000000000000000131; };
+		A11CE0000000000000000102 /* GyroflowAnalysis.m in Sources */ = {isa = PBXBuildFile; fileRef = A11CE0000000000000000101 /* GyroflowAnalysis.m */; };
+		A11CE0000000000000000112 /* GyroflowActions.m in Sources */ = {isa = PBXBuildFile; fileRef = A11CE0000000000000000111 /* GyroflowActions.m */; };
+		A11CE0000000000000000121 /* Models in Resources */ = {isa = PBXBuildFile; fileRef = A11CE0000000000000000120 /* Models */; };
 		A11CE0000000000000000010 /* GyroflowAlertFactory.m in Sources */ = {isa = PBXBuildFile; fileRef = A11CE0000000000000000013 /* GyroflowAlertFactory.m */; };
 		A11CE0000000000000000011 /* GyroflowAlertFactory.m in Sources */ = {isa = PBXBuildFile; fileRef = A11CE0000000000000000013 /* GyroflowAlertFactory.m */; };
 		2239AB112943F8F600028B77 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2239AB102943F8F600028B77 /* Cocoa.framework */; };
@@ -88,6 +92,13 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+        A11CE0000000000000000130 /* GyroflowAnalysisImage.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GyroflowAnalysisImage.h; sourceTree = "<group>"; };
+        A11CE0000000000000000131 /* GyroflowAnalysisImage.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = GyroflowAnalysisImage.m; sourceTree = "<group>"; };
+		A11CE0000000000000000100 /* GyroflowAnalysis.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GyroflowAnalysis.h; sourceTree = "<group>"; };
+		A11CE0000000000000000101 /* GyroflowAnalysis.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = GyroflowAnalysis.m; sourceTree = "<group>"; };
+		A11CE0000000000000000110 /* GyroflowActions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GyroflowActions.h; sourceTree = "<group>"; };
+		A11CE0000000000000000111 /* GyroflowActions.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = GyroflowActions.m; sourceTree = "<group>"; };
+		A11CE0000000000000000120 /* Models */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Models; path = "Gyroflow/Plugin/Resources/Models"; sourceTree = SOURCE_ROOT; };
 		A11CE0000000000000000012 /* GyroflowAlertFactory.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GyroflowAlertFactory.h; sourceTree = "<group>"; };
 		A11CE0000000000000000013 /* GyroflowAlertFactory.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = GyroflowAlertFactory.m; sourceTree = "<group>"; };
 		2239AB0D2943F8F600028B77 /* Gyroflow Toolbox.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Gyroflow Toolbox.app"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -185,6 +196,7 @@
 		2239AB042943F8F600028B77 = {
 			isa = PBXGroup;
 			children = (
+				A11CE0000000000000000120 /* Models */,
 				22F73D772A6030BB00A6F326 /* Lens Profiles */,
 				2239AB282943F8F600028B77 /* Gyroflow */,
 				2239AB0F2943F8F600028B77 /* Frameworks */,
@@ -324,6 +336,12 @@
 			isa = PBXGroup;
 			children = (
 				228E9E1929517DDA00B2571E /* GyroflowConstants.h */,
+				A11CE0000000000000000100 /* GyroflowAnalysis.h */,
+				A11CE0000000000000000101 /* GyroflowAnalysis.m */,
+				A11CE0000000000000000110 /* GyroflowActions.h */,
+				A11CE0000000000000000111 /* GyroflowActions.m */,
+				A11CE0000000000000000130 /* GyroflowAnalysisImage.h */,
+				A11CE0000000000000000131 /* GyroflowAnalysisImage.m */,
 				2239AB2E2943F8F600028B77 /* GyroflowPlugIn.h */,
 				2239AB312943F8F600028B77 /* GyroflowPlugIn.m */,
 				22C25B1E2A7B5CAF00BB135B /* Helpers */,
@@ -468,6 +486,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A11CE0000000000000000121 /* Models in Resources */,
 				22F73D782A6030BB00A6F326 /* Lens Profiles in Resources */,
 				2239AB492943F8F600028B77 /* InfoPlist.strings in Resources */,
 				224321B829615C4400EA591A /* Assets.xcassets in Resources */,
@@ -556,6 +575,9 @@
 				2239AB452943F8F600028B77 /* main.m in Sources */,
 				22BED1C42A5D6805000562A3 /* CustomDropZoneView.m in Sources */,
 				2239AB57294400B500028B77 /* GyroflowParameters.m in Sources */,
+				A11CE0000000000000000102 /* GyroflowAnalysis.m in Sources */,
+				A11CE0000000000000000112 /* GyroflowActions.m in Sources */,
+				A11CE0000000000000000132 /* GyroflowAnalysisImage.m in Sources */,
 				2239AB322943F8F600028B77 /* GyroflowPlugIn.m in Sources */,
 				A11CE0000000000000000011 /* GyroflowAlertFactory.m in Sources */,
 			);

@@ -4,12 +4,14 @@ import argparse
 import ctypes
 import html
 import pathlib
+import re
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--write", action="store_true", help="Update the generated part of the template")
+parser.add_argument("--library", type=pathlib.Path, help="Read the schema from a development dylib")
 arguments = parser.parse_args()
 root = pathlib.Path(__file__).resolve().parents[1]
-library = ctypes.CDLL(str(root / "Source/Frameworks/gyroflow/binary/libgyroflow_toolbox.dylib"))
+library = ctypes.CDLL(str(arguments.library or root / "Source/Frameworks/gyroflow/binary/libgyroflow_toolbox.dylib"))
 library.getPluginParameterDefinitions.restype = ctypes.c_void_p
 library.freeCString.argtypes = [ctypes.c_void_p]
 pointer = library.getPluginParameterDefinitions()
@@ -30,7 +32,7 @@ for definition in definitions:
         identifier = definition["id"]
         if kind == "group":
             groups.append(identifier)
-    if 200 <= identifier < 300 or 600 <= identifier < 700:
+    if 200 <= identifier < 300 or 600 <= identifier < 800:
         selected.append(definition)
 
 library.getParameterConstants.restype = ctypes.c_void_p
@@ -45,9 +47,7 @@ if arguments.write:
 elif not constants_path.exists() or constants_path.read_text() != constants:
     raise SystemExit("Generated C parameter IDs are out of date. Run Scripts/sync_parameters.py --write")
 
-start = "\t\t\t\t\t<!-- BEGIN RUST PARAMETERS -->"
-end = "\t\t\t\t\t<!-- END RUST PARAMETERS -->"
-lines = [start]
+lines = []
 level = 5
 for definition in selected:
     kind = definition["kind"]
@@ -66,14 +66,37 @@ for definition in selected:
             value = int(value)
         lines.append(prefix + f' flags="12884901904" default="{value}" value="{value}"/>')
 assert level == 5, "Unbalanced inspector groups"
-lines.append(end)
 generated = "\n".join(lines)
 path = root / "Source/Gyroflow/Wrapper Application/Resources/Motion Templates/Gyroflow Toolbox/Gyroflow Toolbox.moef"
 template = path.read_text()
-if start not in template:
-    raise SystemExit("Generated-parameter markers missing from the Motion template")
-begin = template.index(start)
-finish = template.index(end, begin) + len(end)
+# Locate additive siblings by parameter ID. Never add comments to a Motion template,
+# or rewrite legacy parameters and their archived data.
+spans = []
+stack = []
+for match in re.finditer(r'<parameter\b[^>]*>|</parameter>', template):
+    token = match.group()
+    if token.startswith("</"):
+        identifier, opening, selected_node = stack.pop()
+        if selected_node:
+            spans.append((opening, match.end()))
+        continue
+    identifier = int(re.search(r'\bid="(\d+)"', token).group(1))
+    selected_node = bool(stack and stack[-1][0] == 90 and
+                         (200 <= identifier < 300 or 600 <= identifier < 800))
+    if token.endswith("/>"):
+        if selected_node:
+            spans.append((match.start(), match.end()))
+    else:
+        stack.append((identifier, match.start(), selected_node))
+if not spans:
+    raise SystemExit("Could not locate the additive parameter block in the Motion template")
+begin = template.rfind("\n", 0, min(span[0] for span in spans)) + 1
+finish = max(span[1] for span in spans)
+untouched = template[begin:finish]
+for opening, closing in sorted(spans, reverse=True):
+    untouched = untouched[:opening - begin] + untouched[closing - begin:]
+if untouched.strip():
+    raise SystemExit("Additive parameters are interleaved with other content; refusing to overwrite it")
 updated = template[:begin] + generated + template[finish:]
 if arguments.write:
     path.write_text(updated)

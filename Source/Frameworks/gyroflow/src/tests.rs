@@ -252,7 +252,7 @@ fn inspector_definitions_have_unique_identifiers() {
     assert!(
         identifiers
             .iter()
-            .all(|identifier| (1..700).contains(identifier))
+            .all(|identifier| (1..800).contains(identifier))
     );
 }
 

@@ -22,6 +22,20 @@ extern "C" {
 const char *getEngineControlDefaults(const char *data);
 const char *getParameterConstants(void);
 
+/** Analysis/preset results are JSON {ok, result, error}; release every result with freeCString. */
+const char *configureToolboxResources(const char *dataDirectory, const char *modelPath);
+const char *toolboxCommand(const char *project, const char *keyframes, const char *parameters, const char *request);
+const char *beginToolboxAnalysis(const char *project, const char *originalProject, const char *parameters, const char *request);
+/** Pixels are borrowed until return: full-frame top-down GRAY8, with source-relative timestamps. */
+const char *feedToolboxAnalysis(uint64_t session, int64_t timestamp, uint32_t width, uint32_t height,
+                              size_t stride, const uint8_t *pixels, size_t length);
+const char *finishToolboxAnalysis(uint64_t session);
+int toolboxWantsAnalysisFrame(uint64_t session, int64_t timestamp);
+const char *toolboxAnalysisFrameLayout(uint64_t session, uint32_t width, uint32_t height);
+/** Cancellation is nonblocking; every successful begin must be paired with release. */
+void cancelToolboxAnalysis(uint64_t session);
+void releaseToolboxAnalysis(uint64_t session);
+
 /** Version 1 render options. Zero reserved fields; initialize using getRenderDefaults. */
 typedef struct GyroflowRenderOptions {
     uint32_t version;
