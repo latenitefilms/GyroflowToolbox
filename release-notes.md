@@ -15,7 +15,7 @@
 - Updated RED motion-data handling to recognise accurately timed gyro data, avoiding unnecessary automatic synchronisation.
 - Added automatic motion-data synchronisation directly in Final Cut Pro, with manual adjustment available through Additional Sync Offset.
 - Added optical stabilisation using Final Cut Pro’s background analysis. Analyse images to improve recorded motion data or stabilise footage without gyro data.
-- Added Save as Default and named presets for saving and recalling stabilisation settings.
+- Added **Save as Default** and named presets for saving and recalling stabilisation settings.
 - Added focal-length-only lens setup and automatic lens metadata delay analysis for supported zoom footage.
 - Improved rotation and framing for vertical footage, including portrait clips on matching vertical timelines.
 - Improved renderer caching and memory management, and reduced unnecessary recalculation when adjusting settings.
