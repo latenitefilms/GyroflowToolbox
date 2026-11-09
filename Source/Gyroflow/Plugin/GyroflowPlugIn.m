@@ -9,6 +9,7 @@
 // Import Headers:
 //---------------------------------------------------------
 #import "GyroflowPlugIn.h"
+#import "GyroflowAlertFactory.h"
 
 typedef void (^BRAWCompletionHandler)(void);
 
@@ -1940,8 +1941,7 @@ static int readGyroflowHostParameter(void *context, uint32_t parameter, int64_t 
         
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     if (![defaults boolForKey:@"suppressLoadPresetLensProfileSuccess"]) {
-        NSAlert *alert                  = [[NSAlert alloc] init];
-        alert.icon                      = [NSImage imageNamed:@"GyroflowToolbox"];
+        NSAlert *alert                  = [GyroflowAlertFactory makeAlert];
         alert.alertStyle                = NSAlertStyleInformational;
         alert.messageText               = @"Successfully Imported!";
         alert.informativeText           = message;
@@ -2757,8 +2757,7 @@ static int readGyroflowHostParameter(void *context, uint32_t parameter, int64_t 
 - (void)showSuccessfullyReloadedAlert {
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     if (![defaults boolForKey:@"suppressSuccessfullyReloaded"]) {
-        NSAlert *alert                  = [[NSAlert alloc] init];
-        alert.icon                      = [NSImage imageNamed:@"GyroflowToolbox"];
+        NSAlert *alert                  = [GyroflowAlertFactory makeAlert];
         alert.alertStyle                = NSAlertStyleInformational;
         alert.messageText               = @"Successfully Reloaded!";
         alert.informativeText           = @"The Gyroflow Project has been successfully reloaded from disk.";
@@ -2969,8 +2968,7 @@ static int readGyroflowHostParameter(void *context, uint32_t parameter, int64_t 
     //---------------------------------------------------------
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     if (![defaults boolForKey:@"suppressRequestSandboxAccessAlert"]) {
-        NSAlert *alert                  = [[NSAlert alloc] init];
-        alert.icon                      = [NSImage imageNamed:@"GyroflowToolbox"];
+        NSAlert *alert                  = [GyroflowAlertFactory makeAlert];
         alert.alertStyle                = NSAlertStyleInformational;
         alert.messageText               = @"Permission Required";
         alert.informativeText           = @"Gyroflow Toolbox requires explicit permission to access your Gyroflow Preferences, so that it can determine the last opened project.\n\nPlease click 'Grant Access' on the next Open Folder window to continue.";
@@ -3185,8 +3183,7 @@ static int readGyroflowHostParameter(void *context, uint32_t parameter, int64_t 
 - (void)showSuccessfullyImportedAlert {
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     if (![defaults boolForKey:@"suppressSuccessfullyImported"]) {
-        NSAlert *alert                  = [[NSAlert alloc] init];
-        alert.icon                      = [NSImage imageNamed:@"GyroflowToolbox"];
+        NSAlert *alert                  = [GyroflowAlertFactory makeAlert];
         alert.alertStyle                = NSAlertStyleInformational;
         alert.messageText               = @"Successfully Imported!";
         alert.informativeText           = @"The Gyroflow Project has been successfully imported into Final Cut Pro.\n\nYou can now adjust the parameters as required via the Video Inspector.";
@@ -3297,8 +3294,7 @@ static int readGyroflowHostParameter(void *context, uint32_t parameter, int64_t 
     //---------------------------------------------------------
     // Show an alert:
     //---------------------------------------------------------
-    NSAlert *alert          = [[NSAlert alloc] init];
-    alert.icon              = [NSImage imageNamed:@"GyroflowToolbox"];
+    NSAlert *alert          = [GyroflowAlertFactory makeAlert];
     alert.alertStyle        = NSAlertStyleInformational;
     alert.messageText       = @"Gyroflow Toolbox Requires Permission";
     alert.informativeText   = @"To make it easier to import BRAW Toolbox clips into Gyroflow Toolbox, you'll need to grant Gyroflow Toolbox sandbox access to a BRAW Toolbox helper file.\n\nOn the next panel, please select 'Grant Access' to continue.";
@@ -3762,11 +3758,10 @@ static int readGyroflowHostParameter(void *context, uint32_t parameter, int64_t 
     progressIndicator.style = NSProgressIndicatorStyleSpinning;
     [progressIndicator startAnimation:self];
 
-    self.progressAlert = [[NSAlert alloc] init];
+    self.progressAlert = [GyroflowAlertFactory makeAlert];
     [self.progressAlert setMessageText:@"Processing Gyroflow Data"];
     [self.progressAlert setInformativeText:@"Please stand by while we prepare things for Final Cut Pro..."];
     [self.progressAlert setAlertStyle:NSAlertStyleInformational];
-    [self.progressAlert setIcon:[NSImage imageNamed:@"GyroflowToolbox"]];
     [self.progressAlert setAccessoryView:progressIndicator];
     [self.progressAlert addButtonWithTitle:@"Cancel"];
     NSButton *button =  [[self.progressAlert buttons] objectAtIndex:0];
@@ -4118,11 +4113,10 @@ static int readGyroflowHostParameter(void *context, uint32_t parameter, int64_t 
     progressIndicator.style = NSProgressIndicatorStyleSpinning;
     [progressIndicator startAnimation:self];
 
-    self.progressAlert = [[NSAlert alloc] init];
+    self.progressAlert = [GyroflowAlertFactory makeAlert];
     [self.progressAlert setMessageText:@"Processing Gyroflow Data"];
     [self.progressAlert setInformativeText:@"Please stand by while we prepare things for Final Cut Pro..."];
     [self.progressAlert setAlertStyle:NSAlertStyleInformational];
-    [self.progressAlert setIcon:[NSImage imageNamed:@"GyroflowToolbox"]];
     [self.progressAlert setAccessoryView:progressIndicator];
     [self.progressAlert addButtonWithTitle:@"Cancel"];
     NSButton *button =  [[self.progressAlert buttons] objectAtIndex:0];
@@ -4261,7 +4255,7 @@ static int readGyroflowHostParameter(void *context, uint32_t parameter, int64_t 
             // The Gyroflow Project doesn't have accurate timestamps,
             // so we need to launch Gyroflow:
             //---------------------------------------------------------
-            NSAlert *syncAlert = [[NSAlert alloc] init];
+            NSAlert *syncAlert = [GyroflowAlertFactory makeAlert];
             syncAlert.messageText = @"Synchronise Motion Data";
             syncAlert.informativeText = @"This clip does not provide accurate motion timestamps. You can align it manually in Final Cut Pro using Advanced Stabilisation → Override Advanced Project Settings → Additional Sync Offset, or open Gyroflow for automatic synchronization.";
             [syncAlert addButtonWithTitle:@"Continue in Final Cut Pro"];
@@ -4532,8 +4526,7 @@ static int readGyroflowHostParameter(void *context, uint32_t parameter, int64_t 
             //---------------------------------------------------------
             NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
             if (![defaults boolForKey:@"suppressNoLensProfileDetected"]) {
-                NSAlert *alert                  = [[NSAlert alloc] init];
-                alert.icon                      = [NSImage imageNamed:@"GyroflowToolbox"];
+                NSAlert *alert                  = [GyroflowAlertFactory makeAlert];
                 alert.alertStyle                = NSAlertStyleInformational;
                 alert.messageText               = @"No Lens Profile Detected";
                 alert.informativeText           = @"A lens profile could not be automatically detected from the supplied video file.\n\nYou will be prompted to select an appropriate Lens Profile in the next panel.";
@@ -4775,8 +4768,7 @@ void runOnMainQueueWithoutDeadlocking(void (^block)(void)) {
 //---------------------------------------------------------
 - (void)showAlertWithMessage:(NSString*)message info:(NSString*)info {
     runOnMainQueueWithoutDeadlocking(^{
-        NSAlert *alert          = [[NSAlert alloc] init];
-        alert.icon              = [NSImage imageNamed:@"GyroflowToolbox"];
+        NSAlert *alert          = [GyroflowAlertFactory makeAlert];
         alert.alertStyle        = NSAlertStyleInformational;
         alert.messageText       = message;
         alert.informativeText   = info;
@@ -4790,8 +4782,7 @@ void runOnMainQueueWithoutDeadlocking(void (^block)(void)) {
 //---------------------------------------------------------
 - (void)showAsyncAlertWithMessage:(NSString*)message info:(NSString*)info {
     dispatch_async(dispatch_get_main_queue(), ^{
-        NSAlert *alert          = [[NSAlert alloc] init];
-        alert.icon              = [NSImage imageNamed:@"GyroflowToolbox"];
+        NSAlert *alert          = [GyroflowAlertFactory makeAlert];
         alert.alertStyle        = NSAlertStyleInformational;
         alert.messageText       = message;
         alert.informativeText   = info;

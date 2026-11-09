@@ -6,6 +6,7 @@
 //
 
 #import "AppDelegate.h"
+#import "GyroflowAlertFactory.h"
 
 @interface AppDelegate ()
 
@@ -19,11 +20,10 @@
 //---------------------------------------------------------
 - (void)showErrorAlertWithMessage:(NSString*)message info:(NSString*)info
 {
-    NSAlert *alert          = [[NSAlert alloc] init];
+    NSAlert *alert          = [GyroflowAlertFactory makeAlert];
     alert.alertStyle        = NSAlertStyleCritical;
     alert.messageText       = message;
     alert.informativeText   = info;
-    alert.icon              = [NSImage imageNamed:@"GyroflowToolbox"];
     [alert beginSheetModalForWindow:self.window completionHandler:nil];
 }
 
@@ -32,11 +32,10 @@
 //---------------------------------------------------------
 - (void)showAlertWithMessage:(NSString*)message info:(NSString*)info
 {
-    NSAlert *alert          = [[NSAlert alloc] init];
+    NSAlert *alert          = [GyroflowAlertFactory makeAlert];
     alert.alertStyle        = NSAlertStyleInformational;
     alert.messageText       = message;
     alert.informativeText   = info;
-    alert.icon              = [NSImage imageNamed:@"GyroflowToolbox"];
     [alert beginSheetModalForWindow:self.window completionHandler:nil];
 }
 
@@ -267,7 +266,7 @@
         //---------------------------------------------------------
         // Show popup with instructions:
         //---------------------------------------------------------
-        NSAlert *alert          = [[NSAlert alloc] init];
+        NSAlert *alert          = [GyroflowAlertFactory makeAlert];
         alert.alertStyle        = NSAlertStyleInformational;
         alert.messageText       = @"Permission Required";
         alert.informativeText   = @"Gyroflow Toolbox requires explicit permission to access your '~/Movies' folder, to install the Gyroflow Toolbox Final Cut Pro effect.\n\nPlease ensure your '~/Movies' folder is selected on the next Open Folder window to continue.";

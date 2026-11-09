@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A11CE0000000000000000010 /* GyroflowAlertFactory.m in Sources */ = {isa = PBXBuildFile; fileRef = A11CE0000000000000000013 /* GyroflowAlertFactory.m */; };
+		A11CE0000000000000000011 /* GyroflowAlertFactory.m in Sources */ = {isa = PBXBuildFile; fileRef = A11CE0000000000000000013 /* GyroflowAlertFactory.m */; };
 		2239AB112943F8F600028B77 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2239AB102943F8F600028B77 /* Cocoa.framework */; };
 		2239AB192943F8F600028B77 /* Gyroflow Toolbox Renderer.pluginkit in Embed PlugIns */ = {isa = PBXBuildFile; fileRef = 2239AB182943F8F600028B77 /* Gyroflow Toolbox Renderer.pluginkit */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		2239AB1D2943F8F600028B77 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2239AB1C2943F8F600028B77 /* Foundation.framework */; };
@@ -86,6 +88,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		A11CE0000000000000000012 /* GyroflowAlertFactory.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GyroflowAlertFactory.h; sourceTree = "<group>"; };
+		A11CE0000000000000000013 /* GyroflowAlertFactory.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = GyroflowAlertFactory.m; sourceTree = "<group>"; };
 		2239AB0D2943F8F600028B77 /* Gyroflow Toolbox.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Gyroflow Toolbox.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		2239AB102943F8F600028B77 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
 		2239AB182943F8F600028B77 /* Gyroflow Toolbox Renderer.pluginkit */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Gyroflow Toolbox Renderer.pluginkit"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -169,6 +173,15 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		A11CE0000000000000000014 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				A11CE0000000000000000012 /* GyroflowAlertFactory.h */,
+				A11CE0000000000000000013 /* GyroflowAlertFactory.m */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
 		2239AB042943F8F600028B77 = {
 			isa = PBXGroup;
 			children = (
@@ -212,6 +225,7 @@
 				2239AB592944150B00028B77 /* Configuration */,
 				2239AB292943F8F600028B77 /* Wrapper Application */,
 				2239AB2D2943F8F600028B77 /* Plugin */,
+				A11CE0000000000000000014 /* Shared */,
 			);
 			path = Gyroflow;
 			sourceTree = "<group>";
@@ -527,6 +541,7 @@
 			files = (
 				2239AB302943F8F600028B77 /* main.m in Sources */,
 				2239AB2C2943F8F600028B77 /* AppDelegate.m in Sources */,
+				A11CE0000000000000000010 /* GyroflowAlertFactory.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -542,6 +557,7 @@
 				22BED1C42A5D6805000562A3 /* CustomDropZoneView.m in Sources */,
 				2239AB57294400B500028B77 /* GyroflowParameters.m in Sources */,
 				2239AB322943F8F600028B77 /* GyroflowPlugIn.m in Sources */,
+				A11CE0000000000000000011 /* GyroflowAlertFactory.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
