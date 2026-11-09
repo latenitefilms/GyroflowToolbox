@@ -7,6 +7,7 @@
 
 **🔨 Improvements:**
 - We've updated to the latest Gyroflow Core v1.7 Renderer. HUGE thank you to the amazing [AdrianEddy](https://github.com/AdrianEddy) for all his ongoing help, assistance, genius and support!
+- 16 lens profiles have been updated from the hero Gyroflow project. Thanks to EVERYONE who has submitted lens profiles and another HUGE thank you to [AdrianEddy](https://github.com/AdrianEddy) for all the work that goes into managing them.
 - Added Metal-powered KLT and optional GMFlow (AI) tracking. Amazing work Yasunori Morishima!
 - Reworked keyframe handling to use Gyroflow’s native keyframe engine. Added a **Use Gyroflow Keyframes** option to preserve animation saved in imported Gyroflow projects.
 - Exported Gyroflow projects now include your current Inspector settings and animation.
@@ -20,7 +21,6 @@
 - Improved rotation and framing for vertical footage, including portrait clips on matching vertical timelines.
 - Improved renderer caching and memory management, and reduced unnecessary recalculation when adjusting settings.
 - Improved preset importing so settings can be reused without replacing the current clip’s motion data or synchronisation offsets.
-- 16 lens profiles have been updated from the hero Gyroflow project. Thanks to EVERYONE who has submitted lens profiles and another HUGE thank you to AdrianEddy for all the work that goes into managing them.
 - Updated alerts to consistently display the Gyroflow Toolbox icon.
 
 ---
@@ -32,7 +32,7 @@
 
 **🔨 Improvements:**
 - We've updated to the latest Gyroflow Core Renderer. HUGE thank you to the amazing [AdrianEddy](https://github.com/AdrianEddy) for all his ongoing help, assistance, genius and support!
-- 16 lens profiles have been updated from the hero Gyroflow project. Thanks to EVERYONE who has submitted lens profiles and another HUGE thank you to AdrianEddy for all the work that goes into managing them.
+- 16 lens profiles have been updated from the hero Gyroflow project. Thanks to EVERYONE who has submitted lens profiles and another HUGE thank you to [AdrianEddy](https://github.com/AdrianEddy) for all the work that goes into managing them.
 - Updated to FxPlug `v4.3.5`.
 
 ---
