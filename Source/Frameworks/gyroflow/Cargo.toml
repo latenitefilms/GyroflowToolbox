@@ -1,6 +1,6 @@
 [package]
 name = "gyroflow-toolbox"
-version = "1.3.5"
+version = "1.4.0"
 authors = ["Chris Hocking <chris@latenitefilms.com>", "Adrian <adrian.eddy@gmail.com>"]
 edition = "2024"
 rust-version = "1.95"
