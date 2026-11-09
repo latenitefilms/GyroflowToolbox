@@ -1,22 +1,8 @@
 //! Owned JSON results and borrowed frame buffers for native analysis and preset actions.
 
-use crate::{BridgeError, BridgeResult, analysis, boundary, input_string, presets};
-use serde_json::{Value, json};
-use std::ffi::{CString, c_char};
-
-fn result_string(operation: impl FnOnce() -> BridgeResult<Value>) -> *const c_char {
-    let response = match boundary(operation) {
-        Ok(value) => json!({"ok": true, "result": value}),
-        Err(error) => {
-            log::error!("Gyroflow Toolbox: {error}");
-            json!({"ok": false, "error": error.to_string()})
-        }
-    };
-    // JSON escapes interior NUL characters, including those in error messages.
-    CString::new(response.to_string())
-        .expect("JSON contains no NUL bytes")
-        .into_raw()
-}
+use crate::{BridgeError, analysis, boundary, ffi_json, input_string, presets};
+use serde_json::json;
+use std::ffi::c_char;
 
 /// Configures sandbox storage and the bundled, pinned GMFlow model before Core is used.
 /// Returns owned JSON; release with `freeCString`.
@@ -28,7 +14,7 @@ pub unsafe extern "C" fn configure_resources(
     data_directory: *const c_char,
     model: *const c_char,
 ) -> *const c_char {
-    result_string(|| {
+    ffi_json(|| {
         // SAFETY: Both strings remain owned by the synchronous caller.
         let paths = unsafe {
             crate::resources::RuntimePaths {
@@ -52,7 +38,7 @@ pub unsafe extern "C" fn command(
     values: *const c_char,
     request: *const c_char,
 ) -> *const c_char {
-    result_string(|| {
+    ffi_json(|| {
         // SAFETY: The native caller retains the project, animation and request strings.
         unsafe {
             presets::command(
@@ -77,7 +63,7 @@ pub unsafe extern "C" fn begin(
     values: *const c_char,
     request: *const c_char,
 ) -> *const c_char {
-    result_string(|| {
+    ffi_json(|| {
         // SAFETY: Native strings are borrowed only for this call.
         unsafe {
             analysis::begin_with_parameters(
@@ -115,7 +101,7 @@ pub unsafe extern "C" fn feed(
     pixels: *const u8,
     length: usize,
 ) -> *const c_char {
-    result_string(|| {
+    ffi_json(|| {
         if pixels.is_null() || length > 4096 * 4096 {
             return Err(BridgeError::InvalidInput("invalid analysis buffer"));
         }
@@ -139,14 +125,14 @@ pub unsafe extern "C" fn feed(
 /// Release the JSON using `freeCString` and the session using `releaseToolboxAnalysis`.
 #[unsafe(export_name = "finishToolboxAnalysis")]
 pub extern "C" fn finish(identifier: u64) -> *const c_char {
-    result_string(|| analysis::finish(identifier))
+    ffi_json(|| analysis::finish(identifier))
 }
 
 /// Returns a bounded crop, rotation and GRAY8 size for the native Metal image converter.
 /// Release the returned JSON using `freeCString`.
 #[unsafe(export_name = "toolboxAnalysisFrameLayout")]
 pub extern "C" fn frame_layout(identifier: u64, width: u32, height: u32) -> *const c_char {
-    result_string(|| analysis::frame_layout(identifier, width, height))
+    ffi_json(|| analysis::frame_layout(identifier, width, height))
 }
 
 /// Requests cancellation without waiting for an in-flight GPU frame.

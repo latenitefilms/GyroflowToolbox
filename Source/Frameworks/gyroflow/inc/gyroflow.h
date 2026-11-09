@@ -22,6 +22,13 @@ extern "C" {
 const char *getEngineControlDefaults(const char *data);
 const char *getParameterConstants(void);
 
+/** Owned JSON {ok, result, error}; free with freeCString. Holds no file access after return.
+ * A result has status "ready" and embedded "project", or "needs_motion" and a suggested "path".
+ * Pass an empty motionPath to resolve the project's source; otherwise pass a user-selected file.
+ * Keep sandbox access to the project and source open throughout the call. Never writes either file.
+ */
+const char *importGyroflowProjectFile(const char *projectPath, const char *motionPath);
+
 /** Analysis/preset results are JSON {ok, result, error}; release every result with freeCString. */
 const char *configureToolboxResources(const char *dataDirectory, const char *modelPath);
 const char *toolboxCommand(const char *project, const char *keyframes, const char *parameters, const char *request);

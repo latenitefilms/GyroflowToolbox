@@ -12,6 +12,7 @@ mod geometry;
 mod parameters;
 mod presets;
 mod project;
+mod project_import;
 mod render;
 mod resources;
 
@@ -161,6 +162,20 @@ pub unsafe extern "C" fn process_frame_with_parameters(
 fn boundary<Value>(operation: impl FnOnce() -> BridgeResult<Value>) -> BridgeResult<Value> {
     // Only the C boundary catches panics. Poisoned renderer locks are never recovered.
     catch_unwind(AssertUnwindSafe(operation)).unwrap_or(Err(BridgeError::Panic))
+}
+
+fn ffi_json(operation: impl FnOnce() -> BridgeResult<serde_json::Value>) -> *const c_char {
+    let response = match boundary(operation) {
+        Ok(value) => serde_json::json!({"ok": true, "result": value}),
+        Err(error) => {
+            log::error!("Gyroflow Toolbox: {error}");
+            serde_json::json!({"ok": false, "error": error.to_string()})
+        }
+    };
+    // JSON escapes interior NUL characters, including those in error messages.
+    CString::new(response.to_string())
+        .expect("JSON contains no NUL bytes")
+        .into_raw()
 }
 fn ffi_string(operation: impl FnOnce() -> BridgeResult<String>) -> *const c_char {
     let value = match boundary(operation) {
@@ -420,11 +435,39 @@ pub unsafe extern "C" fn lens_profile_loaded(data: *const c_char) -> *const c_ch
 pub unsafe extern "C" fn contains_stabilization_data(data: *const c_char) -> *const c_char {
     ffi_string(|| {
         // SAFETY: The caller guarantees the input allocation.
-        let present = project::inspect(unsafe { input_string(data)? }, |manager| {
-            let gyro = manager.gyro.read();
-            !gyro.file_metadata.read().raw_imu.is_empty() || !gyro.quaternions.is_empty()
-        })?;
+        let present = project::inspect(unsafe { input_string(data)? }, project::has_motion)?;
         Ok(if present { "YES" } else { "NO" }.into())
+    })
+}
+
+/// Imports a selected project, resolving and embedding external motion data when needed.
+/// Returns owned JSON `{ok, result, error}`. A result is either `ready` with a project string,
+/// or `needs_motion` with a suggested path for sandbox authorization. Free with `freeCString`.
+///
+/// # Safety
+/// Both arguments must be readable NUL-terminated UTF-8 paths until return. An empty motion path
+/// uses the project's reference. The caller must hold sandbox access to selected files until return.
+#[unsafe(export_name = "importGyroflowProjectFile")]
+pub unsafe extern "C" fn import_project_file(
+    project_path: *const c_char,
+    motion_path: *const c_char,
+) -> *const c_char {
+    ffi_json(|| {
+        // SAFETY: The native caller retains both input strings throughout this synchronous call.
+        let (project_path, motion_path) =
+            unsafe { (input_string(project_path)?, input_string(motion_path)?) };
+        let result = project_import::import_file(
+            std::path::Path::new(project_path),
+            (!motion_path.is_empty()).then(|| std::path::Path::new(motion_path)),
+        )?;
+        Ok(match result {
+            project_import::ImportedProject::Ready { project } => {
+                serde_json::json!({"status": "ready", "project": project})
+            }
+            project_import::ImportedProject::NeedsMotion { path } => {
+                serde_json::json!({"status": "needs_motion", "path": path})
+            }
+        })
     })
 }
 

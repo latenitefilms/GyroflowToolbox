@@ -110,8 +110,11 @@ static void checkBalancedAction(AnalysisHost *host) {
     NSCAssert(host.starts == 1 && host.ends == 1 && !host.actionOpen, @"Host action was not balanced");
 }
 
+extern void testImportRouting(void);
+
 int main(void) {
     @autoreleasepool {
+        testImportRouting();
         for (NSNumber *identifier in @[@(kCB_AnalyseMotion), @(kCB_AutoSync), @(kCB_AnalyseLensDelay)]) {
             for (NSNumber *version in @[@(AnalysisAPIVersionCurrent), @(AnalysisAPIVersionLegacy)]) {
                 AnalysisHost *host = [AnalysisHost new];

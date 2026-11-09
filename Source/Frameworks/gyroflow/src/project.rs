@@ -48,6 +48,15 @@ pub(crate) fn import(data: &str) -> BridgeResult<StabilizationManager> {
 }
 
 pub(crate) fn import_into(manager: &StabilizationManager, data: &str) -> BridgeResult<()> {
+    import_at_url(manager, data, None)
+}
+
+/// Supplies the selected project location when Core resolves external media references.
+pub(crate) fn import_at_url(
+    manager: &StabilizationManager,
+    data: &str,
+    project_url: Option<&str>,
+) -> BridgeResult<()> {
     let value: serde_json::Value = serde_json::from_str(data)?;
     if !value.is_object() {
         return Err(BridgeError::InvalidInput("project must be a JSON object"));
@@ -55,13 +64,18 @@ pub(crate) fn import_into(manager: &StabilizationManager, data: &str) -> BridgeR
     manager.import_gyroflow_data(
         data.as_bytes(),
         true,
-        None,
+        project_url,
         |_| (),
         Arc::new(AtomicBool::new(false)),
         &mut false,
         true,
     )?;
     Ok(())
+}
+
+pub(crate) fn has_motion(manager: &StabilizationManager) -> bool {
+    let gyro = manager.gyro.read();
+    !gyro.file_metadata.read().raw_imu.is_empty() || !gyro.quaternions.is_empty()
 }
 
 pub(crate) fn export(manager: &StabilizationManager) -> BridgeResult<String> {
