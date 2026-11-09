@@ -1,9 +1,9 @@
 # Release Notes
 
-## 1.4.0 (Build 29)
+## 1.4.0 (Build 31)
 
 **🎉 Released:**
-- Coming soon!
+- 8th November 2026
 
 **🔨 Improvements:**
 - We've updated to the latest Gyroflow Core v1.7 Renderer. HUGE thank you to the amazing [AdrianEddy](https://github.com/AdrianEddy) for all his ongoing help, assistance, genius and support!
