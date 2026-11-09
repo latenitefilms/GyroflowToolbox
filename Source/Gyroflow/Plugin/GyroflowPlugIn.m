@@ -2495,9 +2495,6 @@ static int readGyroflowHostParameter(void *context, uint32_t parameter, int64_t 
         //NSLog(@"[Gyroflow Toolbox Renderer] selectedGyroflowProjectBookmarkData: %@", selectedGyroflowProjectBookmarkData);
         
         //---------------------------------------------------------
-        // Read the Gyroflow Project Data from File:
-        //---------------------------------------------------------
-        //---------------------------------------------------------
         // Before we attempt to check the Gyroflow Project, we need
         // to grant sandbox access to the media file if it exists:
         //---------------------------------------------------------
@@ -4334,11 +4331,6 @@ static int readGyroflowHostParameter(void *context, uint32_t parameter, int64_t 
         // Stop Action API:
         //---------------------------------------------------------
         [actionAPI endAction:self];
-        
-        //---------------------------------------------------------
-        // Stop accessing security scoped resource:
-        //---------------------------------------------------------
-
         
         //---------------------------------------------------------
         // If we need to Launch Gyroflow:

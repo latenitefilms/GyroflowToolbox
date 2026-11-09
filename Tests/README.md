@@ -78,8 +78,10 @@ UUIDs and published Motion channels.
 code against a host double that exposes APIs only inside a custom-view action
 or analysis callback. It checks all three analysis buttons, current and legacy
 API lookup, interrupted cleanup, host errors and balanced action scopes.
-It also checks media/project drop routing and cancellation, including an invalid
-neighboring project. Set `GYROFLOW_LIBRARY_DIRECTORY` to test a development dylib.
+It also checks media/project drop routing, cancellation and reload recovery,
+including an invalid neighboring project. Failed reloads leave the effect intact.
+The reload tests use macOS security-scoped bookmarks and require access to that
+system service. Set `GYROFLOW_LIBRARY_DIRECTORY` to test a development dylib.
 
 `test_project_import.py` checks the supplied legacy GoPro project through the Rust
 ABI: relocated Windows paths, preserved synchronization/lens/smoothing settings,
