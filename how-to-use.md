@@ -1,112 +1,40 @@
 # How To Use
 
-### What is Gyroflow?
-
-[Gyroflow](https://github.com/gyroflow/gyroflow) is a free and open source third-party application that can stabilise your video by using motion data from a gyroscope and optionally an accelerometer. Modern cameras record that data internally (such as Blackmagic, GoPro, Sony, Insta360 etc), and Gyroflow stabilises the captured footage precisely by using that data. It can also use gyro data from an external source, such as Betaflight Blackbox.
-
-**Gyroflow Toolbox** allows you to take the stabilised data from Gyroflow and use it within Final Cut Pro as an effect, so you don't have to export a ProRes from Gyroflow!
-
-It's important to understand that **Gyroflow** and **Gyroflow Toolbox** are independent/seperate applications, that share the same render engine - [Gyroflow Core](https://docs.gyroflow.xyz/app/technical-details/gyroflow-core).
-
----
-
-### Learning Gyroflow
-
-Gyroflow has [fantastic documentation](https://docs.gyroflow.xyz/app/) that is regularly updated.
-
-The [Gyroflow Discord](https://discord.gg/BBJ2UVAr2D) is also very active and a great way to get fast support from some of the best and nicest people in the industry.
-
-There are also some great YouTube Videos around, such as:
-
-[![](/static/youtube-gyroflow.jpeg)](https://www.youtube.com/watch?v=QR-SINyvNyI)
-
-[![](/static/youtube-how-to-use.jpeg)](https://www.youtube.com/watch?v=QAds3x8UU1w)
-
----
-
-### Prerequisites
-
-To create the Gyroflow Project (that you import into Gyroflow Toolbox), you'll need to install the latest [Gyroflow](https://gyroflow.xyz/download) application.
-
-However, you don't necessarily have to install **Gyroflow** on the same machine as **Gyroflow Toolbox** - for example, you could run Gyroflow on a fast PC, then copy the exported Gyroflow Project to your Mac to import into Gyroflow Toolbox.
-
-There are also some formats, such as **GoPro**, **DJI**, **Insta360** (and even some **Sony** clips) that don't require launching Gyroflow at all, and you can stay completely within Final Cut Pro.
-
----
-
-### Limitations
-
-_**You should always put the Gyroflow Toolbox effect on a clip INSIDE a Compound Clip with EXACTLY the same FRAME RATE and RESOLUTION.**_
-
-This is because you should only ever apply the Gyroflow Toolbox effect to an **entire clip** - the clip cannot be trimmed. Due to limitations in Final Cut Pro's FxPlug4 API - we currently can't determine the source start timecode of a clip. Because of this, the Gyroflow Toolbox effect should only be applied to a clip where the start of the clip hasn't been trimmed in the timeline (i.e. the clip you have in the timeline should show the first frame of the source clip). If you need to trim the start of this clip, you can use the full clip within a Compound Clip, then trim the Compound Clip as required.
-
-We have been in contact with the Final Cut Pro team about this, and there's currently no other better workaround or solution. This is discussed [on GitHub](https://github.com/latenitefilms/GyroflowToolbox/issues/8) and we would appreciate it if you could let Apple know this is something you'd like to see addressed. You can reference our Apple Feedback Assistant ID: **FB12043900**.
-
----
-
-### Test Footage
-
-The Gyroflow team have kindly shared some test footage that contains gyro data on [Google Drive](https://drive.google.com/drive/folders/1sbZiLN5-sv_sGul1E_DUOluB5OMHfySh?usp=sharing).
-
----
-
-### Supported Gyro Sources
-
-You can find a list of all the currently supported gyro sources in the [Gyroflow Documentation](https://docs.gyroflow.xyz/app/getting-started/supported-cameras).
-
-This includes:
-
-- GoPro (HERO 5 and later)
-- Sony (a1, a7c, a7r IV, a7 IV, a7s III, a9 II, FX3, FX6, FX9, RX0 II, RX100 VII, ZV1, ZV-E10)
-- Insta360 (OneR, OneRS, SMO 4k, Go, GO2, Caddx Peanut)
-- DJI (Avata, O3 Air Unit)
-- Blackmagic RAW (*.braw)
-- RED RAW (*.r3d)
-- Betaflight blackbox (*.bfl, *.bbl, *.csv)
-- ArduPilot logs (*.bin, *.log)
-- Gyroflow [.gcsv log](https://docs.gyroflow.xyz/logging/gcsv/)
-- iOS apps: [`Sensor Logger`](https://apps.apple.com/us/app/sensor-logger/id1531582925), [`G-Field Recorder`](https://apps.apple.com/at/app/g-field-recorder/id1154585693), [`Gyro`](https://apps.apple.com/us/app/gyro-record-device-motion-data/id1161532981), [`GyroCam`](https://apps.apple.com/us/app/gyrocam-professional-camera/id1614296781)
-- Android apps: [`Sensor Logger`](https://play.google.com/store/apps/details?id=com.kelvin.sensorapp&hl=de_AT&gl=US), [`Sensor Record`](https://play.google.com/store/apps/details?id=de.martingolpashin.sensor_record), [`OpenCamera Sensors`](https://github.com/MobileRoboticsSkoltech/OpenCamera-Sensors), [`MotionCam Pro`](https://play.google.com/store/apps/details?id=com.motioncam.pro)
-- Runcam CSV (Runcam 5 Orange, iFlight GOCam GR, Runcam Thumb, Mobius Maxi 4K)
-- Hawkeye Firefly X Lite CSV
-- WitMotion (WT901SDCL binary and *.txt)
-- Vuze (VuzeXR)
-- KanDao (Obisidian Pro)
-
----
-
-### How To Use
-
 If you haven't already, follow the installation instructions [here](/installation/) first.
 
-After you have installed [Gyroflow](https://gyroflow.xyz/download) and Gyroflow Toolbox, you'll see a Gyroflow Toolbox Effect in the Effects Browser:
+After you have installed Gyroflow Toolbox, you'll see a **Gyroflow Toolbox** Effect in the **Effects Browser**:
 
 ![](static/06-install.png)
 
-You can then apply this effect to any clips that are supported by Gyroflow.
+You can then apply this effect to any clips that are supported by Gyroflow. 🥳
+
+---
+
+### Important Limitation
+
+_**You should always put the Gyroflow Toolbox effect on a clip INSIDE a Compound Clip with EXACTLY the same FRAME RATE and RESOLUTION.**_
+
+This is because you should only ever apply the Gyroflow Toolbox effect to an **entire clip** - the clip **cannot** be trimmed.
+
+Due to limitations in Final Cut Pro's FxPlug4 API - we currently can't determine the source start timecode of a clip.
+
+Because of this, the Gyroflow Toolbox effect should only be applied to a clip where the start of the clip hasn't been trimmed in the timeline (i.e. the clip you have in the timeline should show the first frame of the source clip).
+
+If you need to trim the start of this clip, you can use the full clip within a Compound Clip, then trim the Compound Clip as required.
+
+We have been in contact with the Final Cut Pro team about this, and there's currently no other better workaround or solution. This is discussed [on GitHub](https://github.com/latenitefilms/GyroflowToolbox/issues/8) and we would appreciate it if you could let Apple know this is something you'd like to see addressed. You can reference our Apple Feedback Assistant ID: **FB12043900**.
+
+Another annoying thing is that Final Cut Pro's Automatic setting when creating a Compound Clip doesn't properly support non-standard resolutions and aspect ratios - so you really need to TRIPLE CHECK that the frame rate and resolution match your source clip.
 
 ---
 
 ### Applying the Effect
 
-You should always put the Gyroflow Toolbox effect on a clip INSIDE a Compound Clip (see [limitations above](#limitations)) with the EXACT same RESOLUTION and FRAME RATE.
+Again, you should always put the Gyroflow Toolbox effect on a clip INSIDE a Compound Clip with the EXACT same RESOLUTION and FRAME RATE.
 
 It will then look like this:
 
 ![](static/07-install.png)
-
----
-
-### Importing Gyroflow Project
-
-If you have a pre-existing Gyroflow Project, there's a few different ways you can import a Gyroflow Project:
-
-- Drag & Drop from Finder
-- Drag & Drop from another application (such as an Asset Management Tool)
-- Press the **Import Gyroflow Project**
-- Press the **Import Last Gyroflow Project**
-
-If you have a Gyroflow Project with the same filename sitting next to the Media File, Gyroflow Toolbox will always try and load that Gyroflow Project.
 
 ---
 
@@ -133,13 +61,24 @@ If the Media File requires manually loading a **Lens Profile**, Gyroflow Toolbox
 
 ---
 
+### Importing Gyroflow Project
+
+If you have a pre-existing Gyroflow Project, there's a few different ways you can import a Gyroflow Project:
+
+- Drag & Drop from Finder
+- Drag & Drop from another application (such as an Asset Management Tool)
+- Press the **Import Gyroflow Project**
+- Press the **Import Last Gyroflow Project**
+
+If you have a Gyroflow Project with the same filename sitting next to the Media File, Gyroflow Toolbox will always try and load that Gyroflow Project.
+
+---
+
 ### Gyroflow Parameters
 
 Once you've imported a Media File or Gyroflow Project you can then use the Gyroflow Parameters to customise things.
 
-All of the parameters are keyframe-able, however...
-
-_**Any keyframes created in Gyroflow will take priority over the keyframes in Final Cut Pro.**_
+All of the parameters are keyframe-able.
 
 ![](static/11-install.png)
 

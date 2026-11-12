@@ -1,6 +1,6 @@
 # Credits
 
-Gyroflow Toolbox has been thrown together by [Chris Hocking](https://github.com/latenitefilms) at [LateNite Films](https://latenitefilms.com).
+Gyroflow Toolbox has been thrown together by [Chris Hocking](https://github.com/latenitefilms) at [LateNite](https://latenitefilms.com).
 
 Chris also created [CommandPost](https://commandpost.io) and [BRAW Toolbox](https://brawtoolbox.io).
 
