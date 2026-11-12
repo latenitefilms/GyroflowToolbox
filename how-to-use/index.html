@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark">
-    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="4.6.0.847826015195">
+    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="4.6.0.847826326918">
 
     <!-- See retype.com -->
     <meta name="generator" content="Retype 4.6.0">
@@ -44,11 +44,11 @@
     <script data-cfasync="false">(function(){var cl=document.documentElement.classList,ls=localStorage.getItem("retype_scheme"),hd=cl.contains("dark"),hl=cl.contains("light"),wm=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;if(ls==="dark"||(!ls&&wm&&!hd&&!hl)){cl.remove("light");cl.add("dark")}else if(ls==="light"||(!ls&&!wm&&!hd&&!hl)){cl.remove("dark");cl.add("light")}})();</script>
 
     <link id="retype-favicon" rel="icon" href="../static/favicon.ico" />
-    <link href="../resources/css/retype.css?v=4.6.0.847826015195" rel="stylesheet">
+    <link href="../resources/css/retype.css?v=4.6.0.847826326918" rel="stylesheet">
 
-    <script data-cfasync="false" src="../resources/js/config.js?v=4.6.0.847826015195" data-turbo-eval="false" defer></script>
+    <script data-cfasync="false" src="../resources/js/config.js?v=4.6.0.847826326918" data-turbo-eval="false" defer></script>
     <script data-cfasync="false" src="../resources/js/retype.js?v=4.6.0" data-turbo-eval="false" defer></script>
-    <script id="lunr-js" data-cfasync="false" src="../resources/js/lunr.js?v=4.6.0.847826015195" data-turbo-eval="false" defer></script>
+    <script id="lunr-js" data-cfasync="false" src="../resources/js/lunr.js?v=4.6.0.847826326918" data-turbo-eval="false" defer></script>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <style>
@@ -299,7 +299,14 @@
     <img src="../static/06-install.png" alt="" class="max-w-full h-auto rounded-image-rounded border-image-border border-image-border-width" width="724" height="404" />
     <figcaption class="caption"></figcaption>
 </figure>
-<p>You can then apply this effect to any clips that are supported by Gyroflow. <span class="docs-emoji">&#x1F973;</span></p>
+<p>To use Gyroflow Toolbox, first create a <strong>Compound Clip</strong> of your footage that has gyroscope metadata.</p>
+<p>The Compound Clip must have the EXACT SAME frame rate and resolution as your source clip - you need to triple check this, as sometimes Final Cut Pro&#x27;s <code translate="no" v-pre>Automatic</code> setting gets it wrong.</p>
+<p>Inside the Compound Clip, apply the Gyroflow Toolbox effect.</p>
+<p>Because Effects have no knowledge of what they&#x27;re applied to, you need to tell the Effect what the source clip is.</p>
+<p>Simply drag-and-drop the Compound Clip from the Final Cut Pro Browser to the Gyroflow Toolbox Effect drop-zone.</p>
+<p>You&#x27;ll be prompted to grant sandbox access to the file you just dragged across.</p>
+<p>In most cases, for a lot of cameras, that&#x27;s all you need to do! You can then adjust all the parameters as needed. <span class="docs-emoji">&#x1F973;</span></p>
+<p>Gyroflow (the hero open source application) is INSANELY powerful, so there&#x27;s a huge amount of parameters and controls.</p>
 <hr>
 <h3 id="important-limitation">Important Limitation</h3>
 <p><em><strong>You should always put the Gyroflow Toolbox effect on a clip INSIDE a Compound Clip with EXACTLY the same FRAME RATE and RESOLUTION.</strong></em></p>

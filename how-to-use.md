@@ -6,7 +6,21 @@ After you have installed Gyroflow Toolbox, you'll see a **Gyroflow Toolbox** Eff
 
 ![](static/06-install.png)
 
-You can then apply this effect to any clips that are supported by Gyroflow. 🥳
+To use Gyroflow Toolbox, first create a **Compound Clip** of your footage that has gyroscope metadata.
+
+The Compound Clip must have the EXACT SAME frame rate and resolution as your source clip - you need to triple check this, as sometimes Final Cut Pro's `Automatic` setting gets it wrong.
+
+Inside the Compound Clip, apply the Gyroflow Toolbox effect.
+
+Because Effects have no knowledge of what they're applied to, you need to tell the Effect what the source clip is.
+
+Simply drag-and-drop the Compound Clip from the Final Cut Pro Browser to the Gyroflow Toolbox Effect drop-zone.
+
+You'll be prompted to grant sandbox access to the file you just dragged across.
+
+In most cases, for a lot of cameras, that's all you need to do! You can then adjust all the parameters as needed. 🥳
+
+Gyroflow (the hero open source application) is INSANELY powerful, so there's a huge amount of parameters and controls.
 
 ---
 
