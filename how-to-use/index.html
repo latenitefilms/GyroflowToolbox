@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark">
-    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="4.6.0.847826326918">
+    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="4.6.0.847846781936">
 
     <!-- See retype.com -->
     <meta name="generator" content="Retype 4.6.0">
@@ -44,11 +44,11 @@
     <script data-cfasync="false">(function(){var cl=document.documentElement.classList,ls=localStorage.getItem("retype_scheme"),hd=cl.contains("dark"),hl=cl.contains("light"),wm=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;if(ls==="dark"||(!ls&&wm&&!hd&&!hl)){cl.remove("light");cl.add("dark")}else if(ls==="light"||(!ls&&!wm&&!hd&&!hl)){cl.remove("dark");cl.add("light")}})();</script>
 
     <link id="retype-favicon" rel="icon" href="../static/favicon.ico" />
-    <link href="../resources/css/retype.css?v=4.6.0.847826326918" rel="stylesheet">
+    <link href="../resources/css/retype.css?v=4.6.0.847846781936" rel="stylesheet">
 
-    <script data-cfasync="false" src="../resources/js/config.js?v=4.6.0.847826326918" data-turbo-eval="false" defer></script>
+    <script data-cfasync="false" src="../resources/js/config.js?v=4.6.0.847846781936" data-turbo-eval="false" defer></script>
     <script data-cfasync="false" src="../resources/js/retype.js?v=4.6.0" data-turbo-eval="false" defer></script>
-    <script id="lunr-js" data-cfasync="false" src="../resources/js/lunr.js?v=4.6.0.847826326918" data-turbo-eval="false" defer></script>
+    <script id="lunr-js" data-cfasync="false" src="../resources/js/lunr.js?v=4.6.0.847846781936" data-turbo-eval="false" defer></script>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <style>
@@ -300,15 +300,15 @@
     <figcaption class="caption"></figcaption>
 </figure>
 <p>To use Gyroflow Toolbox, first create a <strong>Compound Clip</strong> of your footage that has gyroscope metadata.</p>
-<p>The Compound Clip must have the EXACT SAME frame rate and resolution as your source clip - you need to triple check this, as sometimes Final Cut Pro&#x27;s <code translate="no" v-pre>Automatic</code> setting gets it wrong.</p>
-<p>Inside the Compound Clip, apply the Gyroflow Toolbox effect.</p>
+<p>The <strong>Compound Clip</strong> must have the <strong>EXACT SAME</strong> frame rate and resolution as your source clip - you need to triple check this, as sometimes Final Cut Pro&#x27;s <code translate="no" v-pre>Automatic</code> setting gets it wrong.</p>
+<p>Inside the <strong>Compound Clip</strong>, apply the <strong>Gyroflow Toolbox</strong> effect.</p>
 <p>Because Effects have no knowledge of what they&#x27;re applied to, you need to tell the Effect what the source clip is.</p>
-<p>Simply drag-and-drop the Compound Clip from the Final Cut Pro Browser to the Gyroflow Toolbox Effect drop-zone.</p>
-<p>You&#x27;ll be prompted to grant sandbox access to the file you just dragged across.</p>
+<p>Simply drag-and-drop the <strong>Compound Clip</strong> from the Final Cut Pro Browser to the Gyroflow Toolbox Effect drop-zone.</p>
+<p>You&#x27;ll be prompted to grant sandbox access to the file you just dragged across - click <strong>Open</strong>.</p>
 <p>In most cases, for a lot of cameras, that&#x27;s all you need to do! You can then adjust all the parameters as needed. <span class="docs-emoji">&#x1F973;</span></p>
 <p>Gyroflow (the hero open source application) is INSANELY powerful, so there&#x27;s a huge amount of parameters and controls.</p>
 <hr>
-<h3 id="important-limitation">Important Limitation</h3>
+<h3 id="important-limitations">Important Limitations</h3>
 <p><em><strong>You should always put the Gyroflow Toolbox effect on a clip INSIDE a Compound Clip with EXACTLY the same FRAME RATE and RESOLUTION.</strong></em></p>
 <p>This is because you should only ever apply the Gyroflow Toolbox effect to an <strong>entire clip</strong> - the clip <strong>cannot</strong> be trimmed.</p>
 <p>Due to limitations in Final Cut Pro&#x27;s FxPlug4 API - we currently can&#x27;t determine the source start timecode of a clip.</p>
@@ -316,6 +316,7 @@
 <p>If you need to trim the start of this clip, you can use the full clip within a Compound Clip, then trim the Compound Clip as required.</p>
 <p>We have been in contact with the Final Cut Pro team about this, and there&#x27;s currently no other better workaround or solution. This is discussed <a href="https://github.com/latenitefilms/GyroflowToolbox/issues/8">on GitHub</a> and we would appreciate it if you could let Apple know this is something you&#x27;d like to see addressed. You can reference our Apple Feedback Assistant ID: <strong>FB12043900</strong>.</p>
 <p>Another annoying thing is that Final Cut Pro&#x27;s Automatic setting when creating a Compound Clip doesn&#x27;t properly support non-standard resolutions and aspect ratios - so you really need to TRIPLE CHECK that the frame rate and resolution match your source clip.</p>
+<p>Finally, the last annoying thing is that when Final Cut Pro creates <strong>Optimised Media</strong> it strips out the gyroscope data - so always use the original media.</p>
 <hr>
 <h3 id="applying-the-effect">Applying the Effect</h3>
 <p>Again, you should always put the Gyroflow Toolbox effect on a clip INSIDE a Compound Clip with the EXACT same RESOLUTION and FRAME RATE.</p>
