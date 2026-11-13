@@ -8,15 +8,15 @@ After you have installed Gyroflow Toolbox, you'll see a **Gyroflow Toolbox** Eff
 
 To use Gyroflow Toolbox, first create a **Compound Clip** of your footage that has gyroscope metadata.
 
-The Compound Clip must have the EXACT SAME frame rate and resolution as your source clip - you need to triple check this, as sometimes Final Cut Pro's `Automatic` setting gets it wrong.
+The **Compound Clip** must have the **EXACT SAME** frame rate and resolution as your source clip - you need to triple check this, as sometimes Final Cut Pro's `Automatic` setting gets it wrong.
 
-Inside the Compound Clip, apply the Gyroflow Toolbox effect.
+Inside the **Compound Clip**, apply the **Gyroflow Toolbox** effect.
 
 Because Effects have no knowledge of what they're applied to, you need to tell the Effect what the source clip is.
 
-Simply drag-and-drop the Compound Clip from the Final Cut Pro Browser to the Gyroflow Toolbox Effect drop-zone.
+Simply drag-and-drop the **Compound Clip** from the Final Cut Pro Browser to the Gyroflow Toolbox Effect drop-zone.
 
-You'll be prompted to grant sandbox access to the file you just dragged across.
+You'll be prompted to grant sandbox access to the file you just dragged across - click **Open**.
 
 In most cases, for a lot of cameras, that's all you need to do! You can then adjust all the parameters as needed. 🥳
 
@@ -24,7 +24,7 @@ Gyroflow (the hero open source application) is INSANELY powerful, so there's a h
 
 ---
 
-### Important Limitation
+### Important Limitations
 
 _**You should always put the Gyroflow Toolbox effect on a clip INSIDE a Compound Clip with EXACTLY the same FRAME RATE and RESOLUTION.**_
 
@@ -39,6 +39,8 @@ If you need to trim the start of this clip, you can use the full clip within a C
 We have been in contact with the Final Cut Pro team about this, and there's currently no other better workaround or solution. This is discussed [on GitHub](https://github.com/latenitefilms/GyroflowToolbox/issues/8) and we would appreciate it if you could let Apple know this is something you'd like to see addressed. You can reference our Apple Feedback Assistant ID: **FB12043900**.
 
 Another annoying thing is that Final Cut Pro's Automatic setting when creating a Compound Clip doesn't properly support non-standard resolutions and aspect ratios - so you really need to TRIPLE CHECK that the frame rate and resolution match your source clip.
+
+Finally, the last annoying thing is that when Final Cut Pro creates **Optimised Media** it strips out the gyroscope data - so always use the original media.
 
 ---
 
